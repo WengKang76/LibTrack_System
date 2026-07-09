@@ -1,26 +1,53 @@
-.form-card {
-    background-color: white;
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #1f2937;
+}
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #1f2937;
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
     padding: 25px;
-    border-radius: 12px;
-    max-width: 500px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.form-card label {
+.sidebar h2 {
+    margin-bottom: 5px;
+}
+
+.sidebar p {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
     display: block;
-    margin-top: 12px;
-    font-weight: bold;
+    color: white;
+    text-decoration: none;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
 }
 
-.form-card input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 6px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+.sidebar a:hover {
+    background-color: #374151;
 }
 
-.form-card button,
+.main-content {
+    margin-left: 270px;
+    padding: 35px;
+}
+
 .button {
     display: inline-block;
     margin-top: 15px;
@@ -28,12 +55,11 @@
     color: white;
     padding: 10px 15px;
     border-radius: 7px;
-    border: none;
     text-decoration: none;
+    border: none;
     cursor: pointer;
 }
 
-.form-card button:hover,
 .button:hover {
     background-color: #1d4ed8;
 }

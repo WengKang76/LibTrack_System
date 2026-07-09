@@ -1,0 +1,30 @@
+
+
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="../../static/css/book_catalogue.css">
+{% endblock %}
+
+{% block content %}
+<h1>📚 Book Catalogue Management</h1>
+
+<form class="book-form">
+   <label>Book Title</label>
+    <input type="text" name="title" required>
+
+    <label>Author</label>
+    <input type="text" name="author" required>
+
+    <label>ISBN</label>
+    <input type="text" name="isbn" required>
+
+    <label>Category</label>
+    <input type="text" name="category" required>
+
+    <label>Total Copies</label>
+    <input type="number" name="total_copies" min="1" required>
+
+    <button type="submit">Add Book</button>
+</form>
+{% endblock %}

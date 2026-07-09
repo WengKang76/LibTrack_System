@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LibTrack System</title>
+
+    <!-- Common CSS for whole system -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <!-- Module CSS will be inserted here -->
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 LibTrack</h2>
+        <p>Library Management System</p>
+
+        <a href="/">Dashboard</a>
+        <a href="/books/add">Book Catalogue</a>
+        <a href="/catalogue/">Catalogue Reservation</a>
+        <a href="/borrowing/requests">Borrowing & Returning</a>
+        <a href="/penalty/overdue">Penalty & Transactions</a>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
