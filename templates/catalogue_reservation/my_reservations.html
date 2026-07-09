@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="../../static/css/catalogue_reservation.css">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-header">
+    <h1>🔖 My Reservations</h1>
+    <p>View and cancel your book reservations.</p>
+</div>
+
+<a href="/catalogue/" class="reservation-button">Back to Catalogue</a>
+
+{% if reservations %}
+<table class="reservation-table">
+    <tr>
+        <th>Reservation ID</th>
+        <th>Book ID</th>
+        <th>Book Title</th>
+        <th>Reservation Date</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    {% for reservation in reservations %}
+    <tr>
+        <td>{{ reservation.reservation_id }}</td>
+        <td>{{ reservation.book_id }}</td>
+        <td>{{ reservation.book_title }}</td>
+        <td>{{ reservation.reservation_date }}</td>
+        <td>{{ reservation.status }}</td>
+        <td>
+            {% if reservation.status == "Active" %}
+                <a href="/catalogue/cancel-reservation/{{ reservation.reservation_id }}"
+                   class="reservation-button reservation-button-danger">
+                    Cancel
+                </a>
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<div class="reservation-empty">
+    No reservations found.
+</div>
+{% endif %}
+{% endblock %}

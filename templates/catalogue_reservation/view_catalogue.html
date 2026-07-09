@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-header">
+    <h1>🔖 Catalogue Browsing & Reservation</h1>
+    <p>SCRUM-44: View Book Catalogue</p>
+</div>
+
+<form method="GET" action="/catalogue/" class="reservation-search">
+    <input type="text" name="search" placeholder="Search by title, author, or category"
+           value="{{ search_keyword }}">
+    <button type="submit" class="reservation-button">Search</button>
+    <a href="/catalogue/" class="reservation-button">Clear</a>
+    <a href="/catalogue/available" class="reservation-button">Available Books</a>
+    <a href="/catalogue/my-reservations" class="reservation-button">My Reservations</a>
+</form>
+
+{% if books %}
+<table class="reservation-table">
+    <tr>
+        <th>Book ID</th>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Category</th>
+        <th>Status</th>
+        <th>Available Copies</th>
+        <th>Action</th>
+    </tr>
+
+    {% for book in books %}
+    <tr>
+        <td>{{ book.book_id }}</td>
+        <td>{{ book.title }}</td>
+        <td>{{ book.author }}</td>
+        <td>{{ book.category }}</td>
+        <td>{{ book.status }}</td>
+        <td>{{ book.available_copies }}</td>
+        <td>
+            {% if book.status == "Available" and book.available_copies > 0 %}
+                <a href="/catalogue/borrow/{{ book.book_id }}" class="reservation-button">
+                    Request Borrow
+                </a>
+            {% else %}
+                <a href="/catalogue/reserve/{{ book.book_id }}" class="reservation-button">
+                    Reserve
+                </a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<div class="reservation-empty">
+    No books found.
+</div>
+{% endif %}
+{% endblock %}
