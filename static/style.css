@@ -1,0 +1,100 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #1f2937;
+}
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #1f2937;
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 25px;
+}
+
+.sidebar h2 {
+    margin-bottom: 5px;
+}
+
+.sidebar p {
+    font-size: 14px;
+    color: #cbd5e1;
+    margin-bottom: 30px;
+}
+
+.sidebar a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.sidebar a:hover {
+    background-color: #374151;
+}
+
+.main-content {
+    margin-left: 270px;
+    padding: 35px;
+}
+
+h1 {
+    margin-top: 0;
+    font-size: 32px;
+}
+
+.description {
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+}
+
+.card {
+    background-color: white;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+    margin-top: 0;
+}
+
+.card p {
+    color: #4b5563;
+}
+
+.member {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2563eb;
+}
+
+.button {
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #2563eb;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 7px;
+    text-decoration: none;
+}
+
+.button:hover {
+    background-color: #1d4ed8;
+}
