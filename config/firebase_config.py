@@ -19,7 +19,10 @@ def init_firebase():
     return firestore.client()
 
 
-db = init_firebase()
+if os.getenv("TESTING") == "1":
+    db = None
+else:
+    db = init_firebase()
 
 COLLECTION_BOOKS = "books"
 COLLECTION_BORROW_REQUESTS = "borrow_requests"

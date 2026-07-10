@@ -3,7 +3,13 @@ from datetime import datetime, date
 
 from config.firebase_config import db, COLLECTION_BORROW_TRANSACTIONS
 
-penalty_bp = Blueprint("penalty_transaction", __name__, url_prefix="/penalty")
+
+penalty_bp = Blueprint(
+    "penalty_transaction",
+    __name__,
+    url_prefix="/penalty",
+    template_folder="."
+)
 
 
 @penalty_bp.route("/overdue")
@@ -11,7 +17,7 @@ def identify_overdue_books():
     overdue_books = get_overdue_books()
 
     return render_template(
-        "penalty_transaction/overdue_books.html",
+        "overdue_book.html",
         overdue_books=overdue_books
     )
 
