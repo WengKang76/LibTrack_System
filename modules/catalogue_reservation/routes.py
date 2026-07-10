@@ -14,41 +14,65 @@ RESERVATIONS_COLLECTION = "reservations"
 BORROW_REQUESTS_COLLECTION = "borrow_requests"
 
 
+def _safe_int(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _matches_search(book, search_keyword):
+    if not search_keyword:
+        return True
+
+    searchable_fields = (
+        book.get("title", ""),
+        book.get("author", ""),
+        book.get("category", "")
+    )
+
+    return any(
+        search_keyword in str(field).lower()
+        for field in searchable_fields
+    )
+
+
 # SCRUM-44: Setup module + View book catalogue
 @catalogue_bp.route("/")
 def view_catalogue():
     books = []
-
     search_keyword = request.args.get("search", "").strip().lower()
 
     try:
         docs = db.collection(BOOKS_COLLECTION).stream()
 
         for doc in docs:
-            book = doc.to_dict()
+            book = doc.to_dict() or {}
             book["book_id"] = doc.id
+            book["available_copies"] = _safe_int(
+                book.get("available_copies", 0)
+            )
 
-            if search_keyword:
-                title = str(book.get("title", "")).lower()
-                author = str(book.get("author", "")).lower()
-                category = str(book.get("category", "")).lower()
-
-                if (
-                    search_keyword in title
-                    or search_keyword in author
-                    or search_keyword in category
-                ):
-                    books.append(book)
-            else:
+            if _matches_search(book, search_keyword):
                 books.append(book)
 
+        books.sort(
+            key=lambda book: str(book.get("title", "")).lower()
+        )
+
     except Exception as error:
-        flash(f"Error loading catalogue: {error}")
+        flash(f"Error loading catalogue: {error}", "danger")
 
     return render_template(
         "catalogue_reservation/view_catalogue.html",
         books=books,
-        search_keyword=search_keyword
+        search_keyword=search_keyword,
+        page_title="Book Catalogue",
+        page_description=(
+            "Browse, search, borrow, or reserve books "
+            "from the LibTrack library catalogue."
+        ),
+        available_only=False
     )
 
 
@@ -56,27 +80,47 @@ def view_catalogue():
 @catalogue_bp.route("/available")
 def view_available_books():
     books = []
+    search_keyword = request.args.get("search", "").strip().lower()
 
     try:
         docs = db.collection(BOOKS_COLLECTION).stream()
 
         for doc in docs:
-            book = doc.to_dict()
+            book = doc.to_dict() or {}
             book["book_id"] = doc.id
 
-            status = str(book.get("status", "")).lower()
-            available_copies = int(book.get("available_copies", 0))
+            status = str(book.get("status", "")).strip().lower()
+            available_copies = _safe_int(
+                book.get("available_copies", 0)
+            )
 
-            if status == "available" and available_copies > 0:
+            book["available_copies"] = available_copies
+
+            is_available = (
+                status == "available"
+                and available_copies > 0
+            )
+
+            if is_available and _matches_search(book, search_keyword):
                 books.append(book)
 
+        books.sort(
+            key=lambda book: str(book.get("title", "")).lower()
+        )
+
     except Exception as error:
-        flash(f"Error loading available books: {error}")
+        flash(f"Error loading available books: {error}", "danger")
 
     return render_template(
         "catalogue_reservation/view_catalogue.html",
         books=books,
-        search_keyword=""
+        search_keyword=search_keyword,
+        page_title="Available Books",
+        page_description=(
+            "View books that currently have at least one copy "
+            "available for borrowing."
+        ),
+        available_only=True
     )
 
 

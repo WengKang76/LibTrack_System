@@ -1,61 +1,195 @@
 {% extends "base.html" %}
 
+{% block title %}
+    {{ page_title|default("Book Catalogue") }} | LibTrack
+{% endblock %}
+
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="reservation-header">
-    <h1>🔖 Catalogue Browsing & Reservation</h1>
-    <p>SCRUM-44: View Book Catalogue</p>
-</div>
+{% set current_title = page_title|default("Book Catalogue") %}
+{% set current_description = page_description|default(
+    "Browse and search for books in the LibTrack library."
+) %}
+{% set available_only = available_only|default(false) %}
+{% set search_keyword = search_keyword|default("") %}
+{% set search_endpoint = (
+    'catalogue_reservation.view_available_books'
+    if available_only
+    else 'catalogue_reservation.view_catalogue'
+) %}
 
-<form method="GET" action="/catalogue/" class="reservation-search">
-    <input type="text" name="search" placeholder="Search by title, author, or category"
-           value="{{ search_keyword }}">
-    <button type="submit" class="reservation-button">Search</button>
-    <a href="/catalogue/" class="reservation-button">Clear</a>
-    <a href="/catalogue/available" class="reservation-button">Available Books</a>
-    <a href="/catalogue/my-reservations" class="reservation-button">My Reservations</a>
-</form>
+<div class="reservation-page">
+    <header class="reservation-header">
+        <div>
+            <p class="reservation-eyebrow">Catalogue Browsing &amp; Reservation</p>
+            <h1>
+                {% if available_only %}✅{% else %}📚{% endif %}
+                {{ current_title }}
+            </h1>
+            <p>{{ current_description }}</p>
+        </div>
+    </header>
 
-{% if books %}
-<table class="reservation-table">
-    <tr>
-        <th>Book ID</th>
-        <th>Title</th>
-        <th>Author</th>
-        <th>Category</th>
-        <th>Status</th>
-        <th>Available Copies</th>
-        <th>Action</th>
-    </tr>
+    <section class="reservation-toolbar" aria-label="Catalogue controls">
+        <form method="GET"
+              action="{{ url_for(search_endpoint) }}"
+              class="reservation-search">
+            <label for="catalogue-search" class="reservation-search-label">
+                Search catalogue
+            </label>
 
-    {% for book in books %}
-    <tr>
-        <td>{{ book.book_id }}</td>
-        <td>{{ book.title }}</td>
-        <td>{{ book.author }}</td>
-        <td>{{ book.category }}</td>
-        <td>{{ book.status }}</td>
-        <td>{{ book.available_copies }}</td>
-        <td>
-            {% if book.status == "Available" and book.available_copies > 0 %}
-                <a href="/catalogue/borrow/{{ book.book_id }}" class="reservation-button">
-                    Request Borrow
+            <div class="reservation-search-controls">
+                <input type="search"
+                       id="catalogue-search"
+                       name="search"
+                       placeholder="Search by title, author, or category"
+                       value="{{ search_keyword }}"
+                       autocomplete="off">
+
+                <button type="submit" class="reservation-button">
+                    Search
+                </button>
+
+                {% if search_keyword %}
+                    <a href="{{ url_for(search_endpoint) }}"
+                       class="reservation-button reservation-button-secondary">
+                        Clear Search
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <nav class="reservation-navigation" aria-label="Catalogue views">
+            {% if available_only %}
+                <a href="{{ url_for('catalogue_reservation.view_catalogue') }}"
+                   class="reservation-button reservation-button-secondary">
+                    View All Books
                 </a>
             {% else %}
-                <a href="/catalogue/reserve/{{ book.book_id }}" class="reservation-button">
-                    Reserve
+                <a href="{{ url_for('catalogue_reservation.view_available_books') }}"
+                   class="reservation-button reservation-button-secondary">
+                    Available Books
                 </a>
             {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<div class="reservation-empty">
-    No books found.
+
+            <a href="{{ url_for('catalogue_reservation.view_my_reservations') }}"
+               class="reservation-button reservation-button-secondary">
+                My Reservations
+            </a>
+        </nav>
+    </section>
+
+    <section class="reservation-summary" aria-label="Catalogue summary">
+        <p>
+            <strong>{{ books|length }}</strong>
+            {% if books|length == 1 %}book{% else %}books{% endif %}
+            found
+            {% if search_keyword %}
+                for “<strong>{{ search_keyword }}</strong>”
+            {% endif %}.
+        </p>
+
+        {% if available_only %}
+            <p>Only books with at least one available copy are shown.</p>
+        {% endif %}
+    </section>
+
+    {% if books %}
+        <div class="reservation-table-container">
+            <table class="reservation-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Book ID</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Author</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Available Copies</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for book in books %}
+                        {% set status = book.status|default('Unavailable') %}
+                        {% set available_copies = book.available_copies|default(0)|int %}
+                        {% set is_available = (
+                            status|lower == 'available'
+                            and available_copies > 0
+                        ) %}
+
+                        <tr>
+                            <td>{{ book.book_id|default('N/A') }}</td>
+                            <td>
+                                <strong>{{ book.title|default('Untitled Book') }}</strong>
+                            </td>
+                            <td>{{ book.author|default('Unknown Author') }}</td>
+                            <td>{{ book.category|default('Uncategorised') }}</td>
+                            <td>
+                                <span class="{{
+                                    'reservation-status-available'
+                                    if is_available
+                                    else 'reservation-status-unavailable'
+                                }}">
+                                    {{ 'Available' if is_available else 'Unavailable' }}
+                                </span>
+                            </td>
+                            <td>{{ available_copies }}</td>
+                            <td>
+                                {% if is_available %}
+                                    <a href="{{ url_for(
+                                        'catalogue_reservation.request_borrow_book',
+                                        book_id=book.book_id
+                                    ) }}"
+                                       class="reservation-button reservation-button-small">
+                                        Request Borrow
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for(
+                                        'catalogue_reservation.reserve_book',
+                                        book_id=book.book_id
+                                    ) }}"
+                                       class="reservation-button reservation-button-small">
+                                        Reserve
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <section class="reservation-empty">
+            {% if search_keyword %}
+                <h2>No matching books found</h2>
+                <p>
+                    No books matched “<strong>{{ search_keyword }}</strong>”.
+                    Try another title, author, or category.
+                </p>
+                <a href="{{ url_for(search_endpoint) }}"
+                   class="reservation-button">
+                    Clear Search
+                </a>
+            {% elif available_only %}
+                <h2>No available books found.</h2>
+                <p>
+                    There are currently no books available for borrowing.
+                    Return to the complete catalogue to view or reserve a book.
+                </p>
+                <a href="{{ url_for('catalogue_reservation.view_catalogue') }}"
+                   class="reservation-button">
+                    View All Books
+                </a>
+            {% else %}
+                <h2>No books found</h2>
+                <p>No books have been added to the LibTrack catalogue yet.</p>
+            {% endif %}
+        </section>
+    {% endif %}
 </div>
-{% endif %}
 {% endblock %}
