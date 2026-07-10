@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Borrowing & Returning</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+
+<body>
+
+<div class="main-content">
+
+    <h1>Borrowing & Returning</h1>
+
+    <p class="description">
+        Pending borrowing requests
+    </p>
+
+
+    <div class="card-container">
+
+        {% for request in requests %}
+
+        <div class="card">
+
+            <h3>{{ request.book }}</h3>
+
+            <p>
+                Student:
+                {{ request.student }}
+            </p>
+
+            <p>
+                Status:
+                {{ request.status }}
+            </p>
+
+            {% if request.status == "Pending" %}
+
+            <form method="POST"
+                action="{{ url_for('borrowing.approve_request', request_id=request.id) }}">
+
+                <button class="button" type="submit">
+                    Approve
+                </button>
+
+            </form>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

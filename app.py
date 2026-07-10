@@ -1,6 +1,9 @@
 from flask import Flask, render_template
+from modules.borrowing.routes import borrowing_bp
 
 app = Flask(__name__)
+
+app.register_blueprint(borrowing_bp)
 
 
 @app.route("/")
