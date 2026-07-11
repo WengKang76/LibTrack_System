@@ -5,7 +5,10 @@
     <title>LibTrack System</title>
 
     <!-- Common CSS for whole system -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/main.css') }}"
+    >
 
     <!-- Module CSS will be inserted here -->
     {% block extra_css %}{% endblock %}
@@ -17,14 +20,34 @@
         <p>Library Management System</p>
 
         <a href="/">Dashboard</a>
-        <a href="/books/add">Book Catalogue</a>
+
+      <a href="{{ url_for('book_catalogue.manage_books') }}">
+    Book Catalogue
+</a>
+
         <a href="/catalogue/">Catalogue Reservation</a>
         <a href="/borrowing/requests">Borrowing & Returning</a>
         <a href="/penalty/overdue">Penalty & Transactions</a>
     </div>
 
     <div class="main-content">
+
+        <!-- Display Flask success and error messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div
+                        class="alert {{ category }}"
+                        role="alert"
+                    >
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
         {% block content %}{% endblock %}
+
     </div>
 </body>
 </html>
