@@ -2,7 +2,12 @@
 
 import pytest
 
-from modules.borrowing.repository import borrow_requests, find_request
+from modules.borrowing.repository import (
+    borrow_requests,
+    borrow_transactions,
+    find_request,
+    get_borrow_transactions,
+)
 from modules.borrowing.services import approve_borrow_request
 
 
@@ -10,6 +15,7 @@ from modules.borrowing.services import approve_borrow_request
 def reset_borrow_requests():
     """Reset borrow request repository before each test."""
     borrow_requests.clear()
+    borrow_transactions.clear()
 
     borrow_requests.extend(
         [
@@ -27,6 +33,13 @@ def reset_borrow_requests():
             },
         ]
     )
+
+
+# ==================================================
+# User Story 1:
+# As a librarian, I want to approve a borrowing request
+# so that the book can be officially issued to student.
+# ==================================================
 
 
 def test_approve_pending_borrow_request():
@@ -67,3 +80,59 @@ def test_cannot_approve_already_approved_request():
     result = approve_borrow_request(1)
 
     assert result is False
+
+
+# ==================================================
+# User Story 2:
+# As a librarian, I want the system to automatically
+# generate a due date when a borrowing request is approved
+# so that all borrowing periods follow library policy.
+# ==================================================
+
+
+def test_approval_creates_borrow_transaction():
+    """
+    GIVEN a pending borrowing request exists
+    WHEN the librarian approves the borrowing request
+    THEN the system should create a borrow transaction
+    """
+    approve_borrow_request(1)
+
+    transactions = get_borrow_transactions()
+
+    assert len(transactions) == 1
+    assert transactions[0]["student"] == "Alice"
+    assert transactions[0]["book"] == "Database System Concepts"
+
+
+def test_borrow_transaction_generates_due_date():
+    """
+    GIVEN a pending borrowing request exists
+    WHEN the librarian approves the borrowing request
+    THEN the system should generate borrow date and due date
+    """
+    approve_borrow_request(1)
+
+    transaction = get_borrow_transactions()[0]
+
+    assert transaction["borrow_date"] is not None
+    assert transaction["due_date"] is not None
+
+
+def test_due_date_follows_library_policy():
+    """
+    GIVEN a borrowing request is approved
+    WHEN the system generates the due date
+    THEN the due date should be 14 days after the borrow date
+    """
+    approve_borrow_request(1)
+
+    transaction = get_borrow_transactions()[0]
+
+    from datetime import date, timedelta
+
+    expected_due_date = date.fromisoformat(transaction["borrow_date"]) + timedelta(
+        days=14
+    )
+
+    assert transaction["due_date"] == expected_due_date.isoformat()

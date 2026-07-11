@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, render_template, url_for
 
 from modules.borrowing.services import (
     approve_borrow_request,
+    get_all_borrow_transactions,
     get_all_pending_requests,
 )
 
@@ -15,10 +16,12 @@ borrowing_bp = Blueprint(
 @borrowing_bp.route("/")
 def borrowing_home():
     requests = get_all_pending_requests()
+    transactions = get_all_borrow_transactions()
 
     return render_template(
         "borrowing/index.html",
         requests=requests,
+        transactions=transactions,
     )
 
 

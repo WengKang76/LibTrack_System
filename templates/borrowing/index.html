@@ -58,6 +58,45 @@
 
     </div>
 
+    <h2>Borrow Transactions</h2>
+
+{% if transactions %}
+
+{% for transaction in transactions %}
+
+<div class="card">
+
+    <h3>{{ transaction.book }}</h3>
+
+    <p>
+        Student:
+        {{ transaction.student }}
+    </p>
+
+    <p>
+        Borrow Date:
+        {{ transaction.borrow_date }}
+    </p>
+
+    <p>
+        Due Date:
+        {{ transaction.due_date }}
+    </p>
+
+    <p>
+        Status:
+        {{ transaction.status }}
+    </p>
+
+    </div>
+
+    {% endfor %}
+
+    {% else %}
+
+    <p>No active borrowing transactions.</p>
+
+    {% endif %}
 </div>
 
 </body>

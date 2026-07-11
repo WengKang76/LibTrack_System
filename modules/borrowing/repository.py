@@ -8,6 +8,16 @@ class BorrowRequest(TypedDict):
     status: str
 
 
+class BorrowTransaction(TypedDict):
+    id: int
+    request_id: int
+    student: str
+    book: str
+    borrow_date: str
+    due_date: str
+    status: str
+
+
 borrow_requests: list[BorrowRequest] = [
     {
         "id": 1,
@@ -23,6 +33,8 @@ borrow_requests: list[BorrowRequest] = [
     },
 ]
 
+borrow_transactions: list[BorrowTransaction] = []
+
 
 def get_pending_requests() -> list[BorrowRequest]:
     return [request for request in borrow_requests if request["status"] == "Pending"]
@@ -34,3 +46,11 @@ def find_request(request_id: int) -> BorrowRequest | None:
             return request
 
     return None
+
+
+def add_borrow_transaction(transaction: BorrowTransaction) -> None:
+    borrow_transactions.append(transaction)
+
+
+def get_borrow_transactions() -> list[BorrowTransaction]:
+    return borrow_transactions
