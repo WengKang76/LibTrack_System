@@ -136,3 +136,44 @@ def test_due_date_follows_library_policy():
     )
 
     assert transaction["due_date"] == expected_due_date.isoformat()
+
+
+# ==================================================
+# User Story 3:
+# As a librarian, I want the system to record every
+# borrowing transaction so that borrowing records
+# remain complete and accurate.
+# ==================================================
+
+def test_borrowing_transaction_contains_complete_record():
+    """
+    GIVEN a borrowing request has been approved
+    WHEN the system creates a borrowing transaction
+    THEN the transaction should contain all required information
+    """
+    approve_borrow_request(1)
+
+    transaction = get_borrow_transactions()[0]
+
+    assert transaction["id"] is not None
+    assert transaction["request_id"] == 1
+    assert transaction["student"] == "Alice"
+    assert transaction["book"] == "Database System Concepts"
+    assert transaction["borrow_date"] is not None
+    assert transaction["due_date"] is not None
+    assert transaction["return_date"] is None
+    assert transaction["status"] == "Borrowed"
+
+def test_each_approved_request_creates_separate_transaction():
+    """
+    GIVEN multiple pending borrowing requests exist
+    WHEN librarians approve multiple requests
+    THEN each approval should create its own borrowing transaction
+    """
+    approve_borrow_request(1)
+    approve_borrow_request(2)
+
+    transactions = get_borrow_transactions()
+
+    assert len(transactions) == 2
+    assert transactions[0]["request_id"] != transactions[1]["request_id"]
