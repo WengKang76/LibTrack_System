@@ -42,6 +42,47 @@ def get_overdue_books():
 
     return overdue_books
 
+PENALTY_RATE_PER_DAY = 1.00
+
+
+def calculate_penalty_amount(due_date):
+    today = date.today()
+
+    if isinstance(due_date, str):
+        due_date = datetime.strptime(due_date, "%Y-%m-%d").date()
+
+    if due_date >= today:
+        return {
+            "overdue_days": 0,
+            "penalty_amount": 0.00
+        }
+
+    overdue_days = (today - due_date).days
+    penalty_amount = overdue_days * PENALTY_RATE_PER_DAY
+
+    return {
+        "overdue_days": overdue_days,
+        "penalty_amount": penalty_amount
+    }
+    today = date.today()
+
+    if isinstance(due_date, str):
+        due_date = datetime.strptime(due_date, "%Y-%m-%d").date()
+
+    if due_date >= today:
+        return {
+            "overdue_days": 0,
+            "penalty_amount": 0.00
+        }
+
+    overdue_days = (today - due_date).days
+    penalty_amount = overdue_days * PENALTY_RATE_PER_DAY
+
+    return {
+        "overdue_days": overdue_days,
+        "penalty_amount": penalty_amount
+    }
+
 
 def convert_to_date(value):
     if isinstance(value, datetime):
