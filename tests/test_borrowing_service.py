@@ -145,6 +145,7 @@ def test_due_date_follows_library_policy():
 # remain complete and accurate.
 # ==================================================
 
+
 def test_borrowing_transaction_contains_complete_record():
     """
     GIVEN a borrowing request has been approved
@@ -163,6 +164,7 @@ def test_borrowing_transaction_contains_complete_record():
     assert transaction["due_date"] is not None
     assert transaction["return_date"] is None
     assert transaction["status"] == "Borrowed"
+
 
 def test_each_approved_request_creates_separate_transaction():
     """

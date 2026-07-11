@@ -31,15 +31,15 @@ def approve_borrow_request(request_id: int) -> bool:
     due_date = borrow_date + timedelta(days=14)
 
     transaction = {
-    "id": len(get_borrow_transactions()) + 1,
-    "request_id": request["id"],
-    "student": request["student"],
-    "book": request["book"],
-    "borrow_date": borrow_date.isoformat(),
-    "due_date": due_date.isoformat(),
-    "return_date": None,
-    "status": "Borrowed",
-}
+        "id": len(get_borrow_transactions()) + 1,
+        "request_id": request["id"],
+        "student": request["student"],
+        "book": request["book"],
+        "borrow_date": borrow_date.isoformat(),
+        "due_date": due_date.isoformat(),
+        "return_date": None,
+        "status": "Borrowed",
+    }
 
     add_borrow_transaction(transaction)
 

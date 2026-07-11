@@ -17,7 +17,6 @@ class BorrowTransaction(TypedDict):
     due_date: str
     return_date: str | None
     status: str
-    
 
 
 borrow_requests: list[BorrowRequest] = [
