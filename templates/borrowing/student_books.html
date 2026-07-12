@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Borrowed Books</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<div class="main-content">
+
+    <h1>My Borrowed Books</h1>
+
+    {% if books %}
+
+        {% for book in books %}
+
+        <div class="card">
+
+            <h3>{{ book.book }}</h3>
+
+            <p>
+                Borrow Date:
+                {{ book.borrow_date }}
+            </p>
+
+            <p>
+                Due Date:
+                {{ book.due_date }}
+            </p>
+
+            <p>
+                Status:
+                {{ book.status }}
+            </p>
+
+            {% if book.status == "Borrowed" %}
+
+            <form method="POST"
+                  action="{{ url_for('borrowing.return_book',
+                  transaction_id=book.id) }}">
+
+                <button class="button">
+                    Return Book
+                </button>
+
+            </form>
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>
+            No borrowed books.
+        </p>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+</html>

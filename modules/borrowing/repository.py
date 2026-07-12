@@ -49,6 +49,16 @@ def find_request(request_id: int) -> BorrowRequest | None:
     return None
 
 
+def find_borrow_transaction(
+    transaction_id: int,
+) -> BorrowTransaction | None:
+    for transaction in borrow_transactions:
+        if transaction["id"] == transaction_id:
+            return transaction
+
+    return None
+
+
 def add_borrow_transaction(transaction: BorrowTransaction) -> None:
     borrow_transactions.append(transaction)
 

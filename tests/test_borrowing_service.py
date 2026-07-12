@@ -6,9 +6,14 @@ from modules.borrowing.repository import (
     borrow_requests,
     borrow_transactions,
     find_request,
+    find_borrow_transaction,
     get_borrow_transactions,
 )
-from modules.borrowing.services import approve_borrow_request
+
+from modules.borrowing.services import (
+    approve_borrow_request,
+    request_book_return,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -179,3 +184,58 @@ def test_each_approved_request_creates_separate_transaction():
 
     assert len(transactions) == 2
     assert transactions[0]["request_id"] != transactions[1]["request_id"]
+
+
+# ==================================================
+# User Story 4:
+# As a student, I want the system to allow me to
+# return borrowed books so that my borrowing record
+# is updated.
+# ==================================================
+
+
+def test_student_can_request_book_return():
+    """
+    GIVEN a student has a borrowed book
+    WHEN the student requests to return the book
+    THEN the borrowing status should change to "Return Pending"
+    """
+
+    approve_borrow_request(1)
+
+    result = request_book_return(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["status"] == "Return Pending"
+
+
+def test_student_cannot_request_return_for_invalid_transaction():
+    """
+    GIVEN a transaction ID that does not exist
+    WHEN the student requests a return
+    THEN the system should reject the request
+    """
+
+    result = request_book_return(999)
+
+    assert result is False
+
+
+def test_student_cannot_request_return_twice():
+    """
+    GIVEN a book is already pending return
+    WHEN the student requests return again
+    THEN the system should reject the duplicate request
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    result = request_book_return(1)
+
+    assert result is False
