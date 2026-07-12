@@ -61,3 +61,58 @@
 .penalty-table tr:hover {
     background-color: #f9fafb;
 }
+
+.penalty-card {
+    background-color: white;
+    padding: 25px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.penalty-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.penalty-form label {
+    font-weight: bold;
+    color: #374151;
+}
+
+.penalty-form input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    width: 240px;
+}
+
+.penalty-form button {
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.penalty-form button:hover {
+    background-color: #1d4ed8;
+}
+
+.penalty-amount {
+    font-weight: bold;
+    color: #dc2626;
+}
+
+.status-outstanding {
+    background-color: #fef3c7;
+    color: #92400e;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    display: inline-block;
+}

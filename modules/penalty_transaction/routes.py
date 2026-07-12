@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from datetime import datetime, date
 
 from config.firebase_config import db, COLLECTION_BORROW_TRANSACTIONS
@@ -82,6 +82,41 @@ def calculate_penalty_amount(due_date):
         "overdue_days": overdue_days,
         "penalty_amount": penalty_amount
     }
+
+
+def get_outstanding_penalties(student_id=None):
+    outstanding_penalties = []
+
+    penalty_docs = db.collection("penalties").stream()
+
+    for doc in penalty_docs:
+        penalty = doc.to_dict()
+        penalty["penalty_id"] = doc.id
+
+        status = str(penalty.get("status", "")).lower()
+
+        if status in ["outstanding", "unpaid", "pending"]:
+            if student_id is None or penalty.get("student_id") == student_id:
+                outstanding_penalties.append(penalty)
+
+    return outstanding_penalties
+
+
+@penalty_bp.route("/penalties")
+@penalty_bp.route("/outstanding")
+def view_outstanding_penalties():
+    student_id = request.args.get("student_id")
+
+    if student_id:
+        student_id = student_id.strip()
+
+    outstanding_penalties = get_outstanding_penalties(student_id)
+
+    return render_template(
+        "outstanding_penalties.html",
+        outstanding_penalties=outstanding_penalties,
+        student_id=student_id
+    )
 
 
 def convert_to_date(value):

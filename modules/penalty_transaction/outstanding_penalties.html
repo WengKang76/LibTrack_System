@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="../../static/css/penalty_transaction.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>SCRUM-679: View Outstanding Penalties</h2>
+    <p>This page displays penalty records that are still unpaid or outstanding.</p>
+</div>
+
+<div class="penalty-card">
+    <form method="GET" action="../../static/css/penalty_transaction.css"" class="penalty-form">
+        <label>Search by Student ID:</label>
+        <input type="text" name="student_id" value="{{ student_id or '' }}" placeholder="Example: S001">
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+{% if outstanding_penalties %}
+<div class="penalty-alert penalty-warning">
+    {{ outstanding_penalties|length }} outstanding penalty record(s) found.
+</div>
+
+<table class="penalty-table">
+    <tr>
+        <th>Penalty ID</th>
+        <th>Student ID</th>
+        <th>Transaction ID</th>
+        <th>Book Title</th>
+        <th>Overdue Days</th>
+        <th>Penalty Amount</th>
+        <th>Status</th>
+    </tr>
+
+    {% for penalty in outstanding_penalties %}
+    <tr>
+        <td>{{ penalty.penalty_id }}</td>
+        <td>{{ penalty.student_id }}</td>
+        <td>{{ penalty.transaction_id }}</td>
+        <td>{{ penalty.book_title }}</td>
+        <td>{{ penalty.overdue_days }}</td>
+        <td class="penalty-amount">RM {{ "%.2f"|format(penalty.penalty_amount) }}</td>
+        <td>
+            <span class="status-outstanding">
+                {{ penalty.status }}
+            </span>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% else %}
+<div class="penalty-alert penalty-success">
+    No outstanding penalties found.
+</div>
+{% endif %}
+
+{% endblock %}
