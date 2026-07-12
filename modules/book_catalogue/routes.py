@@ -264,3 +264,20 @@ def edit_book(book_id):
 )
 
     return render_template("edit_book.html", book=book)
+
+# ============================================================
+# SCRUM-704: DELETE BOOK RECORD
+# ============================================================
+
+@book_bp.route("/delete/<book_id>", methods=["GET"])
+def delete_book(book_id):
+    db.collection(COLLECTION_BOOKS).document(book_id).delete()
+
+    flash(
+        "Book record deleted successfully.",
+        "success",
+    )
+
+    return redirect(
+        url_for("book_catalogue.manage_books")
+    )

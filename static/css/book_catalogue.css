@@ -197,3 +197,19 @@
         flex-direction: column;
     }
 }
+
+/* SCRUM-704: Delete Book */
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.button-danger {
+    background-color: #dc2626;
+}
+
+.button-danger:hover {
+    background-color: #b91c1c;
+}
