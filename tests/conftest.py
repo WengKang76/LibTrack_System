@@ -22,12 +22,36 @@ from modules.catalogue_reservation import routes as catalogue_routes
 
 
 class FakeDocument:
-    def __init__(self, document_id, data):
+    def __init__(self, document_id, data=None, exists=True):
         self.id = document_id
-        self._data = data
+        self._data = data or {}
+        self.exists = exists
 
     def to_dict(self):
         return self._data.copy()
+
+
+class FakeDocumentReference:
+    def __init__(self, document_id, books):
+        self._document_id = document_id
+        self._books = books
+
+    def get(self):
+        for book in self._books:
+            if book.get("book_id") == self._document_id:
+                copied_book = book.copy()
+                copied_book.pop("book_id", None)
+                return FakeDocument(
+                    self._document_id,
+                    copied_book,
+                    exists=True
+                )
+
+        return FakeDocument(
+            self._document_id,
+            {},
+            exists=False
+        )
 
 
 class FakeCollection:
@@ -43,6 +67,9 @@ class FakeCollection:
             documents.append(FakeDocument(document_id, copied_book))
 
         return documents
+
+    def document(self, document_id):
+        return FakeDocumentReference(document_id, self._books)
 
 
 class FakeFirestore:
@@ -71,6 +98,11 @@ def app_factory(monkeypatch):
             TESTING=True,
             SECRET_KEY="automated-test-secret-key"
         )
+
+        @app.route("/")
+        def home():
+            return "LibTrack Test Home"
+
         app.register_blueprint(catalogue_routes.catalogue_bp)
 
         return app

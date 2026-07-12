@@ -140,23 +140,33 @@
                             </td>
                             <td>{{ available_copies }}</td>
                             <td>
-                                {% if is_available %}
+                                <div class="reservation-actions">
                                     <a href="{{ url_for(
-                                        'catalogue_reservation.request_borrow_book',
+                                        'catalogue_reservation.view_book_availability',
                                         book_id=book.book_id
                                     ) }}"
-                                       class="reservation-button reservation-button-small">
-                                        Request Borrow
+                                       class="reservation-button reservation-button-small reservation-button-secondary">
+                                        View Status
                                     </a>
-                                {% else %}
-                                    <a href="{{ url_for(
-                                        'catalogue_reservation.reserve_book',
-                                        book_id=book.book_id
-                                    ) }}"
-                                       class="reservation-button reservation-button-small">
-                                        Reserve
-                                    </a>
-                                {% endif %}
+
+                                    {% if is_available %}
+                                        <a href="{{ url_for(
+                                            'catalogue_reservation.request_borrow_book',
+                                            book_id=book.book_id
+                                        ) }}"
+                                           class="reservation-button reservation-button-small">
+                                            Request Borrow
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for(
+                                            'catalogue_reservation.reserve_book',
+                                            book_id=book.book_id
+                                        ) }}"
+                                           class="reservation-button reservation-button-small">
+                                            Reserve
+                                        </a>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}

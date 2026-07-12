@@ -2,30 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>{% block title %}LibTrack System{% endblock %}</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}
+            LibTrack
+        {% endblock %}
+    </title>
 
     <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/main.css') }}">
+          href="{{ url_for(
+              'static',
+              filename='css/main.css'
+          ) }}">
 
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    {% endblock %}
 </head>
-<body>
-    <main>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-container" aria-live="polite">
-                    {% for category, message in messages %}
-                        <div class="flash-message flash-{{ category|default('info') }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
 
-        {% block content %}{% endblock %}
+<body>
+    <header class="main-header">
+        <div class="main-navigation">
+            <a href="{{ url_for('home') }}"
+               class="brand">
+                <span class="brand-icon">📚</span>
+                <span>LibTrack</span>
+            </a>
+
+            <nav class="navigation-links">
+                <a href="{{ url_for('home') }}">
+                    Dashboard
+                </a>
+
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_catalogue'
+                ) }}">
+                    Book Catalogue
+                </a>
+
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_available_books'
+                ) }}">
+                    Available Books
+                </a>
+
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_my_reservations'
+                ) }}">
+                    My Reservations
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(
+        with_categories=true
+    ) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
     </main>
 </body>
 </html>

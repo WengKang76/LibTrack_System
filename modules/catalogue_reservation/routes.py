@@ -124,6 +124,48 @@ def view_available_books():
     )
 
 
+# SCRUM-685: View current availability status of a selected book
+@catalogue_bp.route("/availability/<book_id>")
+def view_book_availability(book_id):
+    """Display the latest availability status for one selected book."""
+    try:
+        book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
+
+        if not book_doc.exists:
+            flash("Book not found.", "danger")
+            return redirect(url_for("catalogue_reservation.view_catalogue"))
+
+        book = book_doc.to_dict() or {}
+        book["book_id"] = book_doc.id
+
+        available_copies = _safe_int(
+            book.get("available_copies", 0)
+        )
+        stored_status = str(
+            book.get("status", "")
+        ).strip().lower()
+
+        is_available = (
+            stored_status == "available"
+            and available_copies > 0
+        )
+
+        book["available_copies"] = available_copies
+        book["current_status"] = (
+            "Available" if is_available else "Unavailable"
+        )
+
+        return render_template(
+            "catalogue_reservation/view_availability.html",
+            book=book,
+            is_available=is_available
+        )
+
+    except Exception as error:
+        flash(f"Error loading book availability: {error}", "danger")
+        return redirect(url_for("catalogue_reservation.view_catalogue"))
+
+
 # SCRUM-689: Reserve an unavailable book
 @catalogue_bp.route("/reserve/<book_id>")
 def reserve_book(book_id):
