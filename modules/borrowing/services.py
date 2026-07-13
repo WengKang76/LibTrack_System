@@ -69,3 +69,18 @@ def request_book_return(transaction_id: int) -> bool:
     transaction["status"] = "Return Pending"
 
     return True
+
+
+def confirm_book_return(transaction_id: int) -> bool:
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["status"] != "Return Pending":
+        return False
+
+    transaction["status"] = "Returned"
+    transaction["return_date"] = date.today().isoformat()
+
+    return True

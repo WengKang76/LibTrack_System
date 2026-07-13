@@ -84,9 +84,33 @@
     </p>
 
     <p>
+        Return Date:
+        {% if transaction.return_date %}
+            {{ transaction.return_date }}
+        {% else %}
+            N/A
+        {% endif %}
+    </p>
+
+    <p>
         Status:
         {{ transaction.status }}
     </p>
+
+    {% if transaction.status == "Return Pending" %}
+
+<form
+    method="POST"
+    action="{{ url_for('borrowing.confirm_return',
+                       transaction_id=transaction.id) }}">
+
+    <button class="button">
+        Confirm Return
+    </button>
+
+</form>
+
+{% endif %}
 
     </div>
 

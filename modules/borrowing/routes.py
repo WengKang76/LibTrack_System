@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, render_template, url_for
 
 from modules.borrowing.services import (
     approve_borrow_request,
+    confirm_book_return,
     get_all_borrow_transactions,
     get_all_pending_requests,
     get_student_borrowed_books,
@@ -51,3 +52,10 @@ def student_books():
         "borrowing/student_books.html",
         books=books,
     )
+
+
+@borrowing_bp.post("/confirm-return/<int:transaction_id>")
+def confirm_return(transaction_id: int):
+    confirm_book_return(transaction_id)
+
+    return redirect(url_for("borrowing.borrowing_home"))

@@ -12,6 +12,7 @@ from modules.borrowing.repository import (
 
 from modules.borrowing.services import (
     approve_borrow_request,
+    confirm_book_return,
     request_book_return,
 )
 
@@ -239,3 +240,127 @@ def test_student_cannot_request_return_twice():
     result = request_book_return(1)
 
     assert result is False
+
+
+# ==================================================
+# User Story 5:
+# As a librarian, I want to record book returns
+# so that the system can update the book availability.
+# ==================================================
+
+
+def test_librarian_can_confirm_book_return():
+    """
+    GIVEN a transaction has a return request
+    WHEN the librarian confirms the returned book
+    THEN the transaction status should become Returned
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    result = confirm_book_return(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["status"] == "Returned"
+
+
+def test_cannot_confirm_non_existing_return():
+    """
+    GIVEN a transaction ID does not exist
+    WHEN the librarian confirms the return
+    THEN the system should reject the request
+    """
+
+    result = confirm_book_return(999)
+
+    assert result is False
+
+
+def test_cannot_confirm_book_without_return_request():
+    """
+    GIVEN a book is still being borrowed
+    WHEN the librarian tries to confirm return
+    THEN the system should reject the confirmation
+    """
+
+    approve_borrow_request(1)
+
+    result = confirm_book_return(1)
+
+    assert result is False
+
+
+# ==================================================
+# User Story 6:
+# As a librarian, I want the system to record every
+# return transaction so that the borrowing history
+# is properly maintained.
+# ==================================================
+
+
+def test_return_transaction_records_return_date():
+    """
+    GIVEN a book has been returned and confirmed by librarian
+    WHEN the return process is completed
+    THEN the system should record the return date
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    confirm_book_return(1)
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["status"] == "Returned"
+    assert transaction["return_date"] is not None
+
+
+def test_return_transaction_preserves_borrowing_history():
+    """
+    GIVEN a completed borrowing transaction
+    WHEN the book is returned
+    THEN the original borrowing record should still exist
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    confirm_book_return(1)
+
+    transactions = get_borrow_transactions()
+
+    assert len(transactions) == 1
+
+    transaction = transactions[0]
+
+    assert transaction["student"] == "Alice"
+    assert transaction["book"] == "Database System Concepts"
+
+
+def test_returned_book_remains_in_transaction_history():
+    """
+    GIVEN a book has been returned
+    WHEN the librarian views transaction history
+    THEN the returned transaction should still be available
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    confirm_book_return(1)
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["status"] == "Returned"
