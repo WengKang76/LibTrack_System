@@ -5,6 +5,8 @@ import pytest
 from modules.borrowing.repository import (
     borrow_requests,
     borrow_transactions,
+    books,
+    find_book,
     find_request,
     find_borrow_transaction,
     get_borrow_transactions,
@@ -22,6 +24,20 @@ def reset_borrow_requests():
     """Reset borrow request repository before each test."""
     borrow_requests.clear()
     borrow_transactions.clear()
+    books.clear()
+
+    books.extend(
+        [
+            {
+                "title": "Database System Concepts",
+                "available": 0,
+            },
+            {
+                "title": "Software Engineering",
+                "available": 0,
+            },
+        ]
+    )
 
     borrow_requests.extend(
         [
@@ -363,4 +379,55 @@ def test_returned_book_remains_in_transaction_history():
     transaction = find_borrow_transaction(1)
 
     assert transaction is not None
+    assert transaction["status"] == "Returned"
+
+
+# ==================================================
+# User Story 7:
+# As a librarian, I want to confirm the returned book
+# from returning student so that the book becomes
+# available for other students.
+# ==================================================
+
+
+def test_confirm_return_updates_book_availability():
+    """
+    GIVEN a borrowed book has no available copies
+    WHEN the librarian confirms the returned book
+    THEN the book availability should increase
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    result = confirm_book_return(1)
+
+    assert result is True
+
+    book = find_book("Database System Concepts")
+
+    assert book is not None
+    assert book["available"] == 1
+
+
+def test_return_without_matching_book_does_not_fail():
+    """
+    GIVEN a transaction exists but book information is unavailable
+    WHEN the librarian confirms return
+    THEN the return process should still complete
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    transaction = find_borrow_transaction(1)
+
+    transaction["book"] = "Unknown Book"
+
+    result = confirm_book_return(1)
+
+    assert result is True
+
     assert transaction["status"] == "Returned"

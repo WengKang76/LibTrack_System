@@ -32,6 +32,15 @@
             </p>
 
             <p>
+                Return Date:
+                {% if book.return_date %}
+                    {{ book.return_date }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </p>
+
+            <p>
                 Status:
                 {{ book.status }}
             </p>

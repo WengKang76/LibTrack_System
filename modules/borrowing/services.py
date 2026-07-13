@@ -4,6 +4,7 @@ from modules.borrowing.repository import (
     find_borrow_transaction,
     get_borrow_transactions,
     get_pending_requests,
+    find_book,
 )
 
 from datetime import date, timedelta
@@ -82,5 +83,10 @@ def confirm_book_return(transaction_id: int) -> bool:
 
     transaction["status"] = "Returned"
     transaction["return_date"] = date.today().isoformat()
+
+    book = find_book(transaction["book"])
+
+    if book:
+        book["available"] += 1
 
     return True
