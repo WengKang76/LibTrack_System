@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
 
 from config.firebase_config import db
@@ -124,10 +124,90 @@ def view_available_books():
     )
 
 
-# SCRUM-685: View current availability status of a selected book
+# SCRUM-685: View current availability status and book details
+def _load_selected_book(book_id):
+    """Load and normalise one selected book from Firestore."""
+    book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
+
+    if not book_doc.exists:
+        return None
+
+    book = book_doc.to_dict() or {}
+    book["book_id"] = book_doc.id
+
+    available_copies = _safe_int(
+        book.get("available_copies", 0)
+    )
+    total_copies = _safe_int(
+        book.get("total_copies", 0)
+    )
+    stored_status = str(
+        book.get("status", "")
+    ).strip().lower()
+
+    is_available = (
+        stored_status == "available"
+        and available_copies > 0
+    )
+
+    book["available_copies"] = available_copies
+    book["total_copies"] = total_copies
+    book["current_status"] = (
+        "Available" if is_available else "Unavailable"
+    )
+
+    return book, is_available
+
+
+def _render_selected_book_details(book_id):
+    """Render the shared book-details interface for one selected book."""
+    try:
+        selected_book = _load_selected_book(book_id)
+
+        if selected_book is None:
+            flash("Book not found.", "danger")
+            return redirect(
+                url_for("catalogue_reservation.view_catalogue")
+            )
+
+        book, is_available = selected_book
+
+        return render_template(
+            "catalogue_reservation/book_details.html",
+            book=book,
+            is_available=is_available
+        )
+
+    except Exception as error:
+        flash(f"Error loading book details: {error}", "danger")
+        return redirect(
+            url_for("catalogue_reservation.view_catalogue")
+        )
+
+
+@catalogue_bp.route("/details/<book_id>")
+def view_book_details(book_id):
+    """Display the complete details and current availability of a book."""
+    return _render_selected_book_details(book_id)
+
+
 @catalogue_bp.route("/availability/<book_id>")
 def view_book_availability(book_id):
-    """Display the latest availability status for one selected book."""
+    """Keep the previous SCRUM-685 URL working for compatibility."""
+    return _render_selected_book_details(book_id)
+
+
+# SCRUM-689: Reserve an unavailable book
+@catalogue_bp.route("/reserve/<book_id>", methods=["GET", "POST"])
+def reserve_book(book_id):
+    """Allow a student to reserve a book that is currently unavailable.
+
+    GET displays a confirmation page. POST validates the book again and
+    creates one active reservation when no duplicate active reservation
+    exists for the same student and book.
+    """
+    student_id = session.get("student_id", "S001")
+
     try:
         book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
 
@@ -137,127 +217,177 @@ def view_book_availability(book_id):
 
         book = book_doc.to_dict() or {}
         book["book_id"] = book_doc.id
-
-        available_copies = _safe_int(
+        book["available_copies"] = _safe_int(
             book.get("available_copies", 0)
         )
-        stored_status = str(
-            book.get("status", "")
-        ).strip().lower()
 
+        stored_status = str(book.get("status", "")).strip().lower()
         is_available = (
             stored_status == "available"
-            and available_copies > 0
+            and book["available_copies"] > 0
         )
 
-        book["available_copies"] = available_copies
-        book["current_status"] = (
-            "Available" if is_available else "Unavailable"
-        )
+        if is_available:
+            flash(
+                "This book is currently available. "
+                "Please submit a borrowing request instead.",
+                "info"
+            )
+            return redirect(
+                url_for(
+                    "catalogue_reservation.view_book_availability",
+                    book_id=book_id
+                )
+            )
 
-        return render_template(
-            "catalogue_reservation/view_availability.html",
-            book=book,
-            is_available=is_available
-        )
-
-    except Exception as error:
-        flash(f"Error loading book availability: {error}", "danger")
-        return redirect(url_for("catalogue_reservation.view_catalogue"))
-
-
-# SCRUM-689: Reserve an unavailable book
-@catalogue_bp.route("/reserve/<book_id>")
-def reserve_book(book_id):
-    student_id = "S001"  # temporary hardcoded user for Sprint 1
-
-    try:
-        book_ref = db.collection(BOOKS_COLLECTION).document(book_id)
-        book_doc = book_ref.get()
-
-        if not book_doc.exists:
-            flash("Book not found.")
-            return redirect(url_for("catalogue_reservation.view_catalogue"))
-
-        book = book_doc.to_dict()
-
-        available_copies = int(book.get("available_copies", 0))
-        status = str(book.get("status", "")).lower()
-
-        if status == "available" and available_copies > 0:
-            flash("This book is available. You do not need to reserve it.")
-            return redirect(url_for("catalogue_reservation.view_catalogue"))
-
-        # Check duplicate reservation
-        existing_reservations = db.collection(RESERVATIONS_COLLECTION) \
-            .where("student_id", "==", student_id) \
-            .where("book_id", "==", book_id) \
-            .where("status", "==", "Active") \
+        existing_reservations = (
+            db.collection(RESERVATIONS_COLLECTION)
+            .where("student_id", "==", student_id)
+            .where("book_id", "==", book_id)
+            .where("status", "==", "Active")
             .stream()
+        )
 
-        for reservation in existing_reservations:
-            flash("You already reserved this book.")
-            return redirect(url_for("catalogue_reservation.view_catalogue"))
+        if any(True for _ in existing_reservations):
+            flash("You already have an active reservation for this book.", "info")
+            return redirect(
+                url_for("catalogue_reservation.view_my_reservations")
+            )
+
+        if request.method == "GET":
+            return render_template(
+                "catalogue_reservation/reserve_book.html",
+                book=book
+            )
 
         reservation_data = {
             "student_id": student_id,
             "book_id": book_id,
-            "book_title": book.get("title", ""),
-            "reservation_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "book_title": book.get("title", "Untitled Book"),
+            "reservation_date": datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
             "status": "Active"
         }
 
         db.collection(RESERVATIONS_COLLECTION).add(reservation_data)
 
-        flash("Book reserved successfully.")
+        flash(
+            f"'{reservation_data['book_title']}' was reserved successfully.",
+            "success"
+        )
+        return redirect(
+            url_for("catalogue_reservation.view_my_reservations")
+        )
 
     except Exception as error:
-        flash(f"Error reserving book: {error}")
-
-    return redirect(url_for("catalogue_reservation.view_catalogue"))
+        flash(f"Error reserving book: {error}", "danger")
+        return redirect(url_for("catalogue_reservation.view_catalogue"))
 
 
 # SCRUM-690: Cancel reservation
-@catalogue_bp.route("/cancel-reservation/<reservation_id>")
+@catalogue_bp.route(
+    "/cancel-reservation/<reservation_id>",
+    methods=["GET", "POST"]
+)
 def cancel_reservation(reservation_id):
+    """Allow the current student to cancel one active reservation.
+
+    GET displays a simple confirmation page. POST validates the reservation
+    again before updating its status in Firestore.
+    """
+    student_id = session.get("student_id", "S001")
+
     try:
-        reservation_ref = db.collection(RESERVATIONS_COLLECTION).document(reservation_id)
+        reservation_ref = (
+            db.collection(RESERVATIONS_COLLECTION)
+            .document(reservation_id)
+        )
         reservation_doc = reservation_ref.get()
 
         if not reservation_doc.exists:
-            flash("Reservation not found.")
-            return redirect(url_for("catalogue_reservation.view_my_reservations"))
+            flash("Reservation not found.", "danger")
+            return redirect(
+                url_for("catalogue_reservation.view_my_reservations")
+            )
 
+        reservation = reservation_doc.to_dict() or {}
+        reservation["reservation_id"] = reservation_doc.id
+
+        # A student may only cancel their own reservation.
+        if reservation.get("student_id") != student_id:
+            flash("Reservation not found.", "danger")
+            return redirect(
+                url_for("catalogue_reservation.view_my_reservations")
+            )
+
+        current_status = str(
+            reservation.get("status", "")
+        ).strip().lower()
+
+        if current_status != "active":
+            flash(
+                "Only an active reservation can be cancelled.",
+                "info"
+            )
+            return redirect(
+                url_for("catalogue_reservation.view_my_reservations")
+            )
+
+        if request.method == "GET":
+            return render_template(
+                "catalogue_reservation/cancel_reservation.html",
+                reservation=reservation
+            )
+
+        cancellation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         reservation_ref.update({
-            "status": "Cancelled"
+            "status": "Cancelled",
+            "cancellation_date": cancellation_date
         })
 
-        flash("Reservation cancelled successfully.")
+        flash(
+            f"Reservation for '{reservation.get('book_title', 'the book')}' "
+            "was cancelled successfully.",
+            "success"
+        )
 
     except Exception as error:
-        flash(f"Error cancelling reservation: {error}")
+        flash(f"Error cancelling reservation: {error}", "danger")
 
-    return redirect(url_for("catalogue_reservation.view_my_reservations"))
+    return redirect(
+        url_for("catalogue_reservation.view_my_reservations")
+    )
 
 
 # View student's own reservations
 @catalogue_bp.route("/my-reservations")
 def view_my_reservations():
-    student_id = "S001"  # temporary hardcoded user for Sprint 1
+    student_id = session.get("student_id", "S001")
     reservations = []
 
     try:
-        docs = db.collection(RESERVATIONS_COLLECTION) \
-            .where("student_id", "==", student_id) \
+        docs = (
+            db.collection(RESERVATIONS_COLLECTION)
+            .where("student_id", "==", student_id)
             .stream()
+        )
 
         for doc in docs:
-            reservation = doc.to_dict()
+            reservation = doc.to_dict() or {}
             reservation["reservation_id"] = doc.id
             reservations.append(reservation)
 
+        # Show active reservations before cancelled ones, then newest first.
+        reservations.sort(
+            key=lambda reservation: (
+                str(reservation.get("status", "")).lower() != "active",
+                str(reservation.get("reservation_date", ""))
+            )
+        )
+
     except Exception as error:
-        flash(f"Error loading reservations: {error}")
+        flash(f"Error loading reservations: {error}", "danger")
 
     return render_template(
         "catalogue_reservation/my_reservations.html",

@@ -378,3 +378,204 @@
         flex-basis: 100%;
     }
 }
+
+/* SCRUM-689: Reserve an unavailable book */
+.reservation-confirmation-card {
+    background: #ffffff;
+    padding: 26px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reservation-confirmation-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.reservation-confirmation-heading h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.reservation-confirmation-notice {
+    margin-top: 18px;
+    padding: 16px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 9px;
+    line-height: 1.6;
+}
+
+.reservation-confirmation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+/* Book details interface aligned with the student catalogue module */
+.student-details-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.student-details-card {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    overflow: hidden;
+    background-color: white;
+    border-radius: 14px;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.1);
+}
+
+.details-book-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 440px;
+    background: linear-gradient(145deg, #dbeafe, #bfdbfe);
+    font-size: 100px;
+}
+
+.details-content {
+    padding: 38px;
+}
+
+.book-category {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    color: #1d4ed8;
+    background-color: #dbeafe;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.details-content h1 {
+    margin: 4px 0 10px;
+    color: #172554;
+    font-size: 32px;
+}
+
+.details-author {
+    margin: 0 0 28px;
+    color: #64748b;
+    font-size: 17px;
+}
+
+.student-detail-list {
+    border-top: 1px solid #e2e8f0;
+}
+
+.student-detail-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.student-detail-label {
+    color: #475569;
+    font-weight: 700;
+}
+
+.availability {
+    display: inline-block;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.availability.available {
+    color: #166534;
+    background-color: #dcfce7;
+}
+
+.availability.unavailable {
+    color: #991b1b;
+    background-color: #fee2e2;
+}
+
+.book-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.view-details-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 11px 16px;
+    color: white;
+    background-color: #2563eb;
+    border: 1px solid #2563eb;
+    border-radius: 7px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.view-details-button:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.view-details-button-secondary {
+    color: #1f2937;
+    background-color: white;
+    border-color: #cbd5e1;
+}
+
+.view-details-button-secondary:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+@media (max-width: 750px) {
+    .student-details-card {
+        grid-template-columns: 1fr;
+    }
+
+    .details-book-icon {
+        min-height: 200px;
+    }
+
+    .details-content {
+        padding: 25px;
+    }
+
+    .student-detail-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+
+    .book-detail-actions,
+    .view-details-button {
+        width: 100%;
+    }
+}
