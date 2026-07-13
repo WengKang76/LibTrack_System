@@ -116,3 +116,43 @@
     font-weight: bold;
     display: inline-block;
 }
+
+.penalty-card {
+    background-color: white;
+    padding: 25px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.penalty-payment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.penalty-payment-form label {
+    font-weight: bold;
+    color: #374151;
+}
+
+.penalty-payment-form input {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+}
+
+.penalty-payment-form button {
+    margin-top: 10px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.penalty-payment-form button:hover {
+    background-color: #1d4ed8;
+}
