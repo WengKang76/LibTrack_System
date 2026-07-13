@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% block title %}
+        LibTrack Student Catalogue
+        {% endblock %}
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/student_catalogue.css'
+        ) }}"
+    >
+</head>
+
+<body>
+
+    <header class="student-header">
+        <div class="header-container">
+
+            <a
+                href="{{ url_for(
+                    'student_catalogue.view_catalogue'
+                ) }}"
+                class="student-brand"
+            >
+                📚 LibTrack
+            </a>
+
+            <nav class="student-navigation">
+                <a
+                    href="{{ url_for(
+                        'student_catalogue.view_catalogue'
+                    ) }}"
+                >
+                    Book Catalogue
+                </a>
+            </nav>
+
+        </div>
+    </header>
+
+    <main class="student-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="student-footer">
+        <p>
+            LibTrack Library Management System
+        </p>
+    </footer>
+
+</body>
+</html>

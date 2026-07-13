@@ -8,22 +8,39 @@ def build_fake_db(existing_isbn=False):
     collection = fake_db.collection.return_value
     query = collection.where.return_value
     limited_query = query.limit.return_value
-    limited_query.stream.return_value = [object()] if existing_isbn else []
-    return fake_db, collection
+    limited_query.stream.return_value = (
+        [MagicMock(id="EXISTING_BOOK")]
+        if existing_isbn
+        else []
+    )
+
+    book_reference = MagicMock()
+    book_reference.id = "BOOK001"
+    copies_collection = book_reference.collection.return_value
+    collection.add.return_value = (None, book_reference)
+
+    return (
+        fake_db,
+        collection,
+        book_reference,
+        copies_collection,
+    )
 
 
 def valid_book_data():
     return {
-        "title": "The Great Gatsby",
-        "author": "F. Scott Fitzgerald",
-        "isbn": "9780743273565",
-        "category": "Classic Fiction",
-        "total_copies": "4",
+        "title": "Python Programming",
+        "author": "Sherman",
+        "isbn": "9780000000001",
+        "category": "Programming",
+        "publisher": "Technology Press",
+        "publication_year": "2024",
+        "total_copies": "5",
     }
 
 
 def test_scrum_12_add_book_page_loads(client, monkeypatch):
-    fake_db, _ = build_fake_db()
+    fake_db, _, _, _ = build_fake_db()
     monkeypatch.setattr(book_routes, "db", fake_db)
 
     response = client.get("/books/add")
@@ -34,7 +51,7 @@ def test_scrum_12_add_book_page_loads(client, monkeypatch):
 
 
 def test_scrum_12_add_book_success(client, monkeypatch):
-    fake_db, collection = build_fake_db()
+    fake_db, collection, _, copies_collection = build_fake_db()
     monkeypatch.setattr(book_routes, "db", fake_db)
 
     response = client.post("/books/add", data=valid_book_data())
@@ -43,17 +60,21 @@ def test_scrum_12_add_book_success(client, monkeypatch):
     collection.add.assert_called_once()
 
     saved_book = collection.add.call_args.args[0]
-    assert saved_book["title"] == "The Great Gatsby"
-    assert saved_book["author"] == "F. Scott Fitzgerald"
-    assert saved_book["isbn"] == "9780743273565"
-    assert saved_book["category"] == "Classic Fiction"
-    assert saved_book["total_copies"] == 4
-    assert saved_book["available_copies"] == 4
+    assert saved_book["title"] == "Python Programming"
+    assert saved_book["author"] == "Sherman"
+    assert saved_book["isbn"] == "9780000000001"
+    assert saved_book["category"] == "Programming"
+    assert saved_book["publisher"] == "Technology Press"
+    assert saved_book["publication_year"] == "2024"
+    assert saved_book["total_copies"] == 5
+    assert saved_book["available_copies"] == 5
     assert saved_book["status"] == "Available"
+
+    assert copies_collection.document.call_count == 5
 
 
 def test_scrum_12_rejects_missing_required_field(client, monkeypatch):
-    fake_db, collection = build_fake_db()
+    fake_db, collection, _, _ = build_fake_db()
     monkeypatch.setattr(book_routes, "db", fake_db)
     data = valid_book_data()
     data["title"] = ""
@@ -66,7 +87,7 @@ def test_scrum_12_rejects_missing_required_field(client, monkeypatch):
 
 
 def test_scrum_12_rejects_invalid_total_copies(client, monkeypatch):
-    fake_db, collection = build_fake_db()
+    fake_db, collection, _, _ = build_fake_db()
     monkeypatch.setattr(book_routes, "db", fake_db)
     data = valid_book_data()
     data["total_copies"] = "abc"
@@ -79,7 +100,7 @@ def test_scrum_12_rejects_invalid_total_copies(client, monkeypatch):
 
 
 def test_scrum_12_rejects_zero_total_copies(client, monkeypatch):
-    fake_db, collection = build_fake_db()
+    fake_db, collection, _, _ = build_fake_db()
     monkeypatch.setattr(book_routes, "db", fake_db)
     data = valid_book_data()
     data["total_copies"] = "0"
@@ -92,7 +113,7 @@ def test_scrum_12_rejects_zero_total_copies(client, monkeypatch):
 
 
 def test_scrum_12_rejects_duplicate_isbn(client, monkeypatch):
-    fake_db, collection = build_fake_db(existing_isbn=True)
+    fake_db, collection, _, _ = build_fake_db(existing_isbn=True)
     monkeypatch.setattr(book_routes, "db", fake_db)
 
     response = client.post("/books/add", data=valid_book_data())

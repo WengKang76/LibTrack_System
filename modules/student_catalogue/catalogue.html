@@ -1,0 +1,117 @@
+{% extends "student_base.html" %}
+
+{% block title %}
+Book Catalogue | LibTrack
+{% endblock %}
+
+{% block content %}
+
+<section class="catalogue-hero">
+
+    <h1>Explore Our Book Catalogue</h1>
+
+    <p>
+        Browse books available in the LibTrack library and view
+        their complete information.
+    </p>
+
+</section>
+
+{% if books %}
+
+<section class="catalogue-grid">
+
+    {% for book in books %}
+
+    <article class="student-book-card">
+
+        <div class="book-icon">
+            📖
+        </div>
+
+        <div class="book-card-content">
+
+            <span class="book-category">
+                {{ book.get('category', 'Uncategorised') }}
+            </span>
+
+            <h2>
+                {{ book.get('title', 'Untitled Book') }}
+            </h2>
+
+            <p class="book-author">
+                By {{ book.get('author', 'Unknown Author') }}
+            </p>
+
+            <div class="book-card-information">
+
+                <p>
+                    <strong>ISBN:</strong>
+                    {{ book.get('isbn', '-') }}
+                </p>
+
+                <p>
+                    <strong>Publisher:</strong>
+                    {{ book.get('publisher', '-') or '-' }}
+                </p>
+
+                <p>
+                    <strong>Publication Year:</strong>
+                    {{ book.get('publication_year', '-') or '-' }}
+                </p>
+
+            </div>
+
+            {% set available =
+                book.get('available_copies', 0) | int
+            %}
+
+            {% if available > 0 %}
+
+            <span class="availability available">
+                Available
+            </span>
+
+            {% else %}
+
+            <span class="availability unavailable">
+                Unavailable
+            </span>
+
+            {% endif %}
+
+            <a
+                href="{{ url_for(
+                    'student_catalogue.view_book_details',
+                    book_id=book['book_id']
+                ) }}"
+                class="view-details-button"
+            >
+                View Book Details
+            </a>
+
+        </div>
+
+    </article>
+
+    {% endfor %}
+
+</section>
+
+{% else %}
+
+<section class="student-empty-state">
+
+    <div class="empty-icon">📚</div>
+
+    <h2>No books are currently available</h2>
+
+    <p>
+        The library catalogue does not contain any book records yet.
+    </p>
+
+</section>
+
+{% endif %}
+
+{% endblock %}

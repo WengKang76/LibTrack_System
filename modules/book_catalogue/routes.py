@@ -17,8 +17,8 @@ def _isbn_already_exists(isbn, exclude_book_id=None):
     """
     Check whether an ISBN is already used by another book.
 
-    exclude_book_id is used during editing so that the current book
-    can retain its existing ISBN.
+    exclude_book_id allows the current book to keep its ISBN
+    when its details are edited.
     """
     matching_books = (
         db.collection(COLLECTION_BOOKS)
@@ -30,11 +30,74 @@ def _isbn_already_exists(isbn, exclude_book_id=None):
     for book_doc in matching_books:
         document_id = getattr(book_doc, "id", None)
 
-        if exclude_book_id is None or document_id != exclude_book_id:
+        if (
+            exclude_book_id is None
+            or document_id != exclude_book_id
+        ):
             return True
 
     return False
 
+
+def _generate_initial_book_copies(
+    book_reference,
+    quantity,
+):
+    """
+    Generate one physical-copy record for every copy
+    of a newly added book.
+    """
+    copies_collection = book_reference.collection("copies")
+
+    for copy_number in range(1, quantity + 1):
+        copy_id = (
+            f"COPY-{book_reference.id.upper()}-"
+            f"{copy_number:03d}"
+        )
+
+        copy_data = {
+            "copy_id": copy_id,
+            "book_id": book_reference.id,
+            "copy_number": copy_number,
+            "status": "Available",
+            "condition": "Good",
+            "created_at": datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        }
+
+        copies_collection.document(copy_id).set(
+            copy_data
+        )
+
+# ============================================================
+# DISPLAY ALL BOOK RECORDS
+# ============================================================
+
+@book_bp.route("/", methods=["GET"])
+def manage_books():
+    book_documents = db.collection(
+        COLLECTION_BOOKS
+    ).stream()
+
+    books = []
+
+    for document in book_documents:
+        book = document.to_dict() or {}
+        book["book_id"] = document.id
+        books.append(book)
+
+    books.sort(
+        key=lambda book: book.get(
+            "title",
+            "",
+        ).lower()
+    )
+
+    return render_template(
+        "manage_books.html",
+        books=books,
+    )
 
 # ============================================================
 # SCRUM-12: ADD NEW BOOK
@@ -50,7 +113,15 @@ def add_book():
             "author": request.form.get("author", "").strip(),
             "isbn": request.form.get("isbn", "").strip(),
             "category": request.form.get("category", "").strip(),
-            "total_copies": request.form.get("total_copies", "").strip(),
+            "publisher": request.form.get("publisher", "").strip(),
+            "publication_year": request.form.get(
+                "publication_year",
+                "",
+            ).strip(),
+            "total_copies": request.form.get(
+                "total_copies",
+                "",
+            ).strip(),
         }
 
         required_fields = {
@@ -90,6 +161,36 @@ def add_book():
                 error="Total copies must be at least 1.",
             ), 400
 
+        publication_year = form_data["publication_year"]
+
+        if publication_year:
+            if not publication_year.isdigit():
+                return render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Publication year must be a valid "
+                        "four-digit year."
+                    ),
+                ), 400
+
+            current_year = datetime.now().year
+            year = int(publication_year)
+
+            if (
+                len(publication_year) != 4
+                or year < 1000
+                or year > current_year
+            ):
+                return render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        f"Publication year must be between "
+                        f"1000 and {current_year}."
+                    ),
+                ), 400
+
         if _isbn_already_exists(form_data["isbn"]):
             return render_template(
                 "add_book.html",
@@ -102,44 +203,43 @@ def add_book():
             "author": form_data["author"],
             "isbn": form_data["isbn"],
             "category": form_data["category"],
+            "publisher": form_data["publisher"],
+            "publication_year": form_data[
+                "publication_year"
+            ],
             "total_copies": total_copies,
             "available_copies": total_copies,
             "status": "Available",
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
         }
 
-        db.collection(COLLECTION_BOOKS).add(book_data)
+        _, book_reference = db.collection(
+            COLLECTION_BOOKS
+        ).add(book_data)
 
-        flash("Book record added successfully.", "success")
+        _generate_initial_book_copies(
+            book_reference,
+            total_copies,
+        )
 
-        return redirect(url_for("book_catalogue.add_book"))
+        flash(
+            (
+                "Book record added successfully. "
+                f"{total_copies} unique copy IDs "
+                "were generated."
+            ),
+            "success",
+        )
 
-    return render_template("add_book.html", form_data=form_data)
-
-# ============================================================
-# BOOK MANAGEMENT PAGE
-# ============================================================
-
-@book_bp.route("/", methods=["GET"])
-def manage_books():
-    """Display all books with a link to edit each record."""
-    book_documents = db.collection(COLLECTION_BOOKS).stream()
-
-    books = []
-
-    for document in book_documents:
-        book = document.to_dict() or {}
-        book["book_id"] = document.id
-        books.append(book)
-
-    # Sort books alphabetically by title
-    books.sort(
-        key=lambda book: book.get("title", "").lower()
-    )
+        return redirect(
+            url_for("book_catalogue.add_book")
+        )
 
     return render_template(
-        "manage_books.html",
-        books=books,
+        "add_book.html",
+        form_data=form_data,
     )
 
 
@@ -260,8 +360,8 @@ def edit_book(book_id):
         flash("Book details updated successfully.", "success")
 
         return redirect(
-    url_for("book_catalogue.manage_books")
-)
+            url_for("book_catalogue.manage_books")
+        )
 
     return render_template("edit_book.html", book=book)
 
