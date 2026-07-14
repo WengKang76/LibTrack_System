@@ -67,7 +67,12 @@ DEMO_PENALTIES = {
         "book_title": "Database System",
         "overdue_days": 3,
         "penalty_amount": 3.00,
-        "status": "Paid"
+        "status": "Paid",
+        "payment_method": "Cash",
+        "paid_by": "Student",
+        "cash_amount_received": 3.00,
+        "change_amount": 0.00,
+        "payment_date": "2026-07-14 10:30:00"
     },
     "P003": {
         "penalty_id": "P003",
@@ -76,7 +81,10 @@ DEMO_PENALTIES = {
         "book_title": "Software Engineering",
         "overdue_days": 2,
         "penalty_amount": 2.00,
-        "status": "Waived"
+        "status": "Waived",
+        "waiver_reason": "Approved by librarian.",
+        "waived_by": "Librarian",
+        "waived_date": "2026-07-14 11:00:00"
     }
 }
 
@@ -121,7 +129,6 @@ def get_overdue_books():
     except Exception:
         pass
 
-    # Demo fallback data for UI preview
     if DEMO_UI_MODE and len(overdue_books) == 0:
         for transaction_id, transaction in DEMO_BORROW_TRANSACTIONS.items():
             demo_transaction = transaction.copy()
@@ -143,13 +150,7 @@ def calculate_penalty_amount(due_date):
     due_date = convert_to_date(due_date)
     today = date.today()
 
-    if due_date is None:
-        return {
-            "overdue_days": 0,
-            "penalty_amount": 0.00
-        }
-
-    if due_date >= today:
+    if due_date is None or due_date >= today:
         return {
             "overdue_days": 0,
             "penalty_amount": 0.00
@@ -183,7 +184,6 @@ def get_outstanding_penalties(student_id=None):
     except Exception:
         pass
 
-    # Demo fallback data for UI preview
     if DEMO_UI_MODE and len(outstanding_penalties) == 0:
         for penalty_id, penalty in DEMO_PENALTIES.items():
             demo_penalty = penalty.copy()
@@ -210,7 +210,6 @@ def get_penalty_by_id(penalty_id):
     except Exception:
         pass
 
-    # Demo fallback data for UI preview
     if DEMO_UI_MODE:
         penalty = DEMO_PENALTIES.get(penalty_id)
 
@@ -239,6 +238,7 @@ def pay_penalty_with_credit_card(penalty_id, card_number):
     payment_data = {
         "status": "Paid",
         "payment_method": "Credit Card",
+        "paid_by": "Student",
         "payment_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "card_last_four": card_number[-4:],
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -249,11 +249,11 @@ def pay_penalty_with_credit_card(penalty_id, card_number):
     except Exception:
         pass
 
-    # Update hardcoded demo data also
     if penalty_id in DEMO_PENALTIES:
         DEMO_PENALTIES[penalty_id].update(payment_data)
 
     return True, "Penalty paid successfully using credit card."
+
 
 def pay_penalty_with_cash(penalty_id, cash_amount):
     penalty = get_penalty_by_id(penalty_id)
@@ -297,6 +297,42 @@ def pay_penalty_with_cash(penalty_id, cash_amount):
         DEMO_PENALTIES[penalty_id].update(payment_data)
 
     return True, "Cash penalty payment completed successfully."
+
+
+def get_penalty_payment_records(student_id=None):
+    payment_records = []
+
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict()
+            penalty["penalty_id"] = doc.id
+
+            status = str(penalty.get("status", "")).lower()
+
+            if status == "paid":
+                if student_id is None or penalty.get("student_id") == student_id:
+                    payment_records.append(penalty)
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE and len(payment_records) == 0:
+        for penalty_id, penalty in DEMO_PENALTIES.items():
+            demo_penalty = penalty.copy()
+            demo_penalty["penalty_id"] = penalty_id
+
+            status = str(demo_penalty.get("status", "")).lower()
+
+            if status == "paid":
+                if student_id is None or demo_penalty.get("student_id") == student_id:
+                    payment_records.append(demo_penalty)
+
+    return payment_records
+
+
+def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
     penalty = get_penalty_by_id(penalty_id)
 
     if penalty is None:
@@ -305,40 +341,30 @@ def pay_penalty_with_cash(penalty_id, cash_amount):
     status = str(penalty.get("status", "")).lower()
 
     if status not in ["outstanding", "unpaid", "pending"]:
-        return False, "Only outstanding penalties can be paid."
+        return False, "Only outstanding penalties can be waived."
 
-    try:
-        cash_amount = float(cash_amount)
-    except ValueError:
-        return False, "Invalid cash amount."
+    waiver_reason = waiver_reason.strip()
 
-    penalty_amount = float(penalty.get("penalty_amount", 0))
+    if waiver_reason == "":
+        return False, "Waiver reason is required."
 
-    if cash_amount < penalty_amount:
-        return False, "Cash amount is less than the penalty amount."
-
-    change_amount = cash_amount - penalty_amount
-
-    payment_data = {
-        "status": "Paid",
-        "payment_method": "Cash",
-        "cash_amount_received": cash_amount,
-        "change_amount": change_amount,
-        "received_by": received_by,
-        "payment_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    waiver_data = {
+        "status": "Waived",
+        "waiver_reason": waiver_reason,
+        "waived_by": waived_by,
+        "waived_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     try:
-        db.collection("penalties").document(penalty_id).update(payment_data)
+        db.collection("penalties").document(penalty_id).update(waiver_data)
     except Exception:
         pass
 
-    # Update hardcoded demo data also
     if penalty_id in DEMO_PENALTIES:
-        DEMO_PENALTIES[penalty_id].update(payment_data)
+        DEMO_PENALTIES[penalty_id].update(waiver_data)
 
-    return True, "Cash penalty payment recorded successfully."
+    return True, "Penalty waived successfully."
 
 
 # =========================================================
@@ -405,6 +431,7 @@ def student_pay_credit_card(penalty_id):
         penalty=penalty
     )
 
+
 @penalty_bp.route("/student/pay-cash/<penalty_id>", methods=["GET", "POST"])
 def student_pay_cash(penalty_id):
     penalty = get_penalty_by_id(penalty_id)
@@ -435,47 +462,39 @@ def student_pay_cash(penalty_id):
         penalty=penalty
     )
 
-def student_pay_cash(penalty_id):
-    penalty = get_penalty_by_id(penalty_id)
 
-    if penalty is None:
-        return "Penalty record not found", 404
+@penalty_bp.route("/payment-records")
+@penalty_bp.route("/librarian/payment-records")
+def view_payment_records():
+    student_id = request.args.get("student_id")
 
-    if request.method == "POST":
-        cash_amount = request.form.get("cash_amount", "").strip()
+    if student_id:
+        student_id = student_id.strip()
 
-        success, message = pay_penalty_with_cash(
-            penalty_id,
-            cash_amount
-        )
-
-        if success:
-            flash(message, "success")
-            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
-
-        return render_template(
-            "student/pay_cash.html",
-            penalty=penalty,
-            error=message
-        ), 400
+    payment_records = get_penalty_payment_records(student_id)
 
     return render_template(
-        "student/pay_cash.html",
-        penalty=penalty
+        "librarian/payment_records.html",
+        payment_records=payment_records,
+        student_id=student_id
     )
+
+
+@penalty_bp.route("/librarian/waive/<penalty_id>", methods=["GET", "POST"])
+def librarian_waive_penalty(penalty_id):
     penalty = get_penalty_by_id(penalty_id)
 
     if penalty is None:
         return "Penalty record not found", 404
 
     if request.method == "POST":
-        cash_amount = request.form.get("cash_amount", "").strip()
-        received_by = request.form.get("received_by", "Librarian").strip()
+        waiver_reason = request.form.get("waiver_reason", "").strip()
+        waived_by = request.form.get("waived_by", "Librarian").strip()
 
-        success, message = pay_penalty_with_cash(
+        success, message = waive_penalty(
             penalty_id,
-            cash_amount,
-            received_by
+            waiver_reason,
+            waived_by
         )
 
         if success:
@@ -483,12 +502,12 @@ def student_pay_cash(penalty_id):
             return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
 
         return render_template(
-            "librarian/pay_cash.html",
+            "librarian/waive_penalty.html",
             penalty=penalty,
             error=message
         ), 400
 
     return render_template(
-        "librarian/pay_cash.html",
+        "librarian/waive_penalty.html",
         penalty=penalty
     )
