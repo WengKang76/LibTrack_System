@@ -5,6 +5,7 @@ from modules.borrowing.repository import (
     get_borrow_transactions,
     get_pending_requests,
     find_book,
+    has_active_reservation,
 )
 
 from datetime import date, timedelta
@@ -51,6 +52,7 @@ def approve_borrow_request(request_id: int) -> bool:
         "due_date": due_date.isoformat(),
         "return_date": None,
         "status": "Borrowed",
+        "renewal_status": "None",
     }
 
     add_borrow_transaction(transaction)
@@ -88,5 +90,25 @@ def confirm_book_return(transaction_id: int) -> bool:
 
     if book:
         book["available"] += 1
+
+    return True
+
+
+def request_book_renewal(transaction_id: int) -> bool:
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["status"] != "Borrowed":
+        return False
+
+    if transaction["renewal_status"] == "Pending":
+        return False
+
+    if has_active_reservation(transaction["book"]):
+        return False
+
+    transaction["renewal_status"] = "Pending"
 
     return True

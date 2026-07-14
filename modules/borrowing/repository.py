@@ -17,6 +17,7 @@ class BorrowTransaction(TypedDict):
     due_date: str
     return_date: str | None
     status: str
+    renewal_status: str
 
 
 borrow_requests: list[BorrowRequest] = [
@@ -37,8 +38,8 @@ borrow_requests: list[BorrowRequest] = [
 borrow_transactions: list[BorrowTransaction] = []
 
 """
-Temporary book data for testing and development purposes.
-Remove this when database is implemented.
+Temporary dataset for testing and development purposes.
+Remove this below when database is implemented.
 """
 
 books = [
@@ -51,6 +52,8 @@ books = [
         "available": 0,
     },
 ]
+
+reservations = []
 
 
 def get_pending_requests() -> list[BorrowRequest]:
@@ -89,3 +92,11 @@ def find_book(book_title: str):
             return book
 
     return None
+
+
+def has_active_reservation(book: str) -> bool:
+    for reservation in reservations:
+        if reservation["book"] == book and reservation["status"] == "Pending":
+            return True
+
+    return False

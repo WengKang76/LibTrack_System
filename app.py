@@ -3,6 +3,8 @@ from modules.borrowing.routes import borrowing_bp
 
 app = Flask(__name__)
 
+app.secret_key = "libtrack-dev-secret-key"
+
 app.register_blueprint(borrowing_bp)
 
 

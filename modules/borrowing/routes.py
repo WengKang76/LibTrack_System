@@ -1,12 +1,13 @@
-from flask import Blueprint, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, url_for
 
 from modules.borrowing.services import (
     approve_borrow_request,
-    confirm_book_return,
     get_all_borrow_transactions,
     get_all_pending_requests,
     get_student_borrowed_books,
     request_book_return,
+    confirm_book_return,
+    request_book_renewal,
 )
 
 borrowing_bp = Blueprint(
@@ -59,3 +60,22 @@ def confirm_return(transaction_id: int):
     confirm_book_return(transaction_id)
 
     return redirect(url_for("borrowing.borrowing_home"))
+
+
+@borrowing_bp.post("/renew-book/<int:transaction_id>")
+def renew_book(transaction_id: int):
+
+    result = request_book_renewal(transaction_id)
+
+    if result:
+        flash(
+            "Renewal request submitted successfully. Waiting for librarian approval.",
+            "success",
+        )
+    else:
+        flash(
+            "Renewal unavailable. Another student has reserved this book. Please return the book on time.",
+            "error",
+        )
+
+    return redirect(url_for("borrowing.student_books"))

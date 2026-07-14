@@ -6,6 +6,7 @@ from modules.borrowing.repository import (
     borrow_requests,
     borrow_transactions,
     books,
+    reservations,
     find_book,
     find_request,
     find_borrow_transaction,
@@ -16,6 +17,7 @@ from modules.borrowing.services import (
     approve_borrow_request,
     confirm_book_return,
     request_book_return,
+    request_book_renewal,
 )
 
 
@@ -25,6 +27,7 @@ def reset_borrow_requests():
     borrow_requests.clear()
     borrow_transactions.clear()
     books.clear()
+    reservations.clear()
 
     books.extend(
         [
@@ -431,3 +434,134 @@ def test_return_without_matching_book_does_not_fail():
     assert result is True
 
     assert transaction["status"] == "Returned"
+
+
+# ==================================================
+# User Story 8:
+# As a student, I want to renew a borrowed book
+# so that I can extend the borrowing period if
+# necessary.
+#
+# The student submits a renewal request.
+# Due date should not change until librarian approval.
+# ==================================================
+
+
+def test_student_can_request_book_renewal():
+    """
+    GIVEN a student has a borrowed book
+    WHEN the student requests renewal
+    THEN the renewal status should become Pending
+    """
+
+    approve_borrow_request(1)
+
+    result = request_book_renewal(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["renewal_status"] == "Pending"
+
+
+def test_renewal_request_does_not_change_due_date():
+    """
+    GIVEN a student has a borrowed book
+    WHEN the student submits a renewal request
+    THEN the due date should remain unchanged
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    original_due_date = transaction["due_date"]
+
+    request_book_renewal(1)
+
+    assert transaction["due_date"] == original_due_date
+
+
+def test_cannot_request_renewal_after_return():
+    """
+    GIVEN a student has returned the borrowed book
+    WHEN the student requests renewal
+    THEN the system should reject the request
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    confirm_book_return(1)
+
+    result = request_book_renewal(1)
+
+    assert result is False
+
+
+def test_cannot_submit_duplicate_renewal_request():
+    """
+    GIVEN a student already has a pending renewal request
+    WHEN the student requests renewal again
+    THEN the system should reject the duplicate request
+    """
+
+    approve_borrow_request(1)
+
+    first_request = request_book_renewal(1)
+
+    second_request = request_book_renewal(1)
+
+    assert first_request is True
+    assert second_request is False
+
+
+# ==================================================
+# User Story 9:
+# As a student, I want the system to prevent renewal
+# when another student has reserved the book so that
+# the reservation queue is respected.
+# ==================================================
+
+
+def test_cannot_renew_book_with_active_reservation():
+    """
+    GIVEN another student has reserved the borrowed book
+    WHEN the student requests renewal
+    THEN the renewal request should be rejected
+    """
+
+    approve_borrow_request(1)
+
+    reservations.append(
+        {
+            "book": "Database System Concepts",
+            "student": "John",
+            "status": "Pending",
+        }
+    )
+
+    result = request_book_renewal(1)
+
+    assert result is False
+
+
+def test_can_renew_book_without_reservation():
+    """
+    GIVEN no student has reserved the borrowed book
+    WHEN the student requests renewal
+    THEN the renewal request should be created
+    """
+
+    approve_borrow_request(1)
+
+    result = request_book_renewal(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction["renewal_status"] == "Pending"
