@@ -56,6 +56,26 @@
 
         <a
             href="{{ url_for(
+                'book_catalogue.librarian_book_details',
+                book_id=book['book_id']
+            ) }}"
+            class="button button-small button-view"
+        >
+            View Details
+        </a>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.add_book_copies',
+                book_id=book['book_id']
+            ) }}"
+            class="button button-small button-add-copy"
+        >
+            Add Copies
+        </a>
+
+        <a
+            href="{{ url_for(
                 'book_catalogue.edit_book',
                 book_id=book['book_id']
             ) }}"

@@ -49,6 +49,8 @@ def _generate_initial_book_copies(
     """
     copies_collection = book_reference.collection("copies")
 
+    
+
     for copy_number in range(1, quantity + 1):
         copy_id = (
             f"COPY-{book_reference.id.upper()}-"
@@ -69,6 +71,85 @@ def _generate_initial_book_copies(
         copies_collection.document(copy_id).set(
             copy_data
         )
+
+def _get_book_copies(book_id):
+    """
+    Retrieve all physical copies belonging to one book.
+    """
+    copies_documents = (
+        db.collection(COLLECTION_BOOKS)
+        .document(book_id)
+        .collection("copies")
+        .stream()
+    )
+
+    copies = []
+
+    for document in copies_documents:
+        copy_record = document.to_dict() or {}
+        copy_record["document_id"] = document.id
+        copies.append(copy_record)
+
+    copies.sort(
+        key=lambda copy_record: copy_record.get(
+            "copy_number",
+            0,
+        )
+    )
+
+    return copies
+
+
+def _get_next_copy_number(copies):
+    """
+    Find the next copy number based on the existing copies.
+    """
+    if not copies:
+        return 1
+
+    copy_numbers = [
+        int(copy_record.get("copy_number", 0))
+        for copy_record in copies
+    ]
+
+    return max(copy_numbers) + 1
+
+
+def _calculate_copy_summary(copies):
+    """
+    Calculate the number of copies for each status.
+    """
+    summary = {
+        "total": len(copies),
+        "available": 0,
+        "borrowed": 0,
+        "reserved": 0,
+        "damaged": 0,
+        "lost": 0,
+    }
+
+    for copy_record in copies:
+        status = copy_record.get(
+            "status",
+            "",
+        ).strip().lower()
+
+        if status == "available":
+            summary["available"] += 1
+
+        elif status == "borrowed":
+            summary["borrowed"] += 1
+
+        elif status == "reserved":
+            summary["reserved"] += 1
+
+        elif status == "damaged":
+            summary["damaged"] += 1
+
+        elif status == "lost":
+            summary["lost"] += 1
+
+    return summary
 
 # ============================================================
 # DISPLAY ALL BOOK RECORDS
@@ -259,6 +340,27 @@ def get_book_by_id(book_id):
 
     return book
 
+# ============================================================
+# SCRUM-898: VIEW LIBRARIAN BOOK DETAILS AND COPY SUMMARY
+# ============================================================
+
+@book_bp.route("/details/<book_id>", methods=["GET"])
+def librarian_book_details(book_id):
+    book = get_book_by_id(book_id)
+
+    if book is None:
+        return "Book record not found.", 404
+
+    copies = _get_book_copies(book_id)
+
+    copy_summary = _calculate_copy_summary(copies)
+
+    return render_template(
+        "librarian_book_details.html",
+        book=book,
+        copies=copies,
+        copy_summary=copy_summary,
+    )
 
 def _validate_publication_year(publication_year):
     """
@@ -364,6 +466,140 @@ def edit_book(book_id):
         )
 
     return render_template("edit_book.html", book=book)
+
+# ============================================================
+# SCRUM-895: ADD ADDITIONAL PHYSICAL BOOK COPIES
+# ============================================================
+
+@book_bp.route(
+    "/copies/add/<book_id>",
+    methods=["GET", "POST"],
+)
+def add_book_copies(book_id):
+    book = get_book_by_id(book_id)
+
+    if book is None:
+        return "Book record not found.", 404
+
+    copies = _get_book_copies(book_id)
+
+    if request.method == "POST":
+        quantity_text = request.form.get(
+            "quantity",
+            "",
+        ).strip()
+
+        try:
+            quantity = int(quantity_text)
+
+        except ValueError:
+            return render_template(
+                "add_book_copies.html",
+                book=book,
+                copies=copies,
+                error=(
+                    "The number of additional copies "
+                    "must be a valid whole number."
+                ),
+            ), 400
+
+        if quantity < 1:
+            return render_template(
+                "add_book_copies.html",
+                book=book,
+                copies=copies,
+                error=(
+                    "The number of additional copies "
+                    "must be at least 1."
+                ),
+            ), 400
+
+        next_copy_number = _get_next_copy_number(
+            copies
+        )
+
+        book_reference = (
+            db.collection(COLLECTION_BOOKS)
+            .document(book_id)
+        )
+
+        copies_collection = book_reference.collection(
+            "copies"
+        )
+
+        generated_copy_ids = []
+
+        for position in range(quantity):
+            copy_number = (
+                next_copy_number + position
+            )
+
+            copy_id = (
+                f"COPY-{book_id.upper()}-"
+                f"{copy_number:03d}"
+            )
+
+            copy_data = {
+                "copy_id": copy_id,
+                "book_id": book_id,
+                "copy_number": copy_number,
+                "status": "Available",
+                "condition": "Good",
+                "created_at": datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            }
+
+            copies_collection.document(
+                copy_id
+            ).set(copy_data)
+
+            generated_copy_ids.append(copy_id)
+
+        updated_copies = _get_book_copies(book_id)
+
+        copy_summary = _calculate_copy_summary(
+            updated_copies
+        )
+
+        main_book_status = "Available"
+
+        if copy_summary["available"] == 0:
+            main_book_status = "Unavailable"
+
+        book_reference.update(
+            {
+                "total_copies": copy_summary["total"],
+                "available_copies": (
+                    copy_summary["available"]
+                ),
+                "status": main_book_status,
+                "updated_at": datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            }
+        )
+
+        flash(
+            (
+                f"{quantity} additional physical "
+                "book copies were added successfully."
+            ),
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "book_catalogue.librarian_book_details",
+                book_id=book_id,
+            )
+        )
+
+    return render_template(
+        "add_book_copies.html",
+        book=book,
+        copies=copies,
+    )
 
 # ============================================================
 # SCRUM-704: DELETE BOOK RECORD
