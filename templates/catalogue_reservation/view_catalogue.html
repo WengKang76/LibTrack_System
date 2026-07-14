@@ -12,7 +12,7 @@
 {% block content %}
 {% set current_title = page_title|default("Book Catalogue") %}
 {% set current_description = page_description|default(
-    "Browse and search for books in the LibTrack library."
+    "Browse books in the LibTrack library catalogue."
 ) %}
 {% set available_only = available_only|default(false) %}
 {% set search_keyword = search_keyword|default("") %}
@@ -35,33 +35,6 @@
     </header>
 
     <section class="reservation-toolbar" aria-label="Catalogue controls">
-        <form method="GET"
-              action="{{ url_for(search_endpoint) }}"
-              class="reservation-search">
-            <label for="catalogue-search" class="reservation-search-label">
-                Search catalogue
-            </label>
-
-            <div class="reservation-search-controls">
-                <input type="search"
-                       id="catalogue-search"
-                       name="search"
-                       placeholder="Search by title, author, or category"
-                       value="{{ search_keyword }}"
-                       autocomplete="off">
-
-                <button type="submit" class="reservation-button">
-                    Search
-                </button>
-
-                {% if search_keyword %}
-                    <a href="{{ url_for(search_endpoint) }}"
-                       class="reservation-button reservation-button-secondary">
-                        Clear Search
-                    </a>
-                {% endif %}
-            </div>
-        </form>
 
         <nav class="reservation-navigation" aria-label="Catalogue views">
             {% if available_only %}

@@ -579,3 +579,37 @@
         width: 100%;
     }
 }
+
+/* SCRUM-16 and SCRUM-36: Borrow request confirmation */
+.borrow-confirmation-card {
+    background: #ffffff;
+    padding: 26px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.borrow-period-notice,
+.borrow-request-notice {
+    margin-top: 18px;
+    padding: 15px 16px;
+    border-radius: 9px;
+    line-height: 1.6;
+}
+
+.borrow-period-notice {
+    color: #1e3a8a;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+}
+
+.borrow-request-notice {
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.borrowing-period-value {
+    color: #1d4ed8;
+    font-size: 1.2rem;
+}

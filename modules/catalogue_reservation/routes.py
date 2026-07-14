@@ -12,6 +12,7 @@ catalogue_bp = Blueprint(
 BOOKS_COLLECTION = "books"
 RESERVATIONS_COLLECTION = "reservations"
 BORROW_REQUESTS_COLLECTION = "borrow_requests"
+BORROWING_PERIOD_DAYS = 14
 
 
 def _safe_int(value, default=0):
@@ -69,7 +70,7 @@ def view_catalogue():
         search_keyword=search_keyword,
         page_title="Book Catalogue",
         page_description=(
-            "Browse, search, borrow, or reserve books "
+            "Browse, borrow, or reserve books "
             "from the LibTrack library catalogue."
         ),
         available_only=False
@@ -395,53 +396,114 @@ def view_my_reservations():
     )
 
 
-# SCRUM-16: Request to borrow a book
-@catalogue_bp.route("/borrow/<book_id>")
+# SCRUM-16, SCRUM-36, SCRUM-691 and SCRUM-692:
+# Request to borrow a book, display the borrowing period, and validate requests.
+@catalogue_bp.route("/borrow/<book_id>", methods=["GET", "POST"])
 def request_borrow_book(book_id):
-    student_id = "S001"  # temporary hardcoded user for Sprint 1
+    """Display and submit a borrowing request for an available book.
+
+    GET validates the selected book and displays the 14-day borrowing period
+    before confirmation. POST repeats the validations and stores one pending
+    request in Firestore.
+    """
+    student_id = session.get("student_id", "S001")
 
     try:
-        book_ref = db.collection(BOOKS_COLLECTION).document(book_id)
-        book_doc = book_ref.get()
+        book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
 
         if not book_doc.exists:
-            flash("Book not found.")
-            return redirect(url_for("catalogue_reservation.view_catalogue"))
+            flash("Book not found.", "danger")
+            return redirect(
+                url_for("catalogue_reservation.view_catalogue")
+            )
 
-        book = book_doc.to_dict()
+        book = book_doc.to_dict() or {}
+        book["book_id"] = book_doc.id
+        book["available_copies"] = _safe_int(
+            book.get("available_copies", 0)
+        )
 
-        available_copies = int(book.get("available_copies", 0))
-        status = str(book.get("status", "")).lower()
+        stored_status = str(
+            book.get("status", "")
+        ).strip().lower()
+        is_available = (
+            stored_status == "available"
+            and book["available_copies"] > 0
+        )
 
-        if status != "available" or available_copies <= 0:
-            flash("This book is unavailable. Please reserve it instead.")
-            return redirect(url_for("catalogue_reservation.view_catalogue"))
+        # SCRUM-691: Unavailable books cannot be borrowed.
+        if not is_available:
+            flash(
+                "This book is unavailable. Please reserve it instead.",
+                "info"
+            )
+            return redirect(
+                url_for(
+                    "catalogue_reservation.view_book_details",
+                    book_id=book_id
+                )
+            )
 
-        # Prevent duplicate pending borrow request
-        existing_requests = db.collection(BORROW_REQUESTS_COLLECTION) \
-            .where("student_id", "==", student_id) \
-            .where("book_id", "==", book_id) \
-            .where("status", "==", "Pending") \
+        # SCRUM-692: Prevent a second pending request for the same book.
+        existing_requests = (
+            db.collection(BORROW_REQUESTS_COLLECTION)
+            .where("student_id", "==", student_id)
+            .where("book_id", "==", book_id)
+            .where("status", "==", "Pending")
             .stream()
+        )
 
-        for borrow_request in existing_requests:
-            flash("You already submitted a borrow request for this book.")
-            return redirect(url_for("catalogue_reservation.view_catalogue"))
+        if any(True for _ in existing_requests):
+            flash(
+                "You already submitted a pending borrow request "
+                "for this book.",
+                "info"
+            )
+            return redirect(
+                url_for(
+                    "catalogue_reservation.view_book_details",
+                    book_id=book_id
+                )
+            )
 
+        # SCRUM-36: Show the borrowing period before any data is created.
+        if request.method == "GET":
+            return render_template(
+                "catalogue_reservation/borrow_book.html",
+                book=book,
+                borrowing_period_days=BORROWING_PERIOD_DAYS
+            )
+
+        # SCRUM-16: Store the confirmed borrowing request in Firestore.
+        request_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         borrow_request_data = {
             "student_id": student_id,
             "book_id": book_id,
-            "book_title": book.get("title", ""),
-            "request_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "borrowing_period": "14 days",
+            "book_title": book.get("title", "Untitled Book"),
+            "request_date": request_date,
+            "borrowing_period": f"{BORROWING_PERIOD_DAYS} days",
+            "borrowing_period_days": BORROWING_PERIOD_DAYS,
             "status": "Pending"
         }
 
-        db.collection(BORROW_REQUESTS_COLLECTION).add(borrow_request_data)
+        db.collection(BORROW_REQUESTS_COLLECTION).add(
+            borrow_request_data
+        )
 
-        flash("Borrow request submitted successfully.")
+        flash(
+            f"Borrow request for '{borrow_request_data['book_title']}' "
+            "was submitted successfully.",
+            "success"
+        )
+        return redirect(
+            url_for(
+                "catalogue_reservation.view_book_details",
+                book_id=book_id
+            )
+        )
 
     except Exception as error:
-        flash(f"Error submitting borrow request: {error}")
-
-    return redirect(url_for("catalogue_reservation.view_catalogue"))
+        flash(f"Error submitting borrow request: {error}", "danger")
+        return redirect(
+            url_for("catalogue_reservation.view_catalogue")
+        )
