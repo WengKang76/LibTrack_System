@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>SCRUM-705 & SCRUM-706: Reject Return and Create Penalty</h2>
+    <p>This page allows the librarian to reject a return exception and create a penalty record for the rejected return.</p>
+</div>
+
+{% if error %}
+<div class="penalty-alert penalty-warning">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="penalty-card">
+    <h3>Return Transaction Details</h3>
+
+    <p><strong>Transaction ID:</strong> {{ transaction.transaction_id }}</p>
+    <p><strong>Student ID:</strong> {{ transaction.student_id }}</p>
+    <p><strong>Book ID:</strong> {{ transaction.book_id }}</p>
+    <p><strong>Book Title:</strong> {{ transaction.book_title }}</p>
+    <p><strong>Return Date:</strong> {{ transaction.return_date }}</p>
+    <p><strong>Status:</strong> {{ transaction.status }}</p>
+</div>
+
+<div class="penalty-card">
+    <form method="POST" class="penalty-payment-form">
+        <label>Rejection Reason</label>
+        <input type="text" name="rejection_reason" placeholder="Example: Returned book condition is unacceptable" required>
+
+        <label>Penalty Amount</label>
+        <input type="number" step="0.01" name="penalty_amount" placeholder="Example: 10.00" required>
+
+        <label>Rejected By</label>
+        <input type="text" name="rejected_by" value="Librarian" required>
+
+        <button type="submit">Reject Return and Create Penalty</button>
+    </form>
+</div>
+
+{% endblock %}

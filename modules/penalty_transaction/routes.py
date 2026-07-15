@@ -365,6 +365,309 @@ def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
         DEMO_PENALTIES[penalty_id].update(waiver_data)
 
     return True, "Penalty waived successfully."
+# =========================================================
+# SCRUM-705 and SCRUM-706: Return Exception Handling
+# =========================================================
+
+DEMO_RETURN_TRANSACTIONS = {
+    "RT001": {
+        "transaction_id": "RT001",
+        "student_id": "S001",
+        "book_id": "B001",
+        "book_title": "Python Programming",
+        "return_date": "2026-07-15",
+        "status": "Return Requested"
+    },
+    "RT002": {
+        "transaction_id": "RT002",
+        "student_id": "S002",
+        "book_id": "B002",
+        "book_title": "Database System",
+        "return_date": "2026-07-15",
+        "status": "Rejected",
+        "rejection_reason": "Book condition unacceptable"
+    },
+    "RT003": {
+        "transaction_id": "RT003",
+        "student_id": "S003",
+        "book_id": "B003",
+        "book_title": "Software Engineering",
+        "return_date": "2026-07-15",
+        "status": "Closed"
+    }
+}
+
+
+def get_return_transaction_by_id(transaction_id):
+    try:
+        transaction_doc = db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).get()
+
+        if transaction_doc.exists:
+            transaction = transaction_doc.to_dict()
+            transaction["transaction_id"] = transaction_doc.id
+            return transaction
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE:
+        transaction = DEMO_RETURN_TRANSACTIONS.get(transaction_id)
+
+        if transaction:
+            return transaction.copy()
+
+    return None
+
+
+def reject_return_exception(transaction_id, rejection_reason, rejected_by="Librarian"):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        return False, "Return transaction not found."
+
+    status = str(transaction.get("status", "")).lower()
+
+    if status in ["rejected", "closed", "completed"]:
+        return False, "This return transaction cannot be rejected."
+
+    rejection_reason = rejection_reason.strip()
+
+    if rejection_reason == "":
+        return False, "Rejection reason is required."
+
+    rejection_data = {
+        "status": "Rejected",
+        "return_status": "Rejected",
+        "rejection_reason": rejection_reason,
+        "rejected_by": rejected_by,
+        "rejected_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    try:
+        db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(rejection_data)
+    except Exception:
+        pass
+
+    if transaction_id in DEMO_RETURN_TRANSACTIONS:
+        DEMO_RETURN_TRANSACTIONS[transaction_id].update(rejection_data)
+
+    return True, "Return exception rejected successfully."
+
+
+def penalty_record_exists_for_rejected_return(transaction_id):
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict()
+
+            if (
+                penalty.get("transaction_id") == transaction_id
+                and penalty.get("penalty_type") == "Rejected Return"
+            ):
+                return True
+
+        return False
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE:
+        for penalty in DEMO_PENALTIES.values():
+            if (
+                penalty.get("transaction_id") == transaction_id
+                and penalty.get("penalty_type") == "Rejected Return"
+            ):
+                return True
+
+    return False
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict()
+
+            if (
+                penalty.get("transaction_id") == transaction_id
+                and penalty.get("penalty_type") == "Rejected Return"
+            ):
+                return True
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE:
+        for penalty in DEMO_PENALTIES.values():
+            if (
+                penalty.get("transaction_id") == transaction_id
+                and penalty.get("penalty_type") == "Rejected Return"
+            ):
+                return True
+
+    return False
+
+
+def create_penalty_record_for_rejected_return(
+    transaction_id,
+    penalty_amount,
+    penalty_reason,
+    created_by="Librarian"
+):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        return False, "Return transaction not found."
+
+    status = str(transaction.get("status", "")).lower()
+
+    if status != "rejected":
+        return False, "Penalty can only be created after the return is rejected."
+
+    if penalty_record_exists_for_rejected_return(transaction_id):
+        return False, "Penalty record already exists for this rejected return."
+
+    try:
+        penalty_amount = float(penalty_amount)
+    except ValueError:
+        return False, "Invalid penalty amount."
+
+    if penalty_amount <= 0:
+        return False, "Penalty amount must be greater than zero."
+
+    penalty_reason = penalty_reason.strip()
+
+    if penalty_reason == "":
+        return False, "Penalty reason is required."
+
+    penalty_id = "P" + datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    penalty_data = {
+        "penalty_id": penalty_id,
+        "student_id": transaction.get("student_id"),
+        "transaction_id": transaction_id,
+        "book_id": transaction.get("book_id"),
+        "book_title": transaction.get("book_title"),
+        "penalty_type": "Rejected Return",
+        "penalty_reason": penalty_reason,
+        "penalty_amount": penalty_amount,
+        "status": "Outstanding",
+        "created_by": created_by,
+        "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    saved_to_database = False
+
+    try:
+        db.collection("penalties").document(penalty_id).set(penalty_data)
+        saved_to_database = True
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE and not saved_to_database:
+        DEMO_PENALTIES[penalty_id] = penalty_data
+
+    return True, "Penalty record for rejected return created successfully."
+
+
+# =========================================================
+# SCRUM-707: Record Lost or Damaged Book Exception
+# =========================================================
+
+DEMO_BOOK_EXCEPTIONS = {}
+
+
+def book_exception_exists(transaction_id):
+    try:
+        exception_docs = db.collection("book_exceptions").stream()
+
+        for doc in exception_docs:
+            exception = doc.to_dict()
+
+            if exception.get("transaction_id") == transaction_id:
+                return True
+
+        return False
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE:
+        for exception in DEMO_BOOK_EXCEPTIONS.values():
+            if exception.get("transaction_id") == transaction_id:
+                return True
+
+    return False
+
+
+def record_lost_damaged_book_exception(
+    transaction_id,
+    exception_type,
+    exception_description,
+    recorded_by="Librarian"
+):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        return False, "Transaction record not found."
+
+    exception_type = exception_type.strip().title()
+
+    if exception_type not in ["Lost", "Damaged"]:
+        return False, "Exception type must be Lost or Damaged."
+
+    exception_description = exception_description.strip()
+
+    if exception_description == "":
+        return False, "Exception description is required."
+
+    if book_exception_exists(transaction_id):
+        return False, "Book exception already exists for this transaction."
+
+    exception_id = "BE" + datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    exception_data = {
+        "exception_id": exception_id,
+        "transaction_id": transaction_id,
+        "student_id": transaction.get("student_id"),
+        "book_id": transaction.get("book_id"),
+        "book_title": transaction.get("book_title"),
+        "exception_type": exception_type,
+        "exception_description": exception_description,
+        "exception_status": "Exception Recorded",
+        "recorded_by": recorded_by,
+        "recorded_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    saved_to_database = False
+
+    try:
+        db.collection("book_exceptions").document(exception_id).set(exception_data)
+        saved_to_database = True
+    except Exception:
+        pass
+
+    update_data = {
+        "status": exception_type + " Exception Recorded",
+        "book_exception_status": "Exception Recorded",
+        "exception_type": exception_type,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    try:
+        db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(update_data)
+    except Exception:
+        pass
+
+    if transaction_id in DEMO_RETURN_TRANSACTIONS:
+        DEMO_RETURN_TRANSACTIONS[transaction_id].update(update_data)
+
+    if DEMO_UI_MODE and not saved_to_database:
+        DEMO_BOOK_EXCEPTIONS[exception_id] = exception_data
+
+    return True, "Lost or damaged book exception recorded successfully."
 
 
 # =========================================================
@@ -510,4 +813,85 @@ def librarian_waive_penalty(penalty_id):
     return render_template(
         "librarian/waive_penalty.html",
         penalty=penalty
+    )
+
+@penalty_bp.route("/librarian/reject-return/<transaction_id>", methods=["GET", "POST"])
+def librarian_reject_return_exception(transaction_id):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        return "Return transaction not found", 404
+
+    if request.method == "POST":
+        rejection_reason = request.form.get("rejection_reason", "").strip()
+        rejected_by = request.form.get("rejected_by", "Librarian").strip()
+        penalty_amount = request.form.get("penalty_amount", "").strip()
+
+        success, message = reject_return_exception(
+            transaction_id,
+            rejection_reason,
+            rejected_by
+        )
+
+        if not success:
+            return render_template(
+                "librarian/reject_return_exception.html",
+                transaction=transaction,
+                error=message
+            ), 400
+
+        penalty_success, penalty_message = create_penalty_record_for_rejected_return(
+            transaction_id,
+            penalty_amount,
+            rejection_reason,
+            rejected_by
+        )
+
+        if not penalty_success:
+            return render_template(
+                "librarian/reject_return_exception.html",
+                transaction=transaction,
+                error=penalty_message
+            ), 400
+
+        flash(message + " " + penalty_message, "success")
+        return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+
+    return render_template(
+        "librarian/reject_return_exception.html",
+        transaction=transaction
+    )
+
+@penalty_bp.route("/librarian/book-exception/<transaction_id>", methods=["GET", "POST"])
+def librarian_record_book_exception(transaction_id):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        return "Transaction record not found", 404
+
+    if request.method == "POST":
+        exception_type = request.form.get("exception_type", "").strip()
+        exception_description = request.form.get("exception_description", "").strip()
+        recorded_by = request.form.get("recorded_by", "Librarian").strip()
+
+        success, message = record_lost_damaged_book_exception(
+            transaction_id,
+            exception_type,
+            exception_description,
+            recorded_by
+        )
+
+        if success:
+            flash(message, "success")
+            return redirect(url_for("penalty_transaction.identify_overdue_books"))
+
+        return render_template(
+            "librarian/book_exception.html",
+            transaction=transaction,
+            error=message
+        ), 400
+
+    return render_template(
+        "librarian/book_exception.html",
+        transaction=transaction
     )
