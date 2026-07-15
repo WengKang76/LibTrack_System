@@ -53,6 +53,9 @@ def approve_borrow_request(request_id: int) -> bool:
         "return_date": None,
         "status": "Borrowed",
         "renewal_status": "None",
+        "show_renewal_alert": False,
+        "show_renewal_message": False,
+        "renewal_message": "",
     }
 
     add_borrow_transaction(transaction)
@@ -110,5 +113,83 @@ def request_book_renewal(transaction_id: int) -> bool:
         return False
 
     transaction["renewal_status"] = "Pending"
+
+    return True
+
+
+def approve_renewal_request(transaction_id: int) -> bool:
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["renewal_status"] != "Pending":
+        return False
+
+    current_due_date = date.fromisoformat(transaction["due_date"])
+
+    new_due_date = current_due_date + timedelta(days=14)
+
+    transaction["due_date"] = new_due_date.isoformat()
+
+    transaction["renewal_status"] = "Approved"
+
+    transaction["show_renewal_message"] = True
+
+    transaction["renewal_message"] = (
+        f"Your renewal request for "
+        f"{transaction['book']} has been approved. "
+        f"New due date: {transaction['due_date']}."
+    )
+
+    return True
+
+
+def clear_renewal_alert(student: str) -> None:
+    for transaction in get_borrow_transactions():
+        if transaction["student"] == student:
+            transaction["show_renewal_message"] = False
+
+
+def reject_renewal_request(transaction_id: int) -> bool:
+
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["renewal_status"] != "Pending":
+        return False
+
+    transaction["renewal_status"] = "Rejected"
+
+    transaction["show_renewal_message"] = True
+
+    transaction["renewal_message"] = (
+        f"Your renewal request for "
+        f"{transaction['book']} has been rejected. "
+        f"Please return the book before the due date."
+    )
+
+    return True
+
+
+def cancel_renewal_request(transaction_id: int) -> bool:
+
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["renewal_status"] != "Pending":
+        return False
+
+    transaction["renewal_status"] = "Cancelled"
+
+    transaction["show_renewal_message"] = True
+
+    transaction["renewal_message"] = (
+        f"Your renewal request for " f"{transaction['book']} has been cancelled."
+    )
 
     return True

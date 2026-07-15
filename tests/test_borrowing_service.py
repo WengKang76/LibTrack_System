@@ -1,5 +1,7 @@
 """Tests for borrowing service functions."""
 
+from datetime import date, timedelta
+
 import pytest
 
 from modules.borrowing.repository import (
@@ -15,7 +17,10 @@ from modules.borrowing.repository import (
 
 from modules.borrowing.services import (
     approve_borrow_request,
+    approve_renewal_request,
+    cancel_renewal_request,
     confirm_book_return,
+    reject_renewal_request,
     request_book_return,
     request_book_renewal,
 )
@@ -565,3 +570,316 @@ def test_can_renew_book_without_reservation():
     transaction = find_borrow_transaction(1)
 
     assert transaction["renewal_status"] == "Pending"
+
+
+# ==================================================
+# User Story 11:
+# As a librarian, I want to approve a valid extension
+# request with one click so that I can process requests
+# efficiently.
+#
+# The librarian approves a pending renewal request.
+# The due date is extended and renewal status changes
+# to Approved.
+# ==================================================
+
+
+def test_librarian_can_approve_renewal_request():
+    """
+    GIVEN a student has submitted a renewal request
+    WHEN the librarian approves the renewal request
+    THEN the renewal status should become Approved
+    AND the due date should be extended
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    original_due_date = transaction["due_date"]
+
+    request_book_renewal(1)
+
+    result = approve_renewal_request(1)
+
+    assert result is True
+
+    assert transaction["renewal_status"] == "Approved"
+
+    assert transaction["due_date"] != original_due_date
+
+
+def test_approved_renewal_extends_due_date_by_14_days():
+    """
+    GIVEN a pending renewal request exists
+    WHEN the librarian approves the request
+    THEN the due date should increase by 14 days
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    original_due_date = date.fromisoformat(transaction["due_date"])
+
+    request_book_renewal(1)
+
+    approve_renewal_request(1)
+
+    expected_due_date = original_due_date + timedelta(days=14)
+
+    assert transaction["due_date"] == expected_due_date.isoformat()
+
+
+def test_cannot_approve_non_existing_renewal_request():
+    """
+    GIVEN a transaction ID does not exist
+    WHEN the librarian approves renewal
+    THEN the system should reject the request
+    """
+
+    result = approve_renewal_request(999)
+
+    assert result is False
+
+
+def test_cannot_approve_already_approved_renewal_request():
+    """
+    GIVEN a renewal request has already been approved
+    WHEN the librarian approves it again
+    THEN the system should reject the duplicate approval
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    approve_renewal_request(1)
+
+    result = approve_renewal_request(1)
+
+    assert result is False
+
+
+# ==================================================
+# User Story 12:
+# As a librarian, I want to reject an invalid request
+# so that the student cannot extend their borrowed
+# book with an invalid reason.
+#
+# The librarian rejects a pending renewal request.
+# The renewal status becomes Rejected and the student
+# receives a rejection message.
+# ==================================================
+
+
+def test_librarian_can_reject_renewal_request():
+    """
+    GIVEN a student has submitted a renewal request
+    WHEN the librarian rejects the renewal request
+    THEN the renewal status should become Rejected
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    result = reject_renewal_request(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["renewal_status"] == "Rejected"
+
+
+def test_rejected_renewal_does_not_change_due_date():
+    """
+    GIVEN a student has submitted a renewal request
+    WHEN the librarian rejects the request
+    THEN the due date should remain unchanged
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    original_due_date = transaction["due_date"]
+
+    request_book_renewal(1)
+
+    reject_renewal_request(1)
+
+    assert transaction["due_date"] == original_due_date
+
+
+def test_rejected_renewal_creates_student_message():
+    """
+    GIVEN a pending renewal request exists
+    WHEN the librarian rejects the request
+    THEN a rejection message should be created
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    reject_renewal_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction["show_renewal_message"] is True
+
+    assert transaction["renewal_message"] != ""
+
+
+def test_cannot_reject_non_existing_renewal_request():
+    """
+    GIVEN a transaction ID does not exist
+    WHEN the librarian rejects renewal
+    THEN the system should return False
+    """
+
+    result = reject_renewal_request(999)
+
+    assert result is False
+
+
+def test_cannot_reject_approved_renewal_request():
+    """
+    GIVEN a renewal request has already been approved
+    WHEN the librarian rejects it afterwards
+    THEN the system should reject the action
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    approve_renewal_request(1)
+
+    result = reject_renewal_request(1)
+
+    assert result is False
+
+
+# ==================================================
+# User Story 13:
+# As a student, I want to cancel my pending extension
+# request, so that I can withdraw my request if I no
+# longer need the book or plan to return it early.
+#
+# The student cancels a pending renewal request.
+# The renewal status becomes Cancelled and the due
+# date remains unchanged.
+# ==================================================
+
+
+def test_student_can_cancel_pending_renewal_request():
+    """
+    GIVEN a student has submitted a renewal request
+    WHEN the student cancels the pending request
+    THEN the renewal status should become Cancelled
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    result = cancel_renewal_request(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["renewal_status"] == "Cancelled"
+
+
+def test_cancelled_renewal_does_not_change_due_date():
+    """
+    GIVEN a student has a pending renewal request
+    WHEN the student cancels the request
+    THEN the due date should remain unchanged
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    original_due_date = transaction["due_date"]
+
+    request_book_renewal(1)
+
+    cancel_renewal_request(1)
+
+    assert transaction["due_date"] == original_due_date
+
+
+def test_cancelled_renewal_creates_student_message():
+    """
+    GIVEN a pending renewal request exists
+    WHEN the student cancels the request
+    THEN a cancellation message should be created
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    cancel_renewal_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction["show_renewal_message"] is True
+
+    assert transaction["renewal_message"] != ""
+
+
+def test_cannot_cancel_non_existing_renewal_request():
+    """
+    GIVEN a transaction ID does not exist
+    WHEN the student cancels renewal
+    THEN the system should reject the action
+    """
+
+    result = cancel_renewal_request(999)
+
+    assert result is False
+
+
+def test_cannot_cancel_approved_renewal_request():
+    """
+    GIVEN a renewal request has already been approved
+    WHEN the student attempts to cancel it
+    THEN the system should reject the action
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    approve_renewal_request(1)
+
+    result = cancel_renewal_request(1)
+
+    assert result is False
+
+
+def test_cannot_cancel_rejected_renewal_request():
+    """
+    GIVEN a renewal request has already been rejected
+    WHEN the student attempts to cancel it
+    THEN the system should reject the action
+    """
+
+    approve_borrow_request(1)
+
+    request_book_renewal(1)
+
+    reject_renewal_request(1)
+
+    result = cancel_renewal_request(1)
+
+    assert result is False

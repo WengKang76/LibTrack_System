@@ -27,6 +27,16 @@
 
         {% for book in books %}
 
+    {% if book.show_renewal_message %}
+
+    <div class="alert">
+
+        {{ book.renewal_message }}
+
+    </div>
+
+    {% endif %}
+        
         <div class="card">
 
             <h3>{{ book.book }}</h3>
@@ -68,6 +78,25 @@
 
             </form>
 
+            {% if book.renewal_status == "Pending" %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'borrowing.cancel_renewal',
+                    transaction_id=book.id
+                ) }}"
+                onsubmit="return confirmRenewal();"
+            >
+
+            <button class="button">
+                Cancel Renewal Request
+            </button>
+
+            </form>
+
+{% endif %}
+
 
             <form method="POST"
                   action="{{ url_for('borrowing.return_book',
@@ -105,6 +134,21 @@ function confirmRenewal() {
     );
 
 }
+
+function cancelRenewal() {
+
+    return confirm(
+        "Are you sure you want to cancel this renewal request?"
+    );
+
+}
+
+fetch(
+    "{{ url_for('borrowing.clear_alert') }}",
+    {
+        method: "POST"
+    }
+);
 </script>
 
 </html>
