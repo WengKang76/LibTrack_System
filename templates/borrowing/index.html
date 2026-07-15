@@ -92,6 +92,35 @@
         {{ transaction.due_date }}
     </p>
 
+    {% if transaction.status == "Borrowed" %}
+
+    <form
+        method="POST"
+        action="{{ url_for(
+            'borrowing.manual_extend',
+            transaction_id=transaction.id
+        ) }}"
+    >
+
+    <label>
+        New Due Date:
+    </label>
+
+    <input
+        type="date"
+        name="new_due_date"
+        min="{{ transaction.due_date }}"
+        required
+    >
+
+    <button class="button">
+        Extend Due Date
+    </button>
+
+    </form>
+
+    {% endif %}
+
     <p>
         Return Date:
         {% if transaction.return_date %}
@@ -110,6 +139,12 @@
         Renewal Status:
         {{ transaction.renewal_status }}
     </p>
+
+    {% if transaction.status == "Borrowed" %}
+
+    </form>
+
+    {% endif %}
 
     <!--Check if the renewal status is "Pending" and display the approve renewa button-->
     {% if transaction.renewal_status == "Pending" %}

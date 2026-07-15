@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from modules.borrowing.services import (
     approve_borrow_request,
@@ -7,6 +7,7 @@ from modules.borrowing.services import (
     get_all_borrow_transactions,
     get_all_pending_requests,
     get_student_borrowed_books,
+    manually_extend_due_date,
     reject_renewal_request,
     request_book_return,
     confirm_book_return,
@@ -142,3 +143,27 @@ def cancel_renewal(transaction_id: int):
         )
 
     return redirect(url_for("borrowing.student_books"))
+
+
+@borrowing_bp.post("/manual-extend/<int:transaction_id>")
+def manual_extend(transaction_id: int):
+
+    new_due_date = request.form["new_due_date"]
+
+    result = manually_extend_due_date(
+        transaction_id,
+        new_due_date,
+    )
+
+    if result:
+        flash(
+            "Due date extended successfully.",
+            "success",
+        )
+    else:
+        flash(
+            "Unable to extend due date.",
+            "error",
+        )
+
+    return redirect(url_for("borrowing.borrowing_home"))

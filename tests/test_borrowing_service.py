@@ -20,6 +20,7 @@ from modules.borrowing.services import (
     approve_renewal_request,
     cancel_renewal_request,
     confirm_book_return,
+    manually_extend_due_date,
     reject_renewal_request,
     request_book_return,
     request_book_renewal,
@@ -570,6 +571,130 @@ def test_can_renew_book_without_reservation():
     transaction = find_borrow_transaction(1)
 
     assert transaction["renewal_status"] == "Pending"
+
+
+# ==================================================
+# User Story 10:
+# As a librarian, I want to manually extend the due
+# date of any borrowed book without a prior request,
+# so that I can correct system errors or handle
+# emergency situations.
+#
+# The librarian selects a new valid due date.
+# The system updates the borrowing period and
+# informs the student.
+# ==================================================
+def test_librarian_can_manually_extend_due_date():
+    """
+    GIVEN a student has an active borrowed book
+    WHEN the librarian manually extends the due date
+    THEN the due date should be updated successfully
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    new_due_date = (
+        date.fromisoformat(transaction["due_date"]) + timedelta(days=7)
+    ).isoformat()
+
+    result = manually_extend_due_date(
+        1,
+        new_due_date,
+    )
+
+    assert result is True
+
+    assert transaction["due_date"] == new_due_date
+
+    assert transaction["renewal_status"] == ("Manual Extension")
+
+
+def test_manual_extension_creates_student_message():
+    """
+    GIVEN a librarian extends a borrowed book
+    WHEN the extension succeeds
+    THEN a message should be created for the student
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    new_due_date = (
+        date.fromisoformat(transaction["due_date"]) + timedelta(days=10)
+    ).isoformat()
+
+    manually_extend_due_date(
+        1,
+        new_due_date,
+    )
+
+    assert transaction["show_renewal_message"] is True
+
+    assert "10 days" in transaction["renewal_message"]
+
+
+def test_cannot_manually_extend_to_before_current_due_date():
+    """
+    GIVEN a borrowed book has an existing due date
+    WHEN the librarian selects an earlier date
+    THEN the extension should fail
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    old_due_date = transaction["due_date"]
+
+    earlier_date = (date.fromisoformat(old_due_date) - timedelta(days=5)).isoformat()
+
+    result = manually_extend_due_date(
+        1,
+        earlier_date,
+    )
+
+    assert result is False
+
+    assert transaction["due_date"] == old_due_date
+
+
+def test_cannot_manually_extend_non_existing_transaction():
+    """
+    GIVEN a transaction does not exist
+    WHEN librarian attempts manual extension
+    THEN the system should reject it
+    """
+
+    result = manually_extend_due_date(
+        999,
+        "2026-08-20",
+    )
+
+    assert result is False
+
+
+def test_cannot_manually_extend_returned_book():
+    """
+    GIVEN a book has already been returned
+    WHEN librarian attempts manual extension
+    THEN the system should reject it
+    """
+
+    approve_borrow_request(1)
+
+    transaction = find_borrow_transaction(1)
+
+    transaction["status"] = "Returned"
+
+    result = manually_extend_due_date(
+        1,
+        "2026-08-20",
+    )
+
+    assert result is False
 
 
 # ==================================================

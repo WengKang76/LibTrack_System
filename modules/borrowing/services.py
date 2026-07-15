@@ -193,3 +193,38 @@ def cancel_renewal_request(transaction_id: int) -> bool:
     )
 
     return True
+
+
+def manually_extend_due_date(transaction_id: int, new_due_date: str) -> bool:
+
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["status"] != "Borrowed":
+        return False
+
+    old_due_date = date.fromisoformat(transaction["due_date"])
+
+    updated_due_date = date.fromisoformat(new_due_date)
+
+    if updated_due_date <= old_due_date:
+        return False
+
+    extension_days = (updated_due_date - old_due_date).days
+
+    transaction["due_date"] = updated_due_date.isoformat()
+
+    transaction["renewal_status"] = "Manual Extension"
+
+    transaction["show_renewal_message"] = True
+
+    transaction["renewal_message"] = (
+        f"Your book {transaction['book']} "
+        f"has been extended by the librarian "
+        f"for {extension_days} days. "
+        f"New due date: {transaction['due_date']}."
+    )
+
+    return True
