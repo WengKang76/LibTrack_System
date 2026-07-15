@@ -490,3 +490,94 @@
         grid-column: auto;
     }
 }
+
+/* =========================================================
+   SCRUM-695: UPDATE PHYSICAL COPY STATUS
+   ========================================================= */
+
+.copy-status-page {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.copy-status-card {
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.selected-copy-information {
+    margin-bottom: 25px;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+}
+
+.selected-copy-information h2 {
+    margin-top: 0;
+    color: #172554;
+}
+
+.selected-copy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.copy-information-item {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 13px;
+    background-color: white;
+    border-radius: 7px;
+}
+
+.copy-information-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.copy-information-value {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 15px;
+}
+
+.copy-status-help {
+    margin-bottom: 22px;
+    padding: 16px;
+    color: #475569;
+    background-color: #f8fafc;
+    border-left: 4px solid #2563eb;
+    border-radius: 6px;
+}
+
+.copy-status-help p {
+    margin: 7px 0;
+}
+
+.button-status {
+    background-color: #7c3aed;
+}
+
+.button-status:hover {
+    background-color: #6d28d9;
+}
+
+@media (max-width: 650px) {
+    .selected-copy-grid {
+        grid-template-columns: 1fr;
+    }
+}

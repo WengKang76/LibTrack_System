@@ -254,6 +254,7 @@
                         <th>Status</th>
                         <th>Condition</th>
                         <th>Created Date</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
 
@@ -293,6 +294,23 @@
                         <td>
                             {{ copy.get('created_at', '-') }}
                         </td>
+                        <td>
+    {% set copy_document_id =
+        copy.get('document_id')
+        or copy.get('copy_id')
+    %}
+
+    <a
+        href="{{ url_for(
+            'book_catalogue.update_copy_status',
+            book_id=book.book_id,
+            copy_id=copy_document_id
+        ) }}"
+        class="button button-small button-status"
+    >
+        Update Status
+    </a>
+</td>
 
                     </tr>
 

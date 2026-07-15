@@ -12,6 +12,14 @@ book_bp = Blueprint(
     template_folder=".",
 )
 
+COPY_STATUSES = (
+    "Available",
+    "Borrowed",
+    "Reserved",
+    "Lost",
+    "Damaged",
+)
+
 
 def _isbn_already_exists(isbn, exclude_book_id=None):
     """
@@ -99,6 +107,25 @@ def _get_book_copies(book_id):
 
     return copies
 
+def _get_book_copy_by_id(book_id, copy_id):
+    """
+    Retrieve one physical copy belonging to a selected book.
+    """
+    copy_document = (
+        db.collection(COLLECTION_BOOKS)
+        .document(book_id)
+        .collection("copies")
+        .document(copy_id)
+        .get()
+    )
+
+    if not copy_document.exists:
+        return None
+
+    copy_record = copy_document.to_dict() or {}
+    copy_record["document_id"] = copy_document.id
+
+    return copy_record
 
 def _get_next_copy_number(copies):
     """
@@ -360,6 +387,81 @@ def librarian_book_details(book_id):
         book=book,
         copies=copies,
         copy_summary=copy_summary,
+    )
+
+# ============================================================
+# SCRUM-695: UPDATE INDIVIDUAL PHYSICAL COPY STATUS
+# ============================================================
+
+@book_bp.route(
+    "/copies/status/<book_id>/<copy_id>",
+    methods=["GET", "POST"],
+)
+def update_copy_status(book_id, copy_id):
+    book = get_book_by_id(book_id)
+
+    if book is None:
+        return "Book record not found.", 404
+
+    copy_record = _get_book_copy_by_id(
+        book_id,
+        copy_id,
+    )
+
+    if copy_record is None:
+        return "Physical book copy not found.", 404
+
+    if request.method == "POST":
+        selected_status = request.form.get(
+            "status",
+            "",
+        ).strip()
+
+        if selected_status not in COPY_STATUSES:
+            return render_template(
+                "update_copy_status.html",
+                book=book,
+                copy_record=copy_record,
+                copy_statuses=COPY_STATUSES,
+                error="Please select a valid copy status.",
+            ), 400
+
+        copy_reference = (
+            db.collection(COLLECTION_BOOKS)
+            .document(book_id)
+            .collection("copies")
+            .document(copy_id)
+        )
+
+        copy_reference.update(
+            {
+                "status": selected_status,
+                "updated_at": datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            }
+        )
+
+        flash(
+            (
+                f"{copy_id} status was updated "
+                f"to {selected_status} successfully."
+            ),
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "book_catalogue.librarian_book_details",
+                book_id=book_id,
+            )
+        )
+
+    return render_template(
+        "update_copy_status.html",
+        book=book,
+        copy_record=copy_record,
+        copy_statuses=COPY_STATUSES,
     )
 
 def _validate_publication_year(publication_year):
