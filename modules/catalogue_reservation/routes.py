@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from config.firebase_config import db
 
@@ -13,6 +13,7 @@ BOOKS_COLLECTION = "books"
 RESERVATIONS_COLLECTION = "reservations"
 BORROW_REQUESTS_COLLECTION = "borrow_requests"
 BORROWING_PERIOD_DAYS = 14
+CURRENT_BORROWING_STATUSES = {"approved", "borrowed", "issued", "active"}
 
 
 def _safe_int(value, default=0):
@@ -20,6 +21,117 @@ def _safe_int(value, default=0):
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _parse_date(value):
+    """Convert supported Firestore or string values into a date."""
+    if value is None:
+        return None
+
+    if isinstance(value, datetime):
+        return value.date()
+
+    if isinstance(value, date):
+        return value
+
+    if isinstance(value, str):
+        cleaned_value = value.strip()
+        if not cleaned_value:
+            return None
+
+        # Support ISO dates, ISO datetimes and the format already used by
+        # this module when writing Firestore records.
+        try:
+            return datetime.fromisoformat(
+                cleaned_value.replace("Z", "+00:00")
+            ).date()
+        except ValueError:
+            pass
+
+        for date_format in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(cleaned_value, date_format).date()
+            except ValueError:
+                continue
+
+    return None
+
+
+def _today():
+    """Return today's date through a small wrapper for deterministic tests."""
+    return date.today()
+
+
+def _remaining_period_text(remaining_days):
+    if remaining_days is None:
+        return "Due date unavailable"
+    if remaining_days > 1:
+        return f"{remaining_days} days remaining"
+    if remaining_days == 1:
+        return "1 day remaining"
+    if remaining_days == 0:
+        return "Due today"
+
+    overdue_days = abs(remaining_days)
+    suffix = "day" if overdue_days == 1 else "days"
+    return f"Overdue by {overdue_days} {suffix}"
+
+
+def _normalise_current_borrowing(document):
+    """Convert one approved/issued request into a borrowed-book record."""
+    borrowing = document.to_dict() or {}
+    status = str(borrowing.get("status", "")).strip().lower()
+
+    if status not in CURRENT_BORROWING_STATUSES:
+        return None
+
+    borrowing_period_days = _safe_int(
+        borrowing.get("borrowing_period_days", BORROWING_PERIOD_DAYS),
+        BORROWING_PERIOD_DAYS,
+    )
+    if borrowing_period_days <= 0:
+        borrowing_period_days = BORROWING_PERIOD_DAYS
+
+    borrow_date = (
+        _parse_date(borrowing.get("borrow_date"))
+        or _parse_date(borrowing.get("issued_date"))
+        or _parse_date(borrowing.get("approval_date"))
+        or _parse_date(borrowing.get("approved_date"))
+        or _parse_date(borrowing.get("request_date"))
+    )
+    due_date = _parse_date(borrowing.get("due_date"))
+
+    # SCRUM-677 integration: records created by SCRUM-16 already include
+    # borrowing_period_days. When the approval module has not stored a due
+    # date, derive it from the approval/borrow/request date.
+    if due_date is None and borrow_date is not None:
+        due_date = borrow_date + timedelta(days=borrowing_period_days)
+
+    remaining_days = None
+    if due_date is not None:
+        remaining_days = (due_date - _today()).days
+
+    borrowing["borrowing_id"] = document.id
+    borrowing["borrow_date_value"] = borrow_date
+    borrowing["due_date_value"] = due_date
+    borrowing["borrow_date_display"] = (
+        borrow_date.strftime("%Y-%m-%d") if borrow_date else "Not available"
+    )
+    borrowing["due_date_display"] = (
+        due_date.strftime("%Y-%m-%d") if due_date else "Not available"
+    )
+    borrowing["borrowing_period_days"] = borrowing_period_days
+    borrowing["remaining_days"] = remaining_days
+    borrowing["remaining_period_text"] = _remaining_period_text(remaining_days)
+    borrowing["remaining_period_state"] = (
+        "overdue"
+        if remaining_days is not None and remaining_days < 0
+        else "due-today"
+        if remaining_days == 0
+        else "active"
+    )
+
+    return borrowing
 
 
 def _matches_search(book, search_keyword):
@@ -507,3 +619,42 @@ def request_borrow_book(book_id):
         return redirect(
             url_for("catalogue_reservation.view_catalogue")
         )
+
+
+# SCRUM-675 and SCRUM-677: View currently borrowed books and remaining period
+@catalogue_bp.route("/my-borrowed-books")
+def view_currently_borrowed_books():
+    """Display the current student's approved or issued borrowing records."""
+    student_id = session.get("student_id", "S001")
+    borrowed_books = []
+
+    try:
+        documents = (
+            db.collection(BORROW_REQUESTS_COLLECTION)
+            .where("student_id", "==", student_id)
+            .stream()
+        )
+
+        for document in documents:
+            borrowing = _normalise_current_borrowing(document)
+            if borrowing is not None:
+                borrowed_books.append(borrowing)
+
+        # Books due first are displayed first. Records without a due date are
+        # placed at the end so valid remaining-period information is prominent.
+        borrowed_books.sort(
+            key=lambda borrowing: (
+                borrowing.get("due_date_value") is None,
+                borrowing.get("due_date_value") or date.max,
+                str(borrowing.get("book_title", "")).lower(),
+            )
+        )
+
+    except Exception as error:
+        flash(f"Error loading borrowed books: {error}", "danger")
+
+    return render_template(
+        "catalogue_reservation/currently_borrowed_books.html",
+        borrowed_books=borrowed_books,
+    )
+

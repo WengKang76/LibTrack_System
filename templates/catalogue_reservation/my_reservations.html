@@ -22,6 +22,11 @@
            class="reservation-button reservation-button-secondary">
             Back to Catalogue
         </a>
+
+        <a href="{{ url_for('catalogue_reservation.view_currently_borrowed_books') }}"
+           class="reservation-button reservation-button-secondary">
+            Borrowed Books
+        </a>
     </div>
 
     {% if reservations %}

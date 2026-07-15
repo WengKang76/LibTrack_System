@@ -132,6 +132,13 @@
                    class="view-details-button view-details-button-secondary">
                     My Reservations
                 </a>
+
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_currently_borrowed_books'
+                ) }}"
+                   class="view-details-button view-details-button-secondary">
+                    Borrowed Books
+                </a>
             </div>
         </div>
     </section>
