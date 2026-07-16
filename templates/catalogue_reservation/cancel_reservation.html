@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Cancel Reservation | LibTrack
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-page">
+    <header class="reservation-header">
+        <div>
+            <p class="reservation-eyebrow">
+                SCRUM-690 · Cancel Reservation
+            </p>
+            <h1>Cancel Reservation</h1>
+            <p>Confirm that you want to cancel this active reservation.</p>
+        </div>
+    </header>
+
+    <section class="reservation-confirmation-card">
+        <h2>{{ reservation.book_title|default("Untitled Book") }}</h2>
+
+        <dl class="availability-details">
+            <div>
+                <dt>Reservation ID</dt>
+                <dd>{{ reservation.reservation_id }}</dd>
+            </div>
+
+            <div>
+                <dt>Book ID</dt>
+                <dd>{{ reservation.book_id }}</dd>
+            </div>
+
+            <div>
+                <dt>Reservation Date</dt>
+                <dd>{{ reservation.reservation_date|default("Not available") }}</dd>
+            </div>
+
+            <div>
+                <dt>Current Status</dt>
+                <dd>{{ reservation.status|default("Active") }}</dd>
+            </div>
+        </dl>
+
+        <div class="reservation-confirmation-notice">
+            Cancelling removes your active reservation for this book.
+            You may create a new reservation later if the book is still unavailable.
+        </div>
+
+        <form method="POST"
+              action="{{ url_for(
+                  'catalogue_reservation.cancel_reservation',
+                  reservation_id=reservation.reservation_id
+              ) }}"
+              class="reservation-confirmation-actions">
+            <button type="submit"
+                    class="reservation-button reservation-button-danger">
+                Confirm Cancellation
+            </button>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_my_reservations'
+            ) }}"
+               class="reservation-button reservation-button-secondary">
+                Keep Reservation
+            </a>
+        </form>
+    </section>
+</div>
+{% endblock %}

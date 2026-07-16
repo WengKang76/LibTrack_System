@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ book.title|default("Book Availability") }} | LibTrack
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-page">
+    <nav class="reservation-navigation reservation-navigation-left"
+         aria-label="Availability page navigation">
+        <a href="{{ url_for('catalogue_reservation.view_catalogue') }}"
+           class="reservation-button reservation-button-secondary">
+            ← Back to Catalogue
+        </a>
+    </nav>
+
+    <header class="reservation-header">
+        <div>
+            <p class="reservation-eyebrow">SCRUM-685 · Current Availability Status</p>
+            <h1>📘 {{ book.title|default("Untitled Book") }}</h1>
+            <p>
+                View the latest availability information for the selected book.
+            </p>
+        </div>
+    </header>
+
+    <section class="availability-card"
+             aria-labelledby="availability-heading">
+        <div class="availability-card-heading">
+            <div>
+                <p class="reservation-eyebrow">Selected Book</p>
+                <h2 id="availability-heading">
+                    {{ book.title|default("Untitled Book") }}
+                </h2>
+            </div>
+
+            <span class="{{
+                'reservation-status-available'
+                if is_available
+                else 'reservation-status-unavailable'
+            }} availability-status-large">
+                {{ book.current_status }}
+            </span>
+        </div>
+
+        <dl class="availability-details">
+            <div>
+                <dt>Book ID</dt>
+                <dd>{{ book.book_id|default("N/A") }}</dd>
+            </div>
+
+            <div>
+                <dt>Author</dt>
+                <dd>{{ book.author|default("Unknown Author") }}</dd>
+            </div>
+
+            <div>
+                <dt>Category</dt>
+                <dd>{{ book.category|default("Uncategorised") }}</dd>
+            </div>
+
+            <div>
+                <dt>Available Copies</dt>
+                <dd class="availability-copy-count">
+                    {{ book.available_copies }}
+                </dd>
+            </div>
+        </dl>
+
+        <div class="availability-message {{
+            'availability-message-success'
+            if is_available
+            else 'availability-message-warning'
+        }}">
+            {% if is_available %}
+                This book is currently available for borrowing.
+                {{ book.available_copies }}
+                {% if book.available_copies == 1 %}copy is{% else %}copies are{% endif %}
+                available.
+            {% else %}
+                This book is currently unavailable for borrowing.
+                You may reserve it and wait for the next available copy.
+            {% endif %}
+        </div>
+
+        <div class="reservation-actions availability-actions">
+            {% if is_available %}
+                <a href="{{ url_for(
+                    'catalogue_reservation.request_borrow_book',
+                    book_id=book.book_id
+                ) }}"
+                   class="reservation-button">
+                    Request Borrow
+                </a>
+            {% else %}
+                <a href="{{ url_for(
+                    'catalogue_reservation.reserve_book',
+                    book_id=book.book_id
+                ) }}"
+                   class="reservation-button">
+                    Reserve This Book
+                </a>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
