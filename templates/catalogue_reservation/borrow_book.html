@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Request {{ book.title|default("Book") }} | LibTrack
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-page">
+    <nav class="reservation-navigation reservation-navigation-left"
+         aria-label="Borrow request navigation">
+        <a href="{{ url_for(
+            'catalogue_reservation.view_book_details',
+            book_id=book.book_id
+        ) }}"
+           class="reservation-button reservation-button-secondary">
+            ← Back to Book Details
+        </a>
+    </nav>
+
+    <header class="reservation-header">
+        <div>
+            <p class="reservation-eyebrow">
+                SCRUM-16 · SCRUM-36
+            </p>
+            <h1>Request to Borrow Book</h1>
+            <p>
+                Review the selected book and borrowing period before
+                submitting your request.
+            </p>
+        </div>
+    </header>
+
+    <section class="borrow-confirmation-card"
+             aria-labelledby="borrow-confirmation-heading">
+        <div class="reservation-confirmation-heading">
+            <div>
+                <p class="reservation-eyebrow">Selected Available Book</p>
+                <h2 id="borrow-confirmation-heading">
+                    {{ book.title|default("Untitled Book") }}
+                </h2>
+            </div>
+
+            <span class="reservation-status-available">
+                Available
+            </span>
+        </div>
+
+        <dl class="availability-details">
+            <div>
+                <dt>Book ID</dt>
+                <dd>{{ book.book_id|default("N/A") }}</dd>
+            </div>
+
+            <div>
+                <dt>Author</dt>
+                <dd>{{ book.author|default("Unknown Author") }}</dd>
+            </div>
+
+            <div>
+                <dt>Available Copies</dt>
+                <dd class="availability-copy-count">
+                    {{ book.available_copies|default(0) }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Borrowing Period</dt>
+                <dd class="borrowing-period-value">
+                    {{ borrowing_period_days }} days
+                </dd>
+            </div>
+        </dl>
+
+        <div class="borrow-period-notice">
+            <strong>Borrowing period:</strong>
+            The book may be borrowed for {{ borrowing_period_days }} days
+            after the request is approved and the book is issued.
+        </div>
+
+        <div class="borrow-request-notice">
+            Submitting this form creates a pending borrowing request. It does
+            not immediately reduce the book's available copy count.
+        </div>
+
+        <form method="POST"
+              action="{{ url_for(
+                  'catalogue_reservation.request_borrow_book',
+                  book_id=book.book_id
+              ) }}"
+              class="reservation-confirmation-actions">
+            <button type="submit" class="reservation-button">
+                Confirm Borrow Request
+            </button>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_book_details',
+                book_id=book.book_id
+            ) }}"
+               class="reservation-button reservation-button-secondary">
+                Cancel
+            </a>
+        </form>
+    </section>
+</div>
+{% endblock %}

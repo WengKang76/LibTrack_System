@@ -1,33 +1,109 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>LibTrack System</title>
-    <link rel="stylesheet" href="../static/style.css">
-</head>
+{% extends "base.html" %}
 
-<body>
-    <div class="sidebar">
-        <h2>📚 LibTrack</h2>
-        
+{% block title %}
+Dashboard | LibTrack
+{% endblock %}
 
-        <a href="index.html">Dashboard</a>
-        <a href="/books/add">Book Catalogue Management</a>
-<a href="/catalogue/">Catalogue Browsing & Reservation</a>
-<a href="/borrowing/requests">Borrowing, Returning & Extension</a>
-<a href="/penalty/overdue">Penalty & Transactions</a>
-<a href="{{ url_for('student_catalogue.view_catalogue') }}">
-    View Student Book Catalogue
-</a>
-<a
-    href="{{ url_for(
-        'user_management.manage_users'
-    ) }}"
->
-    User Management
-</a>
+{% block content %}
+<section class="dashboard-hero">
+    <div class="dashboard-hero-content">
+        <p class="dashboard-label">Library Management System</p>
+
+        <h1>Welcome to LibTrack</h1>
+
+        <p class="dashboard-description">
+            Manage books, browse the library catalogue, submit borrowing
+            requests, reserve unavailable books, and monitor library
+            transactions from one central platform.
+        </p>
+
+        <div class="dashboard-actions">
+            <a href="{{ url_for(
+                'catalogue_reservation.view_catalogue'
+            ) }}"
+               class="primary-button">
+                Browse Book Catalogue
+            </a>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_available_books'
+            ) }}"
+               class="secondary-button">
+                View Available Books
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="section-heading">
+        <h2>LibTrack Services</h2>
+        <p>Select a module to continue.</p>
     </div>
 
-    
-</body>
-</html>
+    <div class="dashboard-card-grid">
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">📚</div>
+
+            <h3>Book Catalogue</h3>
+
+            <p>
+                Browse the complete collection of books registered in
+                the LibTrack library.
+            </p>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_catalogue'
+            ) }}">
+                Open Catalogue
+            </a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">✅</div>
+
+            <h3>Available Books</h3>
+
+            <p>
+                View books that currently have at least one available
+                copy for borrowing.
+            </p>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_available_books'
+            ) }}">
+                View Available Books
+            </a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">🔖</div>
+
+            <h3>My Reservations</h3>
+
+            <p>
+                Review your active and cancelled book reservations.
+            </p>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_my_reservations'
+            ) }}">
+                View Reservations
+            </a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">📖</div>
+
+            <h3>Borrowing</h3>
+
+            <p>
+                Submit borrowing requests and monitor your current
+                borrowed books.
+            </p>
+
+            <span class="coming-soon">Module integration pending</span>
+        </article>
+    </div>
+</section>
+{% endblock %} 

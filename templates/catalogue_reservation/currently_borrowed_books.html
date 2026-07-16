@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Currently Borrowed Books | LibTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-page">
+    <header class="reservation-header">
+        <div>
+            <p class="reservation-eyebrow">Catalogue Browsing &amp; Reservation</p>
+            <h1>📖 Currently Borrowed Books</h1>
+            <p>
+                View your active borrowed books, due dates, and remaining
+                borrowing period.
+            </p>
+        </div>
+    </header>
+
+    <div class="reservation-navigation reservation-navigation-left">
+        <a href="{{ url_for('catalogue_reservation.view_catalogue') }}"
+           class="reservation-button reservation-button-secondary">
+            Back to Catalogue
+        </a>
+
+        <a href="{{ url_for('catalogue_reservation.view_my_reservations') }}"
+           class="reservation-button reservation-button-secondary">
+            My Reservations
+        </a>
+    </div>
+
+    {% if borrowed_books %}
+        <div class="reservation-table-container">
+            <table class="reservation-table borrowed-books-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Borrowing ID</th>
+                        <th scope="col">Book ID</th>
+                        <th scope="col">Book Title</th>
+                        <th scope="col">Borrow Date</th>
+                        <th scope="col">Due Date</th>
+                        <th scope="col">Borrowing Period</th>
+                        <th scope="col">Remaining Period</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for borrowing in borrowed_books %}
+                        <tr>
+                            <td>{{ borrowing.borrowing_id }}</td>
+                            <td>{{ borrowing.book_id|default('N/A') }}</td>
+                            <td>
+                                <strong>
+                                    {{ borrowing.book_title|default('Untitled Book') }}
+                                </strong>
+                            </td>
+                            <td>{{ borrowing.borrow_date_display }}</td>
+                            <td>{{ borrowing.due_date_display }}</td>
+                            <td>{{ borrowing.borrowing_period_days }} days</td>
+                            <td>
+                                <span class="remaining-period remaining-period-{{ borrowing.remaining_period_state }}">
+                                    {{ borrowing.remaining_period_text }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <section class="reservation-empty">
+            <h2>No currently borrowed books</h2>
+            <p>
+                You do not currently have any approved or issued borrowed
+                books.
+            </p>
+
+            <a href="{{ url_for('catalogue_reservation.view_available_books') }}"
+               class="reservation-button">
+                View Available Books
+            </a>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

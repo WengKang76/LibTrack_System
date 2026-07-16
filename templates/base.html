@@ -1,56 +1,97 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LibTrack System</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
-    <!-- Common CSS for whole system -->
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/main.css') }}"
-    >
+    <title>
+        {% block title %}
+            LibTrack
+        {% endblock %}
+    </title>
 
-    <!-- Module CSS will be inserted here -->
-    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet"
+          href="{{ url_for(
+              'static',
+              filename='css/main.css'
+          ) }}">
+
+    {% block extra_css %}
+    {% endblock %}
 </head>
 
 <body>
-    <div class="sidebar">
-        <h2>ðŸ“š LibTrack</h2>
-        <p>Library Management System</p>
+    <header class="main-header">
+        <div class="main-navigation">
+            <a href="{{ url_for('home') }}"
+               class="brand">
+                <span class="brand-icon">📚</span>
+                <span>LibTrack</span>
+            </a>
 
-        <a href="/">Dashboard</a>
+            <nav class="navigation-links">
+                <a href="{{ url_for('home') }}">
+                    Dashboard
+                </a>
 
-      <a href="{{ url_for('book_catalogue.manage_books') }}">
-    Book Catalogue
-</a>
-<a href="/users/">
-    User Management
-</a>
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_catalogue'
+                ) }}">
+                    Book Catalogue
+                </a>
 
-        <a href="/catalogue/">Catalogue Reservation</a>
-        <a href="/borrowing/requests">Borrowing & Returning</a>
-        <a href="/penalty/overdue">Penalty & Transactions</a>
-    </div>
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_available_books'
+                ) }}">
+                    Available Books
+                </a>
 
-    <div class="main-content">
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_my_reservations'
+                ) }}">
+                    My Reservations
+                </a>
 
-        <!-- Display Flask success and error messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_currently_borrowed_books'
+                ) }}">
+                    Borrowed Books
+                </a>
+
+                <a href="{{ url_for('book_catalogue.manage_books') }}">
+                    Manage Books
+                </a>
+
+                <a href="{{ url_for('user_management.manage_users') }}">
+                    User Management
+                </a>
+
+                <a href="{{ url_for('student_catalogue.view_catalogue') }}">
+                    Student Catalogue
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(
+        with_categories=true
+    ) %}
+        {% if messages %}
+            <div class="flash-container">
                 {% for category, message in messages %}
-                    <div
-                        class="alert {{ category }}"
-                        role="alert"
-                    >
+                    <div class="flash-message flash-{{ category }}">
                         {{ message }}
                     </div>
                 {% endfor %}
-            {% endif %}
-        {% endwith %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
-        {% block content %}{% endblock %}
-
-    </div>
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
 </body>
 </html>
+
