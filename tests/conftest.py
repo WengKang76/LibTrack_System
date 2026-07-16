@@ -15,23 +15,35 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 
-# Prevent tests from connecting to the real Firebase database.
-fake_firebase_config = ModuleType("config.firebase_config")
+# Prevent automated tests from connecting to real Firebase.
+fake_firebase_config = ModuleType(
+    "config.firebase_config"
+)
 fake_firebase_config.db = MagicMock()
 fake_firebase_config.COLLECTION_BOOKS = "books"
+fake_firebase_config.COLLECTION_USERS = "users"
 
-sys.modules["config.firebase_config"] = fake_firebase_config
+sys.modules[
+    "config.firebase_config"
+] = fake_firebase_config
 
 
 from modules.book_catalogue.routes import book_bp
+from modules.user_management.routes import (
+    user_management_bp,
+)
 
 
 @pytest.fixture
 def app():
     test_app = Flask(
         "test_app",
-        template_folder=str(BASE_DIR / "templates"),
-        static_folder=str(BASE_DIR / "static"),
+        template_folder=str(
+            BASE_DIR / "templates"
+        ),
+        static_folder=str(
+            BASE_DIR / "static"
+        ),
     )
 
     test_app.config.update(
@@ -39,7 +51,12 @@ def app():
         SECRET_KEY="test-secret-key",
     )
 
+    # base.html contains links to both blueprints.
+    # Therefore both must be registered in the test app.
     test_app.register_blueprint(book_bp)
+    test_app.register_blueprint(
+        user_management_bp
+    )
 
     return test_app
 

@@ -16,6 +16,16 @@
 <a href="/catalogue/">Catalogue Browsing & Reservation</a>
 <a href="/borrowing/requests">Borrowing, Returning & Extension</a>
 <a href="/penalty/overdue">Penalty & Transactions</a>
+<a href="{{ url_for('student_catalogue.view_catalogue') }}">
+    View Student Book Catalogue
+</a>
+<a
+    href="{{ url_for(
+        'user_management.manage_users'
+    ) }}"
+>
+    User Management
+</a>
     </div>
 
     
