@@ -1,21 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>LibTrack System</title>
-    <link rel="stylesheet" href="../static/style.css">
-</head>
+{% extends "base.html" %}
 
-<body>
-    <div class="sidebar">
-        <h2>📚 LibTrack</h2>
-        
+{% block title %}
+Dashboard | LibTrack
+{% endblock %}
 
-        <a href="index.html">Dashboard</a>
-        <a href="/modules/book_catalogue/">Book Catalogue</a>
-        <a href="/modules/catalogue_reservation/book_details.html">Catalogue Reservation</a>
-        <a href="/modules/">Borrowing & Returning</a>
-        <a href="#">Penalty & Transactions</a>
+{% block content %}
+<section class="dashboard-hero">
+    <div class="dashboard-hero-content">
+        <p class="dashboard-label">Library Management System</p>
+
+        <h1>Welcome to LibTrack</h1>
+
+        <p class="dashboard-description">
+            Manage books, browse the library catalogue, submit borrowing
+            requests, reserve unavailable books, and monitor library
+            transactions from one central platform.
+        </p>
+
+        <div class="dashboard-actions">
+            <a href="{{ url_for(
+                'catalogue_reservation.view_catalogue'
+            ) }}"
+               class="primary-button">
+                Browse Book Catalogue
+            </a>
+
+            <a href="{{ url_for(
+                'catalogue_reservation.view_available_books'
+            ) }}"
+               class="secondary-button">
+                View Available Books
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="section-heading">
+        <h2>LibTrack Services</h2>
+        <p>Select a module to continue.</p>
     </div>
 
     <div class="dashboard-card-grid">
@@ -82,5 +105,5 @@
             <span class="coming-soon">Module integration pending</span>
         </article>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}
