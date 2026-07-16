@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>SCRUM-682: Waive Penalties</h2>
+    <p>This page allows the librarian to waive an outstanding penalty with a valid reason.</p>
+</div>
+
+{% if error %}
+<div class="penalty-alert penalty-warning">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="penalty-card">
+    <h3>Penalty Details</h3>
+
+    <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
+    <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
+    <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
+    <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
+    <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
+    <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
+    <p><strong>Status:</strong> {{ penalty.status }}</p>
+</div>
+
+<div class="penalty-card">
+    <form method="POST" class="penalty-payment-form">
+        <label>Waiver Reason</label>
+        <input type="text" name="waiver_reason" placeholder="Example: Approved by librarian due to valid reason" required>
+
+        <label>Waived By</label>
+        <input type="text" name="waived_by" value="Librarian" required>
+
+        <button type="submit">Waive Penalty</button>
+    </form>
+</div>
+
+{% endblock %}

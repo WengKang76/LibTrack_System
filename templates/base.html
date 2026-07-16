@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LibTrack System</title>
+
+    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="../static/css/penalty_transaction.css">
+    <a href="/penalty/student/pay-cash/P001">Student Pay Cash</a>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>📚 LibTrack</h2>
+
+        <a href="/">Dashboard</a>
+        <a href="#">Book Catalogue</a>
+        <a href="#">Catalogue Reservation</a>
+        <a href="#">Borrowing & Returning</a>
+
+        <hr>
+
+        <a href="/penalty/librarian/overdue">Overdue Books</a>
+        <a href="/penalty/librarian/penalties">Outstanding Penalties</a>
+        <a href="/penalty/student/pay-credit-card/P001">Student Pay Credit Card</a>
+        <a href="/penalty/librarian/payment-records">Payment Records</a>
+<a href="/penalty/librarian/waive/P001">Waive Penalty</a>
+<a href="/penalty/librarian/reject-return/RT001">Reject Return Exception</a>
+<a href="/penalty/librarian/book-exception/RT001">Record Lost/Damaged Book</a>
+<a href="/penalty/librarian/check-borrow-approval/BR001">Check Borrow Approval</a>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

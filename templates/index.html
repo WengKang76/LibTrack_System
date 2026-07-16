@@ -1,23 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>LibTrack System</title>
-    <link rel="stylesheet" href="../static/style.css">
-</head>
+{% extends "base.html" %}
 
-<body>
-    <div class="sidebar">
-        <h2>📚 LibTrack</h2>
-        
+{% block content %}
 
-        <a href="index.html">Dashboard</a>
-        <a href="#">Book Catalogue</a>
-        <a href="#">Catalogue Reservation</a>
-        <a href="#">Borrowing & Returning</a>
-        <a href="#">Penalty & Transactions</a>
-    </div>
+<div class="penalty-header">
+    <h1>📚 LibTrack System</h1>
+    <h2>Dashboard</h2>
+    <p>Welcome to the LibTrack Library Management System.</p>
+</div>
 
-    
-</body>
-</html>
+<div class="penalty-card">
+    <h3>Book Catalogue Management</h3>
+    <p><a href="#">Book Catalogue</a></p>
+</div>
+
+<div class="penalty-card">
+    <h3>Catalogue Reservation</h3>
+    <p><a href="#">Catalogue Reservation</a></p>
+</div>
+
+<div class="penalty-card">
+    <h3>Borrowing & Returning</h3>
+    <p><a href="#">Borrowing & Returning</a></p>
+</div>
+
+<div class="penalty-card">
+    <h3>Penalty & Transactions Module</h3>
+
+    <p><a href="/penalty/librarian/overdue">View Overdue Books</a></p>
+    <p><a href="/penalty/librarian/penalties">View Outstanding Penalties</a></p>
+    <p><a href="/penalty/librarian/payment-records">View Payment Records</a></p>
+    <p><a href="/penalty/librarian/waive/P001">Waive Penalty</a></p>
+
+    <p><a href="/penalty/student/pay-credit-card/P001">Student Pay Penalty with Credit Card</a></p>
+    <p><a href="/penalty/student/pay-cash/P001">Student Pay Penalty with Cash / E-Wallet</a></p>
+
+    <p><a href="/penalty/librarian/reject-return/RT001">Reject Return Exception</a></p>
+    <p><a href="/penalty/librarian/book-exception/RT001">Record Lost / Damaged Book Exception</a></p>
+    <p><a href="/penalty/librarian/check-borrow-approval/BR001">Check Borrow Approval</a></p>
+</div>
+
+{% endblock %}

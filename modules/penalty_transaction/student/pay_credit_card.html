@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>SCRUM-703: Pay Penalty with Credit Card</h2>
+    <p>This page allows users to pay outstanding penalties using a credit card.</p>
+</div>
+
+{% if error %}
+<div class="penalty-alert penalty-warning">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="penalty-card">
+    <h3>Penalty Details</h3>
+
+    <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
+    <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
+    <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
+    <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
+    <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
+    <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
+    <p><strong>Status:</strong> {{ penalty.status }}</p>
+</div>
+
+<div class="penalty-card">
+    <form method="POST" class="penalty-payment-form">
+        <label>Credit Card Number</label>
+        <input type="text" name="card_number" placeholder="Example: 4111 1111 1111 1111" required>
+
+        <label>Card Holder Name</label>
+        <input type="text" name="card_holder" placeholder="Example: Tan Guan Hong" required>
+
+        <label>Expiry Date</label>
+        <input type="text" name="expiry_date" placeholder="MM/YY" required>
+
+        <label>CVV</label>
+        <input type="password" name="cvv" placeholder="123" required>
+
+        <button type="submit">Pay with Credit Card</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>SCRUM-709: Prevent Borrowing Approval for Unpaid Penalties</h2>
+    <p>This page checks whether a student has unpaid penalties before a borrowing request is approved.</p>
+</div>
+
+{% if error %}
+<div class="penalty-alert penalty-warning">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="penalty-card">
+    <h3>Borrow Request Details</h3>
+
+    <p><strong>Request ID:</strong> {{ borrow_request.request_id }}</p>
+    <p><strong>Student ID:</strong> {{ borrow_request.student_id }}</p>
+    <p><strong>Book ID:</strong> {{ borrow_request.book_id }}</p>
+    <p><strong>Book Title:</strong> {{ borrow_request.book_title }}</p>
+    <p><strong>Request Date:</strong> {{ borrow_request.request_date }}</p>
+    <p><strong>Status:</strong> {{ borrow_request.status }}</p>
+</div>
+
+{% if unpaid_penalties %}
+<div class="penalty-alert penalty-warning">
+    Borrowing approval is blocked because this student has unpaid penalties.
+</div>
+
+<table class="penalty-table">
+    <tr>
+        <th>Penalty ID</th>
+        <th>Student ID</th>
+        <th>Book Title</th>
+        <th>Penalty Type</th>
+        <th>Amount</th>
+        <th>Status</th>
+    </tr>
+
+    {% for penalty in unpaid_penalties %}
+    <tr>
+        <td>{{ penalty.penalty_id }}</td>
+        <td>{{ penalty.student_id }}</td>
+        <td>{{ penalty.book_title }}</td>
+        <td>{{ penalty.penalty_type or "Overdue Penalty" }}</td>
+        <td>RM {{ "%.2f"|format(penalty.penalty_amount) }}</td>
+        <td>{{ penalty.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% else %}
+<div class="penalty-alert penalty-success">
+    No unpaid penalties found. This borrowing request can be approved.
+</div>
+
+<div class="penalty-card">
+    <form method="POST" class="penalty-payment-form">
+        <label>Approved By</label>
+        <input type="text" name="approved_by" value="Librarian" required>
+
+        <button type="submit">Approve Borrow Request</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}

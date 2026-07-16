@@ -9,6 +9,7 @@ body {
     color: #1f2937;
 }
 
+/* Sidebar layout */
 .sidebar {
     width: 250px;
     height: 100vh;
@@ -21,7 +22,8 @@ body {
 }
 
 .sidebar h2 {
-    margin-bottom: 5px;
+    margin-top: 0;
+    margin-bottom: 25px;
 }
 
 .sidebar p {
@@ -32,19 +34,27 @@ body {
 
 .sidebar a {
     display: block;
-    color: white;
+    color: #d1d5db;
     text-decoration: none;
     padding: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     border-radius: 8px;
 }
 
 .sidebar a:hover {
-    background-color: #374151;
+    background-color: #2563eb;
+    color: white;
 }
 
+.sidebar hr {
+    border: none;
+    border-top: 1px solid #374151;
+    margin: 18px 0;
+}
+
+/* Main content */
 .main-content {
-    margin-left: 270px;
+    margin-left: 280px;
     padding: 35px;
 }
 
@@ -58,6 +68,7 @@ h1 {
     margin-bottom: 25px;
 }
 
+/* Dashboard cards */
 .card-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
