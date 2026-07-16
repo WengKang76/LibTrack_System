@@ -1,0 +1,136 @@
+{% extends "student_base.html" %}
+
+{% block title %}
+{{ book.get('title', 'Book Details') }} | LibTrack
+{% endblock %}
+
+{% block content %}
+
+<div class="student-details-page">
+
+    <a
+        href="{{ url_for(
+            'student_catalogue.view_catalogue'
+        ) }}"
+        class="back-link"
+    >
+        ← Back to Book Catalogue
+    </a>
+
+    <section class="student-details-card">
+
+        <div class="details-book-icon">
+            📖
+        </div>
+
+        <div class="details-content">
+
+            <span class="book-category">
+                {{ book.get('category', 'Uncategorised') }}
+            </span>
+
+            <h1>
+                {{ book.get('title', 'Untitled Book') }}
+            </h1>
+
+            <p class="details-author">
+                By {{ book.get('author', 'Unknown Author') }}
+            </p>
+
+            <div class="student-detail-list">
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        ISBN
+                    </span>
+
+                    <span>
+                        {{ book.get('isbn', '-') }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Category
+                    </span>
+
+                    <span>
+                        {{ book.get('category', '-') }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Publisher
+                    </span>
+
+                    <span>
+                        {{ book.get('publisher', '-') or '-' }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Publication Year
+                    </span>
+
+                    <span>
+                        {{ book.get('publication_year', '-') or '-' }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Total Copies
+                    </span>
+
+                    <span>
+                        {{ book.get('total_copies', 0) }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Available Copies
+                    </span>
+
+                    <span>
+                        {{ book.get('available_copies', 0) }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Availability
+                    </span>
+
+                    <span>
+                        {% set available =
+                            book.get('available_copies', 0) | int
+                        %}
+
+                        {% if available > 0 %}
+
+                        <span class="availability available">
+                            Available
+                        </span>
+
+                        {% else %}
+
+                        <span class="availability unavailable">
+                            Unavailable
+                        </span>
+
+                        {% endif %}
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+{% endblock %}

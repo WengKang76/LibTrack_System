@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for(
+        'static',
+        filename='css/user_management.css'
+    ) }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<div class="user-management-page">
+
+    <div class="user-page-header">
+
+        <div>
+            <h1>User Management</h1>
+
+            <p>
+                View and manage the dummy user accounts
+                used for system demonstration.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="dummy-data-notice">
+
+        <strong>Demonstration data:</strong>
+
+        These user records are dummy accounts because
+        account registration has not been implemented yet.
+
+    </div>
+
+    {% if users %}
+
+    <div class="user-table-container">
+
+        <table class="user-table">
+
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Account Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for user in users %}
+
+                <tr>
+
+                    <td>
+                        {{ user.get('user_id', '-') }}
+                    </td>
+
+                    <td>
+                        <strong>
+                            {{ user.get('full_name', '-') }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ user.get('email', '-') }}
+                    </td>
+
+                    <td>
+                        <span class="role-badge">
+                            {{ user.get('role', '-') }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% set account_status =
+                            user.get(
+                                'account_status',
+                                'Inactive'
+                            ) | lower
+                        %}
+
+                        <span
+                            class="account-status status-{{
+                                account_status
+                            }}"
+                        >
+                            {{
+                                user.get(
+                                    'account_status',
+                                    'Inactive'
+                                )
+                            }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <a
+                            href="{{ url_for(
+                                'user_management.user_details',
+                                user_id=user.document_id
+                            ) }}"
+                            class="button button-small"
+                        >
+                            View Details
+                        </a>
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-user-message">
+
+        <h2>No user records found</h2>
+
+        <p>
+            Run the dummy-user seed script to create
+            demonstration accounts.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

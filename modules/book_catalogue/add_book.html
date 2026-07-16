@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/book_catalogue.css') }}">
+{% endblock %}
+
+{% block content %}
+<h1>📚 Book Catalogue Management</h1>
+<h2>Add New Book Record</h2>
+
+{% if error %}
+<div class="alert error" role="alert">{{ error }}</div>
+{% endif %}
+
+<form
+    method="POST"
+    action="{{ url_for('book_catalogue.add_book') }}"
+    class="book-form"
+>
+    <label for="title">Book Title</label>
+    <input id="title" type="text" name="title"
+           value="{{ form_data.get('title', '') }}" required>
+
+    <label for="author">Author</label>
+    <input id="author" type="text" name="author"
+           value="{{ form_data.get('author', '') }}" required>
+
+    <label for="isbn">ISBN</label>
+    <input id="isbn" type="text" name="isbn"
+           value="{{ form_data.get('isbn', '') }}" required>
+
+    <label for="category">Category</label>
+    <input id="category" type="text" name="category"
+           value="{{ form_data.get('category', '') }}" required>
+
+    <label for="publisher">Publisher</label>
+    <input id="publisher" type="text" name="publisher"
+           value="{{ form_data.get('publisher', '') }}"
+           maxlength="120" placeholder="Enter publisher name">
+
+    <label for="publication_year">Publication Year</label>
+    <input id="publication_year" type="text" inputmode="numeric"
+           name="publication_year"
+           value="{{ form_data.get('publication_year', '') }}"
+           maxlength="4" placeholder="For example: 2024">
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="5"
+              maxlength="1000"
+              placeholder="Enter a short description of the book">{{ form_data.get('description', '') }}</textarea>
+
+    <label for="total_copies">Total Copies</label>
+    <input id="total_copies" type="number" name="total_copies"
+           value="{{ form_data.get('total_copies', '') }}"
+           min="1" step="1" required>
+
+    <button type="submit" class="button">Add Book</button>
+</form>
+{% endblock %}

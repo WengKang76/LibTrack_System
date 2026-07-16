@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for(
+        'static',
+        filename='css/book_catalogue.css'
+    ) }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<div class="book-form-page">
+
+    <div class="page-heading">
+        <div>
+            <h1>Add Physical Book Copies</h1>
+
+            <p>
+                Add new physical copies under an existing
+                book record.
+            </p>
+        </div>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.librarian_book_details',
+                book_id=book.book_id
+            ) }}"
+            class="button button-secondary"
+        >
+            Back to Details
+        </a>
+    </div>
+
+    <div class="book-form-card">
+
+        <div class="selected-book-summary">
+            <h2>
+                {{ book.get('title', 'Untitled Book') }}
+            </h2>
+
+            <p>
+                <strong>Author:</strong>
+                {{ book.get('author', '-') }}
+            </p>
+
+            <p>
+                <strong>ISBN:</strong>
+                {{ book.get('isbn', '-') }}
+            </p>
+
+            <p>
+                <strong>Current physical copies:</strong>
+                {{ copies | length }}
+            </p>
+        </div>
+
+        {% if error %}
+        <div class="form-error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'book_catalogue.add_book_copies',
+                book_id=book.book_id
+            ) }}"
+        >
+
+            <div class="form-group">
+                <label for="quantity">
+                    Number of Additional Copies
+                </label>
+
+                <input
+                    id="quantity"
+                    type="number"
+                    name="quantity"
+                    min="1"
+                    step="1"
+                    required
+                    placeholder="For example: 2"
+                >
+            </div>
+
+            <div class="form-note">
+                <p>
+                    The system will automatically generate
+                    a unique copy ID for every new physical copy.
+                </p>
+            </div>
+
+            <div class="form-actions">
+
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Add Copies
+                </button>
+
+                <a
+                    href="{{ url_for(
+                        'book_catalogue.librarian_book_details',
+                        book_id=book.book_id
+                    ) }}"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
