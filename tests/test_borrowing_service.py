@@ -6,6 +6,12 @@ import pytest
 
 import modules.borrowing.services as service
 
+import sys
+from unittest.mock import MagicMock
+
+sys.modules["firebase_admin"] = MagicMock()
+sys.modules["firebase_admin.credentials"] = MagicMock()
+
 from modules.borrowing.services import (
     approve_borrow_request,
     approve_renewal_request,

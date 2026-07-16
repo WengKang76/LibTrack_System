@@ -9,6 +9,10 @@ from config.firebase_config import (
     COLLECTION_RESERVATIONS,
 )
 
+def get_db():
+    from config.firebase_config import db
+    return db
+
 
 class BorrowRequest(TypedDict):
     id: str
@@ -39,6 +43,7 @@ class BorrowTransaction(TypedDict):
 
 
 def get_pending_requests():
+    db = get_db()
 
     docs = (
         db.collection(COLLECTION_BORROW_REQUESTS)
@@ -73,6 +78,8 @@ def get_pending_requests():
 
 def find_request(request_id: str):
 
+    db = get_db()
+
     doc = db.collection(COLLECTION_BORROW_REQUESTS).document(request_id).get()
 
     if not doc.exists:
@@ -89,7 +96,7 @@ def update_request_status(
     request_id: str,
     status: str,
 ):
-
+    db = get_db()
     db.collection(COLLECTION_BORROW_REQUESTS).document(request_id).update(
         {"status": status}
     )
@@ -102,6 +109,7 @@ def update_request_status(
 
 def add_borrow_transaction(transaction):
 
+    db = get_db()
     ref = db.collection(COLLECTION_BORROW_TRANSACTIONS).add(transaction)
 
     return ref[1].id
@@ -109,6 +117,7 @@ def add_borrow_transaction(transaction):
 
 def get_borrow_transactions():
 
+    db = get_db()
     docs = db.collection(COLLECTION_BORROW_TRANSACTIONS).stream()
 
     transactions = []
@@ -134,7 +143,7 @@ def get_borrow_transactions():
 
 
 def find_borrow_transaction(transaction_id: str):
-
+    db = get_db()
     doc = db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).get()
 
     if not doc.exists:
@@ -152,6 +161,7 @@ def update_borrow_transaction(
     updates: dict,
 ):
 
+    db = get_db()
     db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(
         updates
     )
@@ -163,7 +173,7 @@ def update_borrow_transaction(
 
 
 def find_book(book_id: str):
-
+    db = get_db()
     doc = db.collection(COLLECTION_BOOKS).document(book_id).get()
 
     if not doc.exists:
@@ -180,7 +190,7 @@ def update_book(
     book_id: str,
     updates: dict,
 ):
-
+    db = get_db()
     db.collection(COLLECTION_BOOKS).document(book_id).update(updates)
 
 
@@ -191,6 +201,7 @@ def update_book(
 
 def has_active_reservation(book_id: str):
 
+    db = get_db()
     docs = (
         db.collection(COLLECTION_RESERVATIONS)
         .where(
