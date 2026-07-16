@@ -23,6 +23,7 @@ def get_book_title(book_id: str) -> str:
 
     return "Unknown Book"
 
+
 # Route for Librarians
 def get_all_pending_requests():
     return get_pending_requests()
@@ -168,8 +169,8 @@ def approve_renewal_request(transaction_id: str) -> bool:
             "show_renewal_message": True,
             "renewal_message": (
                 f'Your renewal request for "{book_title}" '
-                f'has been approved. '
-                f'New due date: {new_due_date.isoformat()}.'
+                f"has been approved. "
+                f"New due date: {new_due_date.isoformat()}."
             ),
         },
     )
@@ -184,10 +185,7 @@ def clear_renewal_alert(student_id: str) -> None:
         if transaction["student_id"] == student_id:
 
             update_borrow_transaction(
-                transaction["id"],
-                {
-                    "show_renewal_message": False
-                }
+                transaction["id"], {"show_renewal_message": False}
             )
 
 
@@ -210,8 +208,8 @@ def reject_renewal_request(transaction_id: str) -> bool:
             "show_renewal_message": True,
             "renewal_message": (
                 f'Your renewal request for "{book_title}" '
-                f'has been rejected. '
-                f'Please return the book before the due date.'
+                f"has been rejected. "
+                f"Please return the book before the due date."
             ),
         },
     )
@@ -237,8 +235,7 @@ def cancel_renewal_request(transaction_id: str) -> bool:
             "renewal_status": "Cancelled",
             "show_renewal_message": True,
             "renewal_message": (
-                f'Your renewal request for "{book_title}" '
-                f'has been cancelled.'
+                f'Your renewal request for "{book_title}" ' f"has been cancelled."
             ),
         },
     )
@@ -278,10 +275,10 @@ def manually_extend_due_date(
             "show_renewal_message": True,
             "renewal_message": (
                 f'Your book "{book_title}" '
-                f'has been extended by the librarian '
-                f'for {extension_days} days. '
-                f'New due date: '
-                f'{updated_due_date.isoformat()}.'
+                f"has been extended by the librarian "
+                f"for {extension_days} days. "
+                f"New due date: "
+                f"{updated_due_date.isoformat()}."
             ),
         },
     )

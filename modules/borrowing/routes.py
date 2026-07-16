@@ -106,7 +106,7 @@ def approve_renewal(transaction_id: str):
 @borrowing_bp.post("/clear-renewal-alert")
 def clear_alert():
 
-    student_id = "USR001" # replace with logged-in user later
+    student_id = "USR001"  # replace with logged-in user later
 
     clear_renewal_alert(student_id)
 
