@@ -180,18 +180,37 @@
     <!--Check if the transaction status is "Return Pending" and display the confirm return button-->
     {% if transaction.status == "Return Pending" %}
 
-<form
-    method="POST"
-    action="{{ url_for('borrowing.confirm_return',
-                       transaction_id=transaction.id) }}">
+    <form
+        method="POST"
+        action="{{ url_for('borrowing.confirm_return',
+                        transaction_id=transaction.id) }}">
+
+        <button class="button">
+            Confirm Return
+        </button>
+
+    </form>
+
+    {% endif %}
+
+    <!-- Check if the transaction status is "Returned" and display the close transaction button-->
+    {% if transaction.status == "Returned" %}
+
+    <form
+        method="POST"
+        action="{{ url_for(
+            'borrowing.close_transaction',
+            transaction_id=transaction.id
+        ) }}"
+    >
 
     <button class="button">
-        Confirm Return
+        Close Transaction
     </button>
 
-</form>
+    </form>
 
-{% endif %}
+    {% endif %}
 
     </div>
 

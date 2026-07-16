@@ -19,6 +19,7 @@ from modules.borrowing.services import (
     approve_borrow_request,
     approve_renewal_request,
     cancel_renewal_request,
+    close_borrow_transaction,
     confirm_book_return,
     manually_extend_due_date,
     reject_renewal_request,
@@ -1008,3 +1009,105 @@ def test_cannot_cancel_rejected_renewal_request():
     result = cancel_renewal_request(1)
 
     assert result is False
+
+
+# ==================================================
+# User Story 14:
+# As a librarian, I want to close a borrowing
+# transaction after all books are returned and
+# penalties are settled so that the borrowing
+# process is completed.
+#
+# The librarian closes a returned borrowing
+# transaction to complete the borrowing lifecycle.
+# ==================================================
+
+
+def test_librarian_can_close_returned_transaction():
+    """
+    GIVEN a borrowing transaction has been returned
+    WHEN the librarian closes the transaction
+    THEN the transaction status should become Closed
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    confirm_book_return(1)
+
+    result = close_borrow_transaction(1)
+
+    assert result is True
+
+    transaction = find_borrow_transaction(1)
+
+    assert transaction is not None
+    assert transaction["status"] == "Closed"
+
+
+def test_cannot_close_borrowed_transaction():
+    """
+    GIVEN a borrowing transaction is still borrowed
+    WHEN the librarian attempts to close it
+    THEN the system should reject the request
+    """
+
+    approve_borrow_request(1)
+
+    result = close_borrow_transaction(1)
+
+    assert result is False
+
+
+def test_cannot_close_return_pending_transaction():
+    """
+    GIVEN a borrowing transaction is waiting for return confirmation
+    WHEN the librarian attempts to close it
+    THEN the system should reject the request
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    result = close_borrow_transaction(1)
+
+    assert result is False
+
+
+def test_cannot_close_non_existing_transaction():
+    """
+    GIVEN a transaction ID does not exist
+    WHEN the librarian attempts to close it
+    THEN the system should reject the request
+    """
+
+    result = close_borrow_transaction(999)
+
+    assert result is False
+
+
+def test_cannot_close_already_closed_transaction():
+    """
+    GIVEN a borrowing transaction has already been closed
+    WHEN the librarian attempts to close it again
+    THEN the system should reject the duplicate action
+    """
+
+    approve_borrow_request(1)
+
+    request_book_return(1)
+
+    confirm_book_return(1)
+
+    close_borrow_transaction(1)
+
+    result = close_borrow_transaction(1)
+
+    assert result is False
+
+
+# ==================================================
+# End of Test Cases
+# ==================================================

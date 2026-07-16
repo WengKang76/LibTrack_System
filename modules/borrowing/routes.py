@@ -4,6 +4,7 @@ from modules.borrowing.services import (
     approve_borrow_request,
     cancel_renewal_request,
     clear_renewal_alert,
+    close_borrow_transaction,
     get_all_borrow_transactions,
     get_all_pending_requests,
     get_student_borrowed_books,
@@ -163,6 +164,25 @@ def manual_extend(transaction_id: int):
     else:
         flash(
             "Unable to extend due date.",
+            "error",
+        )
+
+    return redirect(url_for("borrowing.borrowing_home"))
+
+
+@borrowing_bp.post("/close-transaction/<int:transaction_id>")
+def close_transaction(transaction_id: int):
+
+    result = close_borrow_transaction(transaction_id)
+
+    if result:
+        flash(
+            "Borrowing transaction closed successfully.",
+            "success",
+        )
+    else:
+        flash(
+            "Unable to close borrowing transaction.",
             "error",
         )
 

@@ -228,3 +228,18 @@ def manually_extend_due_date(transaction_id: int, new_due_date: str) -> bool:
     )
 
     return True
+
+
+def close_borrow_transaction(transaction_id: int) -> bool:
+
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return False
+
+    if transaction["status"] != "Returned":
+        return False
+
+    transaction["status"] = "Closed"
+
+    return True
