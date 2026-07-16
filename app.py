@@ -13,9 +13,20 @@ from modules.catalogue_reservation.routes import catalogue_bp
 app = Flask(__name__)
 app.secret_key = "libtrack-secret-key"
 
-app.register_blueprint(book_bp)
-app.register_blueprint(student_catalogue_bp)
-app.register_blueprint(
+
+def register_blueprint_if_missing(blueprint):
+    if blueprint.name in app.blueprints:
+        app.logger.debug(
+            "Blueprint %s is already registered; skipping.",
+            blueprint.name,
+        )
+        return
+    app.register_blueprint(blueprint)
+
+
+register_blueprint_if_missing(book_bp)
+register_blueprint_if_missing(student_catalogue_bp)
+register_blueprint_if_missing(
     user_management_bp
 )
 
@@ -34,7 +45,6 @@ app.register_blueprint(catalogue_bp)
 # them automatically after their branches are merged, but it can still run
 # locally when they are not present yet.
 OPTIONAL_BLUEPRINTS = (
-    ("modules.book_catalogue.routes", "book_bp"),
     ("modules.borrowing_return.routes", "borrowing_bp"),
     ("modules.penalty_transaction.routes", "penalty_bp"),
 )
