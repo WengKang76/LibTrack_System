@@ -11,7 +11,6 @@ from config.firebase_config import db
 
 from datetime import date, timedelta
 
-
 # ==========================
 # Users
 # ==========================
