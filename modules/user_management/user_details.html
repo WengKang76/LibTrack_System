@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for(
+        'static',
+        filename='css/user_management.css'
+    ) }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<div class="user-details-page">
+
+    <div class="user-page-header">
+
+        <div>
+            <h1>User Details</h1>
+
+            <p>
+                View the selected user account information.
+            </p>
+        </div>
+
+        <a
+            href="{{ url_for(
+                'user_management.manage_users'
+            ) }}"
+            class="button button-secondary"
+        >
+            Back to User Management
+        </a>
+
+    </div>
+
+    <div class="user-details-card">
+
+        <div class="user-information-grid">
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    User ID
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('user_id', '-') }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Full Name
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('full_name', '-') }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Email
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('email', '-') }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Phone Number
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('phone_number', '-') }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Role
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('role', '-') }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Account Status
+                </span>
+
+                {% set account_status =
+                    user.get(
+                        'account_status',
+                        'Inactive'
+                    ) | lower
+                %}
+
+                <span
+                    class="account-status status-{{
+                        account_status
+                    }}"
+                >
+                    {{
+                        user.get(
+                            'account_status',
+                            'Inactive'
+                        )
+                    }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Created Date
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('created_at', '-') }}
+                </span>
+            </div>
+
+            <div class="user-information-item">
+                <span class="user-information-label">
+                    Last Updated
+                </span>
+
+                <span class="user-information-value">
+                    {{ user.get('updated_at', '-') }}
+                </span>
+            </div>
+
+        </div>
+
+        {% set user_role =
+            user.get('role', '') | lower
+        %}
+
+        {% set account_status =
+            user.get(
+                'account_status',
+                ''
+            ) | lower
+        %}
+
+        <div class="user-account-actions">
+
+            {% if (
+                user_role == 'student'
+                and account_status == 'active'
+            ) %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'user_management.deactivate_student',
+                    user_id=user.document_id
+                ) }}"
+            >
+                <button
+                    type="submit"
+                    class="button button-danger"
+                >
+                    Deactivate Student Account
+                </button>
+            </form>
+
+            {% elif (
+                user_role == 'student'
+                and account_status == 'inactive'
+            ) %}
+
+            <div class="inactive-account-message">
+
+                This Student account is currently inactive.
+
+            </div>
+
+            {% else %}
+
+            <div class="protected-account-message">
+
+                Librarian accounts cannot be deactivated
+                through this function.
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

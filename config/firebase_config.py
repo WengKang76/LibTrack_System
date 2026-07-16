@@ -22,8 +22,8 @@ def init_firebase():
 db = init_firebase()
 
 COLLECTION_BOOKS = "books"
+COLLECTION_USERS = "users"
 COLLECTION_BORROW_REQUESTS = "borrow_requests"
 COLLECTION_BORROW_TRANSACTIONS = "borrow_transactions"
 COLLECTION_PENALTIES = "penalties"
 COLLECTION_RESERVATIONS = "reservations"
-COLLECTION_USERS = "users"
