@@ -669,6 +669,121 @@ def record_lost_damaged_book_exception(
 
     return True, "Lost or damaged book exception recorded successfully."
 
+# =========================================================
+# SCRUM-709: Prevent Borrowing Approval for Unpaid Penalties
+# =========================================================
+
+DEMO_BORROW_REQUESTS = {
+    "BR001": {
+        "request_id": "BR001",
+        "student_id": "S001",
+        "book_id": "B001",
+        "book_title": "Python Programming",
+        "request_date": "2026-07-15",
+        "status": "Pending"
+    },
+    "BR002": {
+        "request_id": "BR002",
+        "student_id": "S002",
+        "book_id": "B002",
+        "book_title": "Database System",
+        "request_date": "2026-07-15",
+        "status": "Pending"
+    }
+}
+
+
+def get_unpaid_penalties_by_student(student_id):
+    unpaid_penalties = []
+
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict()
+            penalty["penalty_id"] = doc.id
+
+            status = str(penalty.get("status", "")).lower()
+
+            if (
+                penalty.get("student_id") == student_id
+                and status in ["outstanding", "unpaid", "pending"]
+            ):
+                unpaid_penalties.append(penalty)
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE and len(unpaid_penalties) == 0:
+        for penalty_id, penalty in DEMO_PENALTIES.items():
+            demo_penalty = penalty.copy()
+            demo_penalty["penalty_id"] = penalty_id
+
+            status = str(demo_penalty.get("status", "")).lower()
+
+            if (
+                demo_penalty.get("student_id") == student_id
+                and status in ["outstanding", "unpaid", "pending"]
+            ):
+                unpaid_penalties.append(demo_penalty)
+
+    return unpaid_penalties
+
+
+def get_borrow_request_by_id(request_id):
+    try:
+        request_doc = db.collection("borrow_requests").document(request_id).get()
+
+        if request_doc.exists:
+            borrow_request = request_doc.to_dict()
+            borrow_request["request_id"] = request_doc.id
+            return borrow_request
+
+    except Exception:
+        pass
+
+    if DEMO_UI_MODE:
+        borrow_request = DEMO_BORROW_REQUESTS.get(request_id)
+
+        if borrow_request:
+            return borrow_request.copy()
+
+    return None
+
+
+def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian"):
+    borrow_request = get_borrow_request_by_id(request_id)
+
+    if borrow_request is None:
+        return False, "Borrow request not found."
+
+    request_status = str(borrow_request.get("status", "")).lower()
+
+    if request_status != "pending":
+        return False, "Only pending borrow requests can be approved."
+
+    student_id = borrow_request.get("student_id")
+    unpaid_penalties = get_unpaid_penalties_by_student(student_id)
+
+    if len(unpaid_penalties) > 0:
+        return False, "Borrowing approval blocked because the student has unpaid penalties."
+
+    approval_data = {
+        "status": "Approved",
+        "approved_by": approved_by,
+        "approved_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    try:
+        db.collection("borrow_requests").document(request_id).update(approval_data)
+    except Exception:
+        pass
+
+    if request_id in DEMO_BORROW_REQUESTS:
+        DEMO_BORROW_REQUESTS[request_id].update(approval_data)
+
+    return True, "Borrow request approved successfully."
 
 # =========================================================
 # ROUTES
@@ -894,4 +1009,39 @@ def librarian_record_book_exception(transaction_id):
     return render_template(
         "librarian/book_exception.html",
         transaction=transaction
+    )
+
+@penalty_bp.route("/librarian/check-borrow-approval/<request_id>", methods=["GET", "POST"])
+def librarian_check_borrow_approval(request_id):
+    borrow_request = get_borrow_request_by_id(request_id)
+
+    if borrow_request is None:
+        return "Borrow request not found", 404
+
+    student_id = borrow_request.get("student_id")
+    unpaid_penalties = get_unpaid_penalties_by_student(student_id)
+
+    if request.method == "POST":
+        approved_by = request.form.get("approved_by", "Librarian").strip()
+
+        success, message = approve_borrow_request_with_penalty_check(
+            request_id,
+            approved_by
+        )
+
+        if success:
+            flash(message, "success")
+            return redirect(url_for("penalty_transaction.librarian_check_borrow_approval", request_id=request_id))
+
+        return render_template(
+            "librarian/check_borrow_approval.html",
+            borrow_request=borrow_request,
+            unpaid_penalties=unpaid_penalties,
+            error=message
+        ), 400
+
+    return render_template(
+        "librarian/check_borrow_approval.html",
+        borrow_request=borrow_request,
+        unpaid_penalties=unpaid_penalties
     )
