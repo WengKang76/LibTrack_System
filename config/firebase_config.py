@@ -7,6 +7,8 @@ _key_path = os.path.join(_current_dir, "serviceAccountKey.json")
 
 
 def init_firebase():
+    key_path = "config/serviceAccountKey.json"
+
     if not firebase_admin._apps:
         if not os.path.exists(_key_path):
             raise FileNotFoundError(
