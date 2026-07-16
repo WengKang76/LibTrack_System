@@ -15,6 +15,12 @@ import config
 
 fake_firebase_config = types.ModuleType("config.firebase_config")
 fake_firebase_config.db = None
+fake_firebase_config.COLLECTION_BOOKS = "books"
+fake_firebase_config.COLLECTION_USERS = "users"
+fake_firebase_config.COLLECTION_BORROW_REQUESTS = "borrow_requests"
+fake_firebase_config.COLLECTION_BORROW_TRANSACTIONS = "borrow_transactions"
+fake_firebase_config.COLLECTION_PENALTIES = "penalties"
+fake_firebase_config.COLLECTION_RESERVATIONS = "reservations"
 sys.modules["config.firebase_config"] = fake_firebase_config
 setattr(config, "firebase_config", fake_firebase_config)
 

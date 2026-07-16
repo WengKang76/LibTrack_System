@@ -147,6 +147,10 @@ def book_client():
         SECRET_KEY="testing-secret-key",
     )
 
+    @app.route("/")
+    def home():
+        return "LibTrack Test Home"
+
     app.register_blueprint(book_routes.book_bp)
 
     return app.test_client()
