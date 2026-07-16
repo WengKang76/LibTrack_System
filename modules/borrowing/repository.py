@@ -9,8 +9,9 @@ from config.firebase_config import (
     COLLECTION_RESERVATIONS,
 )
 
+
 def get_db():
-    from config.firebase_config import db
+
     return db
 
 
