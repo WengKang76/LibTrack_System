@@ -113,6 +113,14 @@ class FakeBookDocumentReference:
             self.book_id,
         )
 
+    def update(self, updated_data):
+        if self.book_id not in self.database.books:
+            raise KeyError(f"Unknown book ID: {self.book_id}")
+
+        self.database.books[self.book_id].update(
+            dict(updated_data)
+        )
+
 
 class FakeBooksCollection:
     def __init__(self, database):

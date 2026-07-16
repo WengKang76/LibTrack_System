@@ -581,3 +581,109 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================================
+   STEP 7: UNAVAILABLE AND REPAIRED PHYSICAL COPIES
+   ========================================================= */
+
+.copy-unavailable-page {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.copy-unavailable-card {
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.unavailable-help {
+    margin-bottom: 22px;
+    padding: 16px;
+    color: #475569;
+    background-color: #fff7ed;
+    border-left: 4px solid #f97316;
+    border-radius: 6px;
+}
+
+.unavailable-help p {
+    margin: 8px 0;
+}
+
+.copy-action-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.inline-action-form {
+    display: inline;
+    margin: 0;
+}
+
+.button-warning {
+    color: white;
+    background-color: #ea580c;
+}
+
+.button-warning:hover {
+    background-color: #c2410c;
+}
+
+.button-restore {
+    color: white;
+    background-color: #16a34a;
+    border: none;
+    cursor: pointer;
+}
+
+.button-restore:hover {
+    background-color: #15803d;
+}
+/* =========================================================
+   WHOLE-BOOK CATALOGUE ACTIVATION
+   ========================================================= */
+
+.book-unavailable-page {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.book-unavailable-card {
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.catalogue-warning {
+    margin-bottom: 22px;
+    padding: 16px;
+    color: #9a3412;
+    background-color: #fff7ed;
+    border-left: 4px solid #ea580c;
+    border-radius: 6px;
+    line-height: 1.5;
+}
+
+.book-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    resize: vertical;
+    font: inherit;
+}
+
+.book-form textarea:focus,
+.form-group select:focus {
+    border-color: #2563eb;
+    outline: 2px solid rgba(37, 99, 235, 0.15);
+}
+
+.details-header-actions {
+    flex-wrap: wrap;
+}

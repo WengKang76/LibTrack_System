@@ -11,6 +11,15 @@ student_catalogue_bp = Blueprint(
 )
 
 
+def _is_visible_in_student_catalogue(book):
+    visible = book.get("is_visible_to_students")
+    if isinstance(visible, bool):
+        return visible
+
+    catalogue_status = str(book.get("catalogue_status", "Active")).lower()
+    return catalogue_status not in {"inactive", "unavailable"}
+
+
 def get_student_book_by_id(book_id):
     book_document = (
         db.collection(COLLECTION_BOOKS)
@@ -22,30 +31,26 @@ def get_student_book_by_id(book_id):
         return None
 
     book = book_document.to_dict() or {}
-    book["book_id"] = book_document.id
+    if not _is_visible_in_student_catalogue(book):
+        return None
 
+    book["book_id"] = book_document.id
     return book
 
 
 @student_catalogue_bp.route("/", methods=["GET"])
 def view_catalogue():
-    book_documents = db.collection(COLLECTION_BOOKS).stream()
-
     books = []
 
-    for document in book_documents:
+    for document in db.collection(COLLECTION_BOOKS).stream():
         book = document.to_dict() or {}
         book["book_id"] = document.id
-        books.append(book)
 
-    books.sort(
-        key=lambda book: book.get("title", "").lower()
-    )
+        if _is_visible_in_student_catalogue(book):
+            books.append(book)
 
-    return render_template(
-        "catalogue.html",
-        books=books,
-    )
+    books.sort(key=lambda book: str(book.get("title", "")).lower())
+    return render_template("catalogue.html", books=books)
 
 
 @student_catalogue_bp.route(
@@ -58,7 +63,4 @@ def view_book_details(book_id):
     if book is None:
         return "Book record not found.", 404
 
-    return render_template(
-        "book_details.html",
-        book=book,
-    )
+    return render_template("book_details.html", book=book)

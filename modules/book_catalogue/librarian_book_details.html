@@ -37,6 +37,42 @@
                 + Add Copies
             </a>
 
+            {% set visible_to_students =
+                book.get('is_visible_to_students', true)
+            %}
+
+            {% if visible_to_students %}
+
+            <a
+                href="{{ url_for(
+                    'book_catalogue.deactivate_book',
+                    book_id=book.book_id
+                ) }}"
+                class="button button-warning"
+            >
+                Deactivate Book
+            </a>
+
+            {% else %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'book_catalogue.activate_book',
+                    book_id=book.book_id
+                ) }}"
+                class="inline-action-form"
+            >
+                <button
+                    type="submit"
+                    class="button button-restore"
+                >
+                    Activate Book
+                </button>
+            </form>
+
+            {% endif %}
+
             <a
                 href="{{ url_for(
                     'book_catalogue.manage_books'
@@ -130,6 +166,47 @@
                     {{ book.get('description', '-') or '-' }}
                 </span>
             </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    Student Catalogue Status
+                </span>
+
+                <span class="information-value">
+                    {{
+                        book.get(
+                            'catalogue_status',
+                            'Active'
+                        )
+                    }}
+                </span>
+            </div>
+
+            {% if not book.get(
+                'is_visible_to_students',
+                true
+            ) %}
+
+            <div class="information-item full-width">
+                <span class="information-label">
+                    Inactive Reason
+                </span>
+
+                <span class="information-value">
+                    {{
+                        book.get(
+                            'catalogue_inactive_reason',
+                            ''
+                        )
+                        or book.get(
+                            'catalogue_unavailable_reason',
+                            '-'
+                        )
+                    }}
+                </span>
+            </div>
+
+            {% endif %}
 
         </div>
 
@@ -294,23 +371,53 @@
                         <td>
                             {{ copy.get('created_at', '-') }}
                         </td>
-                        <td>
-    {% set copy_document_id =
-        copy.get('document_id')
-        or copy.get('copy_id')
-    %}
 
-    <a
-        href="{{ url_for(
-            'book_catalogue.update_copy_status',
-            book_id=book.book_id,
-            copy_id=copy_document_id
-        ) }}"
-        class="button button-small button-status"
-    >
-        Update Status
-    </a>
-</td>
+                        <td>
+                            {% set copy_document_id =
+                                copy.get('document_id')
+                                or copy.get('copy_id')
+                            %}
+
+                            {% set current_copy_status =
+                                copy.get('status', '') | lower
+                            %}
+
+                            <div class="copy-action-buttons">
+
+                                <a
+                                    href="{{ url_for(
+                                        'book_catalogue.update_copy_status',
+                                        book_id=book.book_id,
+                                        copy_id=copy_document_id
+                                    ) }}"
+                                    class="button button-small button-status"
+                                >
+                                    Update Status
+                                </a>
+
+                                {% if current_copy_status == 'damaged' %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'book_catalogue.restore_damaged_copy',
+                                        book_id=book.book_id,
+                                        copy_id=copy_document_id
+                                    ) }}"
+                                    class="inline-action-form"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="button button-small button-restore"
+                                    >
+                                        Restore Damaged Copy
+                                    </button>
+                                </form>
+
+                                {% endif %}
+
+                            </div>
+                        </td>
 
                     </tr>
 
