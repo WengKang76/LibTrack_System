@@ -29,14 +29,14 @@ def borrowing_home():
     transactions = get_all_borrow_transactions()
 
     return render_template(
-        "borrowing/index.html",
+        "borrowing/librarian.html",
         requests=requests,
         transactions=transactions,
     )
 
 
-@borrowing_bp.route("/approve/<int:request_id>", methods=["POST"])
-def approve_request(request_id: int):
+@borrowing_bp.route("/approve/<request_id>", methods=["POST"])
+def approve_request(request_id: str):
     success = approve_borrow_request(request_id)
 
     if not success:
@@ -45,15 +45,18 @@ def approve_request(request_id: int):
     return redirect(url_for("borrowing.borrowing_home"))
 
 
-@borrowing_bp.post("/return/<int:transaction_id>")
-def return_book(transaction_id: int):
+@borrowing_bp.post("/return/<transaction_id>")
+def return_book(transaction_id: str):
     request_book_return(transaction_id)
     return redirect(url_for("borrowing.student_books"))
 
 
+# Student Page Routes with test user "USR001" Alice,
+# replace "USR001" with session["user_id"] after implementing login system
 @borrowing_bp.route("/student")
 def student_books():
-    books = get_student_borrowed_books("Alice")
+
+    books = get_student_borrowed_books("USR001")
 
     return render_template(
         "borrowing/student_books.html",
@@ -61,15 +64,15 @@ def student_books():
     )
 
 
-@borrowing_bp.post("/confirm-return/<int:transaction_id>")
-def confirm_return(transaction_id: int):
+@borrowing_bp.post("/confirm-return/<transaction_id>")
+def confirm_return(transaction_id: str):
     confirm_book_return(transaction_id)
 
     return redirect(url_for("borrowing.borrowing_home"))
 
 
-@borrowing_bp.post("/renew-book/<int:transaction_id>")
-def renew_book(transaction_id: int):
+@borrowing_bp.post("/renew-book/<transaction_id>")
+def renew_book(transaction_id: str):
 
     result = request_book_renewal(transaction_id)
 
@@ -87,8 +90,8 @@ def renew_book(transaction_id: int):
     return redirect(url_for("borrowing.student_books"))
 
 
-@borrowing_bp.post("/approve-renewal/<int:transaction_id>")
-def approve_renewal(transaction_id: int):
+@borrowing_bp.post("/approve-renewal/<transaction_id>")
+def approve_renewal(transaction_id: str):
 
     result = approve_renewal_request(transaction_id)
 
@@ -103,13 +106,15 @@ def approve_renewal(transaction_id: int):
 @borrowing_bp.post("/clear-renewal-alert")
 def clear_alert():
 
-    clear_renewal_alert("Alice")
+    student_id = "USR001" # replace with logged-in user later
 
-    return "", 204
+    clear_renewal_alert(student_id)
+
+    return ""
 
 
-@borrowing_bp.post("/reject-renewal/<int:transaction_id>")
-def reject_renewal(transaction_id: int):
+@borrowing_bp.post("/reject-renewal/<transaction_id>")
+def reject_renewal(transaction_id: str):
 
     result = reject_renewal_request(transaction_id)
 
@@ -127,8 +132,8 @@ def reject_renewal(transaction_id: int):
     return redirect(url_for("borrowing.borrowing_home"))
 
 
-@borrowing_bp.post("/cancel-renewal/<int:transaction_id>")
-def cancel_renewal(transaction_id: int):
+@borrowing_bp.post("/cancel-renewal/<transaction_id>")
+def cancel_renewal(transaction_id: str):
 
     result = cancel_renewal_request(transaction_id)
 
@@ -146,8 +151,8 @@ def cancel_renewal(transaction_id: int):
     return redirect(url_for("borrowing.student_books"))
 
 
-@borrowing_bp.post("/manual-extend/<int:transaction_id>")
-def manual_extend(transaction_id: int):
+@borrowing_bp.post("/manual-extend/<transaction_id>")
+def manual_extend(transaction_id: str):
 
     new_due_date = request.form["new_due_date"]
 
@@ -170,8 +175,8 @@ def manual_extend(transaction_id: int):
     return redirect(url_for("borrowing.borrowing_home"))
 
 
-@borrowing_bp.post("/close-transaction/<int:transaction_id>")
-def close_transaction(transaction_id: int):
+@borrowing_bp.post("/close-transaction/<transaction_id>")
+def close_transaction(transaction_id: str):
 
     result = close_borrow_transaction(transaction_id)
 

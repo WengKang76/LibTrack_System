@@ -1,102 +1,209 @@
 from typing import TypedDict
 
+from config.firebase_config import (
+    db,
+    COLLECTION_BOOKS,
+    COLLECTION_BORROW_REQUESTS,
+    COLLECTION_BORROW_TRANSACTIONS,
+    COLLECTION_USERS,
+    COLLECTION_RESERVATIONS,
+)
+
 
 class BorrowRequest(TypedDict):
-    id: int
-    student: str
-    book: str
+    id: str
+    book_id: str
+    student_id: str
+    borrowing_period: int
+    request_date: str
     status: str
 
 
 class BorrowTransaction(TypedDict):
-    id: int
-    request_id: int
-    student: str
-    book: str
+    id: str
+    request_id: str
+    student_id: str
+    book_id: str
     borrow_date: str
     due_date: str
     return_date: str | None
     status: str
     renewal_status: str
+    show_renewal_message: bool
+    renewal_message: str
 
 
-borrow_requests: list[BorrowRequest] = [
-    {
-        "id": 1,
-        "student": "Alice",
-        "book": "Database System Concepts",
-        "status": "Pending",
-    },
-    {
-        "id": 2,
-        "student": "John",
-        "book": "Software Engineering",
-        "status": "Pending",
-    },
-]
-
-borrow_transactions: list[BorrowTransaction] = []
-
-"""
-Temporary dataset for testing and development purposes.
-Remove this below when database is implemented.
-"""
-
-books = [
-    {
-        "title": "Database System Concepts",
-        "available": 0,
-    },
-    {
-        "title": "Software Engineering",
-        "available": 0,
-    },
-]
-
-reservations = []
+# ==========================
+# Borrow Request
+# ==========================
 
 
-def get_pending_requests() -> list[BorrowRequest]:
-    return [request for request in borrow_requests if request["status"] == "Pending"]
+def get_pending_requests():
+
+    docs = (
+        db.collection(COLLECTION_BORROW_REQUESTS)
+        .where("status", "==", "Pending")
+        .stream()
+    )
+
+    requests = []
+
+    for doc in docs:
+
+        data = doc.to_dict()
+
+        book_doc = db.collection(COLLECTION_BOOKS).document(data["book_id"]).get()
+
+        user_doc = db.collection(COLLECTION_USERS).document(data["student_id"]).get()
+
+        book = book_doc.to_dict() if book_doc.exists else {}
+        user = user_doc.to_dict() if user_doc.exists else {}
+
+        requests.append(
+            {
+                "id": doc.id,
+                "student": user.get("full_name", "Unknown"),
+                "book": book.get("title", "Unknown"),
+                "status": data["status"],
+            }
+        )
+
+    return requests
 
 
-def find_request(request_id: int) -> BorrowRequest | None:
-    for request in borrow_requests:
-        if request["id"] == request_id:
-            return request
+def find_request(request_id: str):
 
-    return None
+    doc = db.collection(COLLECTION_BORROW_REQUESTS).document(request_id).get()
 
+    if not doc.exists:
+        return None
 
-def find_borrow_transaction(
-    transaction_id: int,
-) -> BorrowTransaction | None:
-    for transaction in borrow_transactions:
-        if transaction["id"] == transaction_id:
-            return transaction
+    data = doc.to_dict()
 
-    return None
+    data["id"] = doc.id
+
+    return data
 
 
-def add_borrow_transaction(transaction: BorrowTransaction) -> None:
-    borrow_transactions.append(transaction)
+def update_request_status(
+    request_id: str,
+    status: str,
+):
+
+    db.collection(COLLECTION_BORROW_REQUESTS).document(request_id).update(
+        {"status": status}
+    )
 
 
-def get_borrow_transactions() -> list[BorrowTransaction]:
-    return borrow_transactions
+# ==========================
+# Borrow Transactions
+# ==========================
 
 
-def find_book(book_title: str):
-    for book in books:
-        if book["title"] == book_title:
-            return book
+def add_borrow_transaction(transaction):
 
-    return None
+    ref = db.collection(COLLECTION_BORROW_TRANSACTIONS).add(transaction)
+
+    return ref[1].id
 
 
-def has_active_reservation(book: str) -> bool:
-    for reservation in reservations:
-        if reservation["book"] == book and reservation["status"] == "Pending":
-            return True
+def get_borrow_transactions():
 
-    return False
+    docs = db.collection(COLLECTION_BORROW_TRANSACTIONS).stream()
+
+    transactions = []
+
+    for doc in docs:
+
+        data = doc.to_dict()
+
+        book_doc = db.collection(COLLECTION_BOOKS).document(data["book_id"]).get()
+
+        user_doc = db.collection(COLLECTION_USERS).document(data["student_id"]).get()
+
+        book = book_doc.to_dict() if book_doc.exists else {}
+        user = user_doc.to_dict() if user_doc.exists else {}
+
+        data["id"] = doc.id
+        data["book"] = book.get("title", "Unknown")
+        data["student"] = user.get("full_name", "Unknown")
+
+        transactions.append(data)
+
+    return transactions
+
+
+def find_borrow_transaction(transaction_id: str):
+
+    doc = db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).get()
+
+    if not doc.exists:
+        return None
+
+    data = doc.to_dict()
+
+    data["id"] = doc.id
+
+    return data
+
+
+def update_borrow_transaction(
+    transaction_id: str,
+    updates: dict,
+):
+
+    db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(
+        updates
+    )
+
+
+# ==========================
+# Books
+# ==========================
+
+
+def find_book(book_id: str):
+
+    doc = db.collection(COLLECTION_BOOKS).document(book_id).get()
+
+    if not doc.exists:
+        return None
+
+    book = doc.to_dict()
+
+    book["id"] = doc.id
+
+    return book
+
+
+def update_book(
+    book_id: str,
+    updates: dict,
+):
+
+    db.collection(COLLECTION_BOOKS).document(book_id).update(updates)
+
+
+# ==========================
+# Reservations
+# ==========================
+
+
+def has_active_reservation(book_id: str):
+
+    docs = (
+        db.collection(COLLECTION_RESERVATIONS)
+        .where(
+            "book_id",
+            "==",
+            book_id,
+        )
+        .where(
+            "status",
+            "==",
+            "Pending",
+        )
+        .stream()
+    )
+
+    return any(True for _ in docs)

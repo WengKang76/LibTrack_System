@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <title>My Borrowed Books</title>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet"
+      href="{{ url_for('static', filename='borrowing/student.css') }}">
 </head>
 
 <body>
@@ -41,30 +43,99 @@
 
             <h3>{{ book.book }}</h3>
 
-            <p>
-                Borrow Date:
-                {{ book.borrow_date }}
-            </p>
+            <div class="detail-row">
 
-            <p>
-                Due Date:
-                {{ book.due_date }}
-            </p>
+                <span class="detail-title">
 
-            <p>
-                Return Date:
-                {% if book.return_date %}
-                    {{ book.return_date }}
-                {% else %}
-                    N/A
-                {% endif %}
-            </p>
+                    Borrow Date
 
-            <p>
-                Status:
-                {{ book.status }}
-            </p>
+                </span>
 
+                <span>
+
+                  {{ book.borrow_date }}
+
+                 </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                    Due Date
+
+                </span>
+
+                <span>
+
+                 {{ book.due_date }}
+
+                </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                 Return Date
+
+                </span>
+
+                <span>
+
+                    {% if book.return_date %}
+                        {{ book.return_date }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+
+                </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                 Status
+
+                </span>
+
+                <span class="badge
+                    {% if book.status == 'Borrowed' %}
+                    borrowed
+                    {% elif book.status == 'Return Pending' %}
+                    return-pending
+                    {% elif book.status == 'Returned' %}
+                    returned
+                    {% endif %}
+                    ">
+
+                    {{ book.status }}
+
+                </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                    Renewal
+
+                </span>
+
+                <span>
+
+                    {{ book.renewal_status or "None" }}
+
+                </span>
+
+            </div>
+
+            <div class="action-buttons">
             {% if book.status == "Borrowed" %}
 
             <form method="POST"
@@ -95,7 +166,7 @@
 
             </form>
 
-{% endif %}
+            {% endif %}
 
 
             <form method="POST"
@@ -109,7 +180,7 @@
             </form>
 
             {% endif %}
-
+            </div>
         </div>
 
         {% endfor %}
