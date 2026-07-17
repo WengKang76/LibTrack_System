@@ -2,7 +2,11 @@ config/serviceAccountKey.json
 **/serviceAccountKey.json
 
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
 
 .env
 .venv/
+venv/
+
+.vscode/

@@ -2,38 +2,84 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LibTrack System</title>
 
-    <!-- Common CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <!-- Penalty module CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+    <title>
+        {% block title %}
+            LibTrack System
+        {% endblock %}
+    </title>
 
-    {% block extra_css %}{% endblock %}
+    <!-- Existing shared styles -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+    <!-- Integrated dashboard and catalogue styles -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/main.css') }}"
+    >
+
+    <!-- Penalty module styles -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/penalty_transaction.css'
+        ) }}"
+    >
+
+    {% block extra_css %}
+    {% endblock %}
 </head>
 
 <body>
-    <div class="sidebar">
+    <aside class="sidebar">
         <h2>📚 LibTrack</h2>
         <p>Library Management System</p>
 
-        <a href="/">Dashboard</a>
+        <!-- Direct paths are used so isolated blueprint tests
+             do not fail with Flask BuildError. -->
+        <a href="/">
+            Dashboard
+        </a>
 
-        <a href="{{ url_for('book_catalogue.manage_books') }}">
-            Book Catalogue
+        <a href="/books/manage">
+            Book Catalogue Management
+        </a>
+
+        <a href="/student-catalogue/">
+            Student Book Catalogue
+        </a>
+
+        <a href="/catalogue/">
+            Catalogue Browsing
+        </a>
+
+        <a href="/catalogue/available">
+            Available Books
+        </a>
+
+        <a href="/catalogue/my-reservations">
+            My Reservations
+        </a>
+
+        <a href="/catalogue/my-borrowed-books">
+            Borrowed Books
+        </a>
+
+        <a href="/borrowing/requests">
+            Borrowing &amp; Returning
         </a>
 
         <a href="/users/">
             User Management
-        </a>
-
-        <a href="/catalogue/">
-            Catalogue Reservation
-        </a>
-
-        <a href="/borrowing/requests">
-            Borrowing & Returning
         </a>
 
         <hr>
@@ -67,28 +113,39 @@
         </a>
 
         <a href="/penalty/student/pay-credit-card/P001">
-            Student Pay Credit Card
+            Student Pay by Credit Card
         </a>
 
         <a href="/penalty/student/pay-cash/P001">
-            Student Pay Cash
+            Student Pay by Cash
         </a>
-    </div>
+    </aside>
 
-    <div class="main-content">
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
+    <main class="main-content">
+        {% with messages = get_flashed_messages(
+            with_categories=true
+        ) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert {{ category }}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div
+                            class="
+                                alert
+                                {{ category }}
+                                flash-message
+                                flash-{{ category }}
+                            "
+                            role="alert"
+                        >
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
 
-        {% block content %}{% endblock %}
-
-    </div>
+        {% block content %}
+        {% endblock %}
+    </main>
 </body>
 </html>
