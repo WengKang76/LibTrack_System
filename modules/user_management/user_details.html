@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block extra_css %}
 <link
@@ -137,22 +137,19 @@
 
         </div>
 
-        {% set user_role =
-            user.get('role', '') | lower
+        {% set normalized_role =
+            user.get('role', '') | string | trim | lower
         %}
 
-        {% set account_status =
-            user.get(
-                'account_status',
-                ''
-            ) | lower
+        {% set normalized_status =
+            user.get('account_status', '') | string | trim | lower
         %}
 
         <div class="user-account-actions">
 
             {% if (
-                user_role == 'student'
-                and account_status == 'active'
+                normalized_role == 'student'
+                and normalized_status == 'active'
             ) %}
 
             <form
@@ -165,29 +162,43 @@
                 <button
                     type="submit"
                     class="button button-danger"
+                    onclick="return confirm(
+                        'Are you sure you want to deactivate this Student account?'
+                    );"
                 >
                     Deactivate Student Account
                 </button>
             </form>
 
             {% elif (
-                user_role == 'student'
-                and account_status == 'inactive'
+                normalized_role == 'student'
+                and normalized_status == 'inactive'
             ) %}
 
             <div class="inactive-account-message">
-
                 This Student account is currently inactive.
-
             </div>
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'user_management.reactivate_student',
+                    user_id=user.document_id
+                ) }}"
+            >
+                <button
+                    type="submit"
+                    class="button button-success"
+                >
+                    Reactivate Student Account
+                </button>
+            </form>
 
             {% else %}
 
             <div class="protected-account-message">
-
-                Librarian accounts cannot be deactivated
+                Librarian accounts cannot be activated or deactivated
                 through this function.
-
             </div>
 
             {% endif %}

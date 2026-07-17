@@ -71,7 +71,16 @@ def manage_users():
     for document in user_documents:
         user = document.to_dict() or {}
 
+        role = str(
+            user.get("role", "")
+        ).strip().lower()
+
+        # User Management displays only Student accounts.
+        if role != "student":
+            continue
+
         user["document_id"] = document.id
+
         user.setdefault(
             "user_id",
             document.id,
@@ -81,10 +90,7 @@ def manage_users():
 
     users.sort(
         key=lambda user: str(
-            user.get(
-                "full_name",
-                "",
-            )
+            user.get("full_name", "")
         ).lower()
     )
 
@@ -92,7 +98,6 @@ def manage_users():
         "manage_users.html",
         users=users,
     )
-
 
 # ============================================================
 # SCRUM-512: VIEW SELECTED USER DETAILS
@@ -172,6 +177,75 @@ def deactivate_student(user_id):
         (
             f"{user.get('full_name', 'The Student')} "
             "account was deactivated successfully."
+        ),
+        "success",
+    )
+
+    return redirect(
+        url_for(
+            "user_management.user_details",
+            user_id=user_id,
+        )
+    )
+
+# ============================================================
+# SCRUM-509: REACTIVATE STUDENT ACCOUNT
+# ============================================================
+
+@user_management_bp.route(
+    "/reactivate/<user_id>",
+    methods=["POST"],
+)
+def reactivate_student(user_id):
+    user = get_user_by_id(user_id)
+
+    if user is None:
+        return "User record not found.", 404
+
+    user_role = str(
+        user.get(
+            "role",
+            "",
+        )
+    ).strip().lower()
+
+    if user_role != "student":
+        return (
+            "Only Student accounts can be reactivated.",
+            400,
+        )
+
+    current_status = str(
+        user.get(
+            "account_status",
+            "",
+        )
+    ).strip().lower()
+
+    if current_status == "active":
+        return (
+            "This Student account is already active.",
+            400,
+        )
+
+    current_time = _current_timestamp()
+
+    (
+        db.collection(COLLECTION_USERS)
+        .document(user_id)
+        .update(
+            {
+                "account_status": "Active",
+                "reactivated_at": current_time,
+                "updated_at": current_time,
+            }
+        )
+    )
+
+    flash(
+        (
+            f"{user.get('full_name', 'The Student')} "
+            "account was reactivated successfully."
         ),
         "success",
     )
