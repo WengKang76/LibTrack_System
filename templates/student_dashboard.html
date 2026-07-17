@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero">
+    <h1>Student Dashboard</h1>
+    <p>Select a student function to continue.</p>
+</section>
+
+<div class="card-grid">
+    <div class="dashboard-card">
+        <h3>View Book Catalogue</h3>
+        <p>Browse available books in the library.</p>
+        <a href="/student/catalogue/" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Catalogue Reservation</h3>
+        <p>Browse and reserve books.</p>
+        <a href="/catalogue/" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Pay Penalty by Credit Card</h3>
+        <p>Pay outstanding penalty using credit card.</p>
+        <a href="/penalty/student/pay-credit-card/P001" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Pay Penalty by Cash</h3>
+        <p>View cash payment instruction for penalty.</p>
+        <a href="/penalty/student/pay-cash/P001" class="button">Open</a>
+    </div>
+</div>
+
+{% endblock %}

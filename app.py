@@ -32,11 +32,27 @@ app.register_blueprint(borrowing_bp)
 def home():
     return render_template("index.html")
 
+@app.route("/")
+def role_selection():
+    return render_template("role_selection.html")
+
+
+@app.route("/librarian")
+def librarian_dashboard():
+    return render_template("librarian_dashboard.html")
+
+
+@app.route("/student")
+def student_dashboard():
+    return render_template("student_dashboard.html")
+
 
 # Health-check endpoint for CI/CD and deployment checks.
 @app.route("/health")
 def health():
     return {"status": "ok"}
+
+    
 
 
 if __name__ == "__main__":

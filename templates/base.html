@@ -2,150 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>LibTrack System</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <title>
-        {% block title %}
-            LibTrack System
-        {% endblock %}
-    </title>
-
-    <!-- Existing shared styles -->
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='style.css') }}"
-    >
-
-    <!-- Integrated dashboard and catalogue styles -->
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/main.css') }}"
-    >
-
-    <!-- Penalty module styles -->
-    <link
-        rel="stylesheet"
-        href="{{ url_for(
-            'static',
-            filename='css/penalty_transaction.css'
-        ) }}"
-    >
-
-    {% block extra_css %}
-    {% endblock %}
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <aside class="sidebar">
-        <h2>📚 LibTrack</h2>
-        <p>Library Management System</p>
+    <header class="topbar">
+        <div class="logo">📚 LibTrack</div>
 
-        <!-- Direct paths are used so isolated blueprint tests
-             do not fail with Flask BuildError. -->
-        <a href="/">
-            Dashboard
-        </a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/librarian">Librarian</a>
+            <a href="/student">Student</a>
+        </nav>
+    </header>
 
-        <a href="/books/manage">
-            Book Catalogue Management
-        </a>
-
-        <a href="/student-catalogue/">
-            Student Book Catalogue
-        </a>
-
-        <a href="/catalogue/">
-            Catalogue Browsing
-        </a>
-
-        <a href="/catalogue/available">
-            Available Books
-        </a>
-
-        <a href="/catalogue/my-reservations">
-            My Reservations
-        </a>
-
-        <a href="/catalogue/my-borrowed-books">
-            Borrowed Books
-        </a>
-
-        <a href="/borrowing/requests">
-            Borrowing &amp; Returning
-        </a>
-
-        <a href="/users/">
-            User Management
-        </a>
-
-        <hr>
-
-        <a href="/penalty/librarian/overdue">
-            Overdue Books
-        </a>
-
-        <a href="/penalty/librarian/penalties">
-            Outstanding Penalties
-        </a>
-
-        <a href="/penalty/librarian/payment-records">
-            Payment Records
-        </a>
-
-        <a href="/penalty/librarian/waive/P001">
-            Waive Penalty
-        </a>
-
-        <a href="/penalty/librarian/reject-return/RT001">
-            Reject Return Exception
-        </a>
-
-        <a href="/penalty/librarian/book-exception/RT001">
-            Record Lost/Damaged Book
-        </a>
-
-        <a href="/penalty/librarian/check-borrow-approval/BR001">
-            Check Borrow Approval
-        </a>
-
-        <a href="/penalty/student/pay-credit-card/P001">
-            Student Pay by Credit Card
-        </a>
-
-        <a href="/penalty/student/pay-cash/P001">
-            Student Pay by Cash
-        </a>
-    </aside>
-
-    <main class="main-content">
-        {% with messages = get_flashed_messages(
-            with_categories=true
-        ) %}
+    <main class="page-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-container">
-                    {% for category, message in messages %}
-                        <div
-                            class="
-                                alert
-                                {{ category }}
-                                flash-message
-                                flash-{{ category }}
-                            "
-                            role="alert"
-                        >
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
 
-        {% block content %}
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
 </body>
 </html>
