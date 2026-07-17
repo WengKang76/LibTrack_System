@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/book_catalogue.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="book-unavailable-page">
+    <div class="page-heading">
+        <div>
+            <h1>Deactivate Book</h1>
+            <p>
+                Hide this book from the student catalogue without deleting
+                the book record or its physical copies.
+            </p>
+        </div>
+        <a href="{{ url_for('book_catalogue.librarian_book_details', book_id=book.book_id) }}"
+           class="button button-secondary">Back to Book Details</a>
+    </div>
+
+    <div class="book-unavailable-card">
+        <section class="selected-book-summary">
+            <h2>{{ book.get('title', 'Untitled Book') }}</h2>
+            <p><strong>Author:</strong> {{ book.get('author', '-') }}</p>
+            <p><strong>ISBN:</strong> {{ book.get('isbn', '-') }}</p>
+            <p><strong>Total copies:</strong> {{ book.get('total_copies', 0) }}</p>
+            <p><strong>Available copies:</strong> {{ book.get('available_copies', 0) }}</p>
+        </section>
+
+        <div class="catalogue-warning">
+            <strong>Important:</strong>
+            Deactivating the book only removes it from the student catalogue.
+            Physical-copy IDs, statuses and counts remain unchanged.
+        </div>
+
+        {% if error %}
+        <div class="form-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST"
+              action="{{ url_for('book_catalogue.deactivate_book', book_id=book.book_id) }}">
+            <div class="form-group">
+                <label for="reason">Reason for Deactivation</label>
+                <select id="reason" name="reason" required>
+                    <option value="">Select a reason</option>
+                    {% for reason in inactive_reasons %}
+                    <option value="{{ reason }}">{{ reason }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button button-warning">Deactivate Book</button>
+                <a href="{{ url_for('book_catalogue.librarian_book_details', book_id=book.book_id) }}"
+                   class="button button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

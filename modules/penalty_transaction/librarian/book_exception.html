@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>SCRUM-707: Record Lost or Damaged Book Exception</h2>
+    <p>This page allows the librarian to record a lost or damaged book case.</p>
+</div>
+
+{% if error %}
+<div class="penalty-alert penalty-warning">
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="penalty-card">
+    <h3>Transaction Details</h3>
+
+    <p><strong>Transaction ID:</strong> {{ transaction.transaction_id }}</p>
+    <p><strong>Student ID:</strong> {{ transaction.student_id }}</p>
+    <p><strong>Book ID:</strong> {{ transaction.book_id }}</p>
+    <p><strong>Book Title:</strong> {{ transaction.book_title }}</p>
+    <p><strong>Status:</strong> {{ transaction.status }}</p>
+</div>
+
+<div class="penalty-card">
+    <form method="POST" class="penalty-payment-form">
+        <label>Exception Type</label>
+        <select name="exception_type" required>
+            <option value="">-- Select Exception Type --</option>
+            <option value="Lost">Lost</option>
+            <option value="Damaged">Damaged</option>
+        </select>
+
+        <label>Exception Description</label>
+        <input type="text" name="exception_description" placeholder="Example: Book pages are torn / Book was lost by student" required>
+
+        <label>Recorded By</label>
+        <input type="text" name="recorded_by" value="Librarian" required>
+
+        <button type="submit">Record Book Exception</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}My Reservations | LibTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="reservation-page">
+    <header class="reservation-header">
+        <div>
+            <p class="reservation-eyebrow">Catalogue Browsing &amp; Reservation</p>
+            <h1>🔖 My Reservations</h1>
+            <p>View and cancel your active book reservations.</p>
+        </div>
+    </header>
+
+    <div class="reservation-navigation reservation-navigation-left">
+        <a href="{{ url_for('catalogue_reservation.view_catalogue') }}"
+           class="reservation-button reservation-button-secondary">
+            Back to Catalogue
+        </a>
+
+        <a href="{{ url_for('catalogue_reservation.view_currently_borrowed_books') }}"
+           class="reservation-button reservation-button-secondary">
+            Borrowed Books
+        </a>
+    </div>
+
+    {% if reservations %}
+        <div class="reservation-table-container">
+            <table class="reservation-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Reservation ID</th>
+                        <th scope="col">Book ID</th>
+                        <th scope="col">Book Title</th>
+                        <th scope="col">Reservation Date</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for reservation in reservations %}
+                        <tr>
+                            <td>{{ reservation.reservation_id }}</td>
+                            <td>{{ reservation.book_id }}</td>
+                            <td>{{ reservation.book_title }}</td>
+                            <td>{{ reservation.reservation_date }}</td>
+                            <td>{{ reservation.status }}</td>
+                            <td>
+                                {% if reservation.status == "Active" %}
+                                    <a href="{{ url_for(
+                                        'catalogue_reservation.cancel_reservation',
+                                        reservation_id=reservation.reservation_id
+                                    ) }}"
+                                       class="reservation-button reservation-button-danger reservation-button-small">
+                                        Cancel Reservation
+                                    </a>
+                                {% else %}
+                                    <span aria-label="No action available">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <section class="reservation-empty">
+            <h2>No reservations found</h2>
+            <p>You do not currently have any book reservations.</p>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

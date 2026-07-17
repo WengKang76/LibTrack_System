@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for(
+        'static',
+        filename='css/book_catalogue.css'
+    ) }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<div class="librarian-details-page">
+
+    <div class="details-header">
+
+        <div>
+            <h1>Librarian Book Details</h1>
+
+            <p>
+                View the book information and physical-copy
+                summary.
+            </p>
+        </div>
+
+        <div class="details-header-actions">
+
+            <a
+                href="{{ url_for(
+                    'book_catalogue.add_book_copies',
+                    book_id=book.book_id
+                ) }}"
+                class="button"
+            >
+                + Add Copies
+            </a>
+
+            {% set visible_to_students =
+                book.get('is_visible_to_students', true)
+            %}
+
+            {% if visible_to_students %}
+
+            <a
+                href="{{ url_for(
+                    'book_catalogue.deactivate_book',
+                    book_id=book.book_id
+                ) }}"
+                class="button button-warning"
+            >
+                Deactivate Book
+            </a>
+
+            {% else %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'book_catalogue.activate_book',
+                    book_id=book.book_id
+                ) }}"
+                class="inline-action-form"
+            >
+                <button
+                    type="submit"
+                    class="button button-restore"
+                >
+                    Activate Book
+                </button>
+            </form>
+
+            {% endif %}
+
+            <a
+                href="{{ url_for(
+                    'book_catalogue.manage_books'
+                ) }}"
+                class="button button-secondary"
+            >
+                Back to Catalogue
+            </a>
+
+        </div>
+
+    </div>
+
+    <section class="details-section">
+
+        <h2>Book Information</h2>
+
+        <div class="book-information-grid">
+
+            <div class="information-item">
+                <span class="information-label">
+                    Title
+                </span>
+
+                <span class="information-value">
+                    {{ book.get('title', '-') }}
+                </span>
+            </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    Author
+                </span>
+
+                <span class="information-value">
+                    {{ book.get('author', '-') }}
+                </span>
+            </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    ISBN
+                </span>
+
+                <span class="information-value">
+                    {{ book.get('isbn', '-') }}
+                </span>
+            </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    Category
+                </span>
+
+                <span class="information-value">
+                    {{ book.get('category', '-') }}
+                </span>
+            </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    Publisher
+                </span>
+
+                <span class="information-value">
+                    {{ book.get('publisher', '-') or '-' }}
+                </span>
+            </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    Publication Year
+                </span>
+
+                <span class="information-value">
+                    {{
+                        book.get(
+                            'publication_year',
+                            '-'
+                        ) or '-'
+                    }}
+                </span>
+            </div>
+
+            <div class="information-item full-width">
+                <span class="information-label">
+                    Description
+                </span>
+
+                <span class="information-value">
+                    {{ book.get('description', '-') or '-' }}
+                </span>
+            </div>
+
+            <div class="information-item">
+                <span class="information-label">
+                    Student Catalogue Status
+                </span>
+
+                <span class="information-value">
+                    {{
+                        book.get(
+                            'catalogue_status',
+                            'Active'
+                        )
+                    }}
+                </span>
+            </div>
+
+            {% if not book.get(
+                'is_visible_to_students',
+                true
+            ) %}
+
+            <div class="information-item full-width">
+                <span class="information-label">
+                    Inactive Reason
+                </span>
+
+                <span class="information-value">
+                    {{
+                        book.get(
+                            'catalogue_inactive_reason',
+                            ''
+                        )
+                        or book.get(
+                            'catalogue_unavailable_reason',
+                            '-'
+                        )
+                    }}
+                </span>
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </section>
+
+    <section class="details-section">
+
+        <div class="section-heading">
+
+            <div>
+                <h2>Physical Copy Summary</h2>
+
+                <p>
+                    The counts below are calculated from the
+                    individual physical-copy records.
+                </p>
+            </div>
+
+        </div>
+
+        <div class="copy-summary-grid">
+
+            <div class="summary-card">
+                <span class="summary-number">
+                    {{ copy_summary.total }}
+                </span>
+
+                <span class="summary-label">
+                    Total Copies
+                </span>
+            </div>
+
+            <div class="summary-card summary-available">
+                <span class="summary-number">
+                    {{ copy_summary.available }}
+                </span>
+
+                <span class="summary-label">
+                    Available
+                </span>
+            </div>
+
+            <div class="summary-card summary-borrowed">
+                <span class="summary-number">
+                    {{ copy_summary.borrowed }}
+                </span>
+
+                <span class="summary-label">
+                    Borrowed
+                </span>
+            </div>
+
+            <div class="summary-card summary-reserved">
+                <span class="summary-number">
+                    {{ copy_summary.reserved }}
+                </span>
+
+                <span class="summary-label">
+                    Reserved
+                </span>
+            </div>
+
+            <div class="summary-card summary-damaged">
+                <span class="summary-number">
+                    {{ copy_summary.damaged }}
+                </span>
+
+                <span class="summary-label">
+                    Damaged
+                </span>
+            </div>
+
+            <div class="summary-card summary-lost">
+                <span class="summary-number">
+                    {{ copy_summary.lost }}
+                </span>
+
+                <span class="summary-label">
+                    Lost
+                </span>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section class="details-section">
+
+        <div class="section-heading">
+
+            <div>
+                <h2>Individual Physical Copies</h2>
+
+                <p>
+                    Each physical copy has its own unique
+                    copy ID.
+                </p>
+            </div>
+
+            <a
+                href="{{ url_for(
+                    'book_catalogue.add_book_copies',
+                    book_id=book.book_id
+                ) }}"
+                class="button button-small"
+            >
+                Add More Copies
+            </a>
+
+        </div>
+
+        {% if copies %}
+
+        <div class="table-container">
+
+            <table class="book-table">
+
+                <thead>
+                    <tr>
+                        <th>Copy ID</th>
+                        <th>Copy Number</th>
+                        <th>Status</th>
+                        <th>Condition</th>
+                        <th>Created Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for copy in copies %}
+
+                    <tr>
+
+                        <td>
+                            <strong>
+                                {{ copy.get('copy_id', '-') }}
+                            </strong>
+                        </td>
+
+                        <td>
+                            {{ copy.get('copy_number', '-') }}
+                        </td>
+
+                        <td>
+                            <span
+                                class="copy-status status-{{
+                                    copy.get(
+                                        'status',
+                                        'unknown'
+                                    ) | lower
+                                }}"
+                            >
+                                {{ copy.get('status', '-') }}
+                            </span>
+                        </td>
+
+                        <td>
+                            {{ copy.get('condition', '-') }}
+                        </td>
+
+                        <td>
+                            {{ copy.get('created_at', '-') }}
+                        </td>
+
+                        <td>
+                            {% set copy_document_id =
+                                copy.get('document_id')
+                                or copy.get('copy_id')
+                            %}
+
+                            {% set current_copy_status =
+                                copy.get('status', '') | lower
+                            %}
+
+                            <div class="copy-action-buttons">
+
+                                <a
+                                    href="{{ url_for(
+                                        'book_catalogue.update_copy_status',
+                                        book_id=book.book_id,
+                                        copy_id=copy_document_id
+                                    ) }}"
+                                    class="button button-small button-status"
+                                >
+                                    Update Status
+                                </a>
+
+                                {% if current_copy_status == 'damaged' %}
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'book_catalogue.restore_damaged_copy',
+                                        book_id=book.book_id,
+                                        copy_id=copy_document_id
+                                    ) }}"
+                                    class="inline-action-form"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="button button-small button-restore"
+                                    >
+                                        Restore Damaged Copy
+                                    </button>
+                                </form>
+
+                                {% endif %}
+
+                            </div>
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="empty-copy-message">
+
+            <h3>No physical-copy records found</h3>
+
+            <p>
+                Add a physical copy to begin managing this
+                book's individual copies.
+            </p>
+
+            <a
+                href="{{ url_for(
+                    'book_catalogue.add_book_copies',
+                    book_id=book.book_id
+                ) }}"
+                class="button"
+            >
+                Add First Copy
+            </a>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+{% endblock %}

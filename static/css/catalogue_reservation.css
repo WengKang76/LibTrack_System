@@ -1,0 +1,644 @@
+.reservation-page {
+    width: min(1200px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 48px;
+}
+
+.reservation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    background-color: white;
+    padding: 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reservation-eyebrow {
+    margin: 0 0 8px;
+    color: #2563eb;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.reservation-header h1 {
+    margin: 0;
+    color: #1f2937;
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
+}
+
+.reservation-header p:not(.reservation-eyebrow) {
+    color: #6b7280;
+    margin: 10px 0 0;
+    line-height: 1.6;
+}
+
+.reservation-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 18px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.reservation-search {
+    flex: 1 1 560px;
+}
+
+.reservation-search-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #374151;
+    font-weight: 700;
+}
+
+.reservation-search-controls,
+.reservation-navigation {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.reservation-navigation {
+    justify-content: flex-end;
+}
+
+.reservation-navigation-left {
+    justify-content: flex-start;
+    margin-bottom: 18px;
+}
+
+.reservation-search input {
+    flex: 1 1 260px;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font: inherit;
+    color: #1f2937;
+    background: white;
+}
+
+.reservation-search input:focus {
+    outline: 3px solid rgba(37, 99, 235, 0.18);
+    border-color: #2563eb;
+}
+
+.reservation-summary {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin: 18px 2px 12px;
+    color: #4b5563;
+}
+
+.reservation-summary p {
+    margin: 0;
+}
+
+.reservation-table-container {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reservation-table {
+    width: 100%;
+    min-width: 900px;
+    margin: 0;
+    border-collapse: collapse;
+    background-color: white;
+}
+
+.reservation-table th {
+    background-color: #1f2937;
+    color: white;
+    padding: 13px 12px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.reservation-table td {
+    padding: 13px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+.reservation-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.reservation-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.reservation-status-available,
+.reservation-status-unavailable {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.reservation-status-available {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.reservation-status-unavailable {
+    color: #991b1b;
+    background: #fee2e2;
+}
+
+.reservation-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    background-color: #2563eb;
+    color: white;
+    padding: 9px 14px;
+    border: 1px solid #2563eb;
+    border-radius: 7px;
+    text-decoration: none;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.reservation-button:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.reservation-button-secondary {
+    background-color: white;
+    color: #1f2937;
+    border-color: #cbd5e1;
+}
+
+.reservation-button-secondary:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.reservation-button-small {
+    min-height: 36px;
+    padding: 7px 11px;
+    font-size: 0.88rem;
+}
+
+.reservation-button-danger {
+    background-color: #dc2626;
+    border-color: #dc2626;
+}
+
+.reservation-button-danger:hover {
+    background-color: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.reservation-empty {
+    background-color: #eff6ff;
+    color: #1e3a8a;
+    padding: 26px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    margin-top: 18px;
+    text-align: center;
+}
+
+.reservation-empty h2 {
+    margin: 0 0 8px;
+}
+
+.reservation-empty p {
+    margin: 0 auto 16px;
+    max-width: 650px;
+    line-height: 1.6;
+}
+
+.flash-container {
+    width: min(1200px, calc(100% - 32px));
+    margin: 20px auto 0;
+}
+
+.flash-message {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.flash-danger,
+.flash-error {
+    color: #991b1b;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+}
+
+.flash-success {
+    color: #166534;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+}
+
+.flash-info,
+.flash-message:not(.flash-danger):not(.flash-error):not(.flash-success) {
+    color: #1e40af;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+}
+
+
+/* SCRUM-685: Selected-book availability status */
+.reservation-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.availability-card {
+    background: white;
+    padding: 26px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.availability-card-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.availability-card-heading h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.availability-status-large {
+    padding: 8px 14px;
+    font-size: 1rem;
+}
+
+.availability-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.availability-details > div {
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+}
+
+.availability-details dt {
+    margin-bottom: 7px;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.availability-details dd {
+    margin: 0;
+    color: #1f2937;
+    font-weight: 700;
+}
+
+.availability-copy-count {
+    font-size: 1.45rem;
+}
+
+.availability-message {
+    padding: 16px;
+    border-radius: 9px;
+    line-height: 1.6;
+}
+
+.availability-message-success {
+    color: #166534;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+}
+
+.availability-message-warning {
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+}
+
+.availability-actions {
+    margin-top: 20px;
+}
+
+@media (max-width: 720px) {
+    .reservation-page {
+        width: min(100% - 20px, 1200px);
+        padding-top: 18px;
+    }
+
+    .reservation-header,
+    .reservation-toolbar {
+        padding: 18px;
+    }
+
+    .reservation-search-controls,
+    .reservation-navigation,
+    .reservation-button {
+        width: 100%;
+    }
+
+    .reservation-search input {
+        width: 100%;
+        flex-basis: 100%;
+    }
+}
+
+/* SCRUM-689: Reserve an unavailable book */
+.reservation-confirmation-card {
+    background: #ffffff;
+    padding: 26px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reservation-confirmation-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.reservation-confirmation-heading h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.reservation-confirmation-notice {
+    margin-top: 18px;
+    padding: 16px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 9px;
+    line-height: 1.6;
+}
+
+.reservation-confirmation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+/* Book details interface aligned with the student catalogue module */
+.student-details-page {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.student-details-card {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    overflow: hidden;
+    background-color: white;
+    border-radius: 14px;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.1);
+}
+
+.details-book-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 440px;
+    background: linear-gradient(145deg, #dbeafe, #bfdbfe);
+    font-size: 100px;
+}
+
+.details-content {
+    padding: 38px;
+}
+
+.book-category {
+    display: inline-block;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    color: #1d4ed8;
+    background-color: #dbeafe;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.details-content h1 {
+    margin: 4px 0 10px;
+    color: #172554;
+    font-size: 32px;
+}
+
+.details-author {
+    margin: 0 0 28px;
+    color: #64748b;
+    font-size: 17px;
+}
+
+.student-detail-list {
+    border-top: 1px solid #e2e8f0;
+}
+
+.student-detail-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.student-detail-label {
+    color: #475569;
+    font-weight: 700;
+}
+
+.availability {
+    display: inline-block;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.availability.available {
+    color: #166534;
+    background-color: #dcfce7;
+}
+
+.availability.unavailable {
+    color: #991b1b;
+    background-color: #fee2e2;
+}
+
+.book-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.view-details-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 11px 16px;
+    color: white;
+    background-color: #2563eb;
+    border: 1px solid #2563eb;
+    border-radius: 7px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.view-details-button:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.view-details-button-secondary {
+    color: #1f2937;
+    background-color: white;
+    border-color: #cbd5e1;
+}
+
+.view-details-button-secondary:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+@media (max-width: 750px) {
+    .student-details-card {
+        grid-template-columns: 1fr;
+    }
+
+    .details-book-icon {
+        min-height: 200px;
+    }
+
+    .details-content {
+        padding: 25px;
+    }
+
+    .student-detail-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+
+    .book-detail-actions,
+    .view-details-button {
+        width: 100%;
+    }
+}
+
+/* SCRUM-16 and SCRUM-36: Borrow request confirmation */
+.borrow-confirmation-card {
+    background: #ffffff;
+    padding: 26px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.borrow-period-notice,
+.borrow-request-notice {
+    margin-top: 18px;
+    padding: 15px 16px;
+    border-radius: 9px;
+    line-height: 1.6;
+}
+
+.borrow-period-notice {
+    color: #1e3a8a;
+    background: #dbeafe;
+    border: 1px solid #bfdbfe;
+}
+
+.borrow-request-notice {
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.borrowing-period-value {
+    color: #1d4ed8;
+    font-size: 1.2rem;
+}
+
+/* SCRUM-675 and SCRUM-677: currently borrowed books */
+.borrowed-books-table {
+    min-width: 1050px;
+}
+
+.remaining-period {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.remaining-period-active {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.remaining-period-due-today {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.remaining-period-overdue {
+    color: #991b1b;
+    background: #fee2e2;
+}

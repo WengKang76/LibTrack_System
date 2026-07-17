@@ -1,0 +1,689 @@
+.book-form {
+    background-color: white;
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 500px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.book-form label {
+    display: block;
+    margin-top: 12px;
+    font-weight: bold;
+}
+
+.book-form input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+.book-form .button {
+    margin-top: 20px;
+}
+
+.book-form input:focus,
+.book-form select:focus {
+    border-color: #2563eb;
+    outline: 2px solid rgba(37, 99, 235, 0.15);
+}
+
+.form-note {
+    max-width: 650px;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.required-note {
+    margin-top: 16px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.form-actions .button {
+    display: inline-block;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    background-color: #2563eb;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.form-actions .button:hover {
+    background-color: #1d4ed8;
+}
+
+.form-actions .button-secondary {
+    background-color: #6b7280;
+}
+
+.form-actions .button-secondary:hover {
+    background-color: #4b5563;
+}
+
+.alert {
+    max-width: 650px;
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    border-radius: 6px;
+}
+
+.alert.success {
+    color: #166534;
+    background-color: #dcfce7;
+    border: 1px solid #86efac;
+}
+
+.alert.error {
+    color: #991b1b;
+    background-color: #fee2e2;
+    border: 1px solid #fca5a5;
+}
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    margin-bottom: 6px;
+}
+
+.page-header p {
+    margin: 0;
+    color: #6b7280;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.book-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.book-table th,
+.book-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.book-table th {
+    color: #374151;
+    background-color: #f3f4f6;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.book-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.book-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.button {
+    display: inline-block;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    background-color: #2563eb;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #1d4ed8;
+}
+
+.button-small {
+    padding: 7px 14px;
+    font-size: 14px;
+}
+
+.button-secondary {
+    background-color: #6b7280;
+}
+
+.button-secondary:hover {
+    background-color: #4b5563;
+}
+
+.empty-state {
+    padding: 50px 20px;
+    text-align: center;
+    background-color: white;
+    border-radius: 8px;
+}
+
+.empty-state h3 {
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* SCRUM-704: Delete Book */
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.button-danger {
+    background-color: #dc2626;
+}
+
+.button-danger:hover {
+    background-color: #b91c1c;
+}
+
+/* =========================================================
+   STEP 5: PHYSICAL COPY MANAGEMENT
+   ========================================================= */
+
+.page-heading,
+.details-header,
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.page-heading h1,
+.details-header h1,
+.section-heading h2 {
+    margin: 0 0 7px;
+}
+
+.page-heading p,
+.details-header p,
+.section-heading p {
+    margin: 0;
+    color: #64748b;
+}
+
+.details-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.book-form-page,
+.librarian-details-page {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.book-form-card,
+.details-section {
+    margin-bottom: 25px;
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.selected-book-summary {
+    margin-bottom: 24px;
+    padding: 18px;
+    background-color: #f1f5f9;
+    border-radius: 8px;
+}
+
+.selected-book-summary h2 {
+    margin-top: 0;
+    color: #172554;
+}
+
+.selected-book-summary p {
+    margin: 7px 0;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #334155;
+    font-weight: 700;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+.form-note {
+    margin-bottom: 20px;
+    padding: 13px 15px;
+    color: #1e40af;
+    background-color: #eff6ff;
+    border-left: 4px solid #2563eb;
+    border-radius: 5px;
+}
+
+.form-note p {
+    margin: 0;
+}
+
+.form-error {
+    margin-bottom: 20px;
+    padding: 13px 15px;
+    color: #991b1b;
+    background-color: #fee2e2;
+    border-radius: 6px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.book-information-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.information-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 15px;
+    background-color: #f8fafc;
+    border-radius: 7px;
+}
+
+.information-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.information-label {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.information-value {
+    color: #0f172a;
+    line-height: 1.5;
+}
+
+.copy-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(130px, 1fr)
+    );
+    gap: 15px;
+}
+
+.summary-card {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 7px;
+    padding: 20px 12px;
+    background-color: #e2e8f0;
+    border-radius: 9px;
+    text-align: center;
+}
+
+.summary-number {
+    color: #0f172a;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.summary-label {
+    color: #475569;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.summary-available {
+    background-color: #dcfce7;
+}
+
+.summary-borrowed {
+    background-color: #dbeafe;
+}
+
+.summary-reserved {
+    background-color: #fef3c7;
+}
+
+.summary-damaged {
+    background-color: #ffedd5;
+}
+
+.summary-lost {
+    background-color: #fee2e2;
+}
+
+.button-view {
+    background-color: #059669;
+}
+
+.button-view:hover {
+    background-color: #047857;
+}
+
+.button-add-copy {
+    background-color: #7c3aed;
+}
+
+.button-add-copy:hover {
+    background-color: #6d28d9;
+}
+
+.copy-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-available {
+    color: #166534;
+    background-color: #dcfce7;
+}
+
+.status-borrowed {
+    color: #1e40af;
+    background-color: #dbeafe;
+}
+
+.status-reserved {
+    color: #92400e;
+    background-color: #fef3c7;
+}
+
+.status-damaged {
+    color: #9a3412;
+    background-color: #ffedd5;
+}
+
+.status-lost {
+    color: #991b1b;
+    background-color: #fee2e2;
+}
+
+.empty-copy-message {
+    padding: 45px 20px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.empty-copy-message h3 {
+    margin-top: 0;
+    color: #334155;
+}
+
+.empty-copy-message p {
+    color: #64748b;
+}
+
+@media (max-width: 750px) {
+    .page-heading,
+    .details-header,
+    .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .details-header-actions {
+        flex-wrap: wrap;
+    }
+
+    .book-information-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .information-item.full-width {
+        grid-column: auto;
+    }
+}
+
+/* =========================================================
+   SCRUM-695: UPDATE PHYSICAL COPY STATUS
+   ========================================================= */
+
+.copy-status-page {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.copy-status-card {
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.selected-copy-information {
+    margin-bottom: 25px;
+    padding: 20px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+}
+
+.selected-copy-information h2 {
+    margin-top: 0;
+    color: #172554;
+}
+
+.selected-copy-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.copy-information-item {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 13px;
+    background-color: white;
+    border-radius: 7px;
+}
+
+.copy-information-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.copy-information-value {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: white;
+    font-size: 15px;
+}
+
+.copy-status-help {
+    margin-bottom: 22px;
+    padding: 16px;
+    color: #475569;
+    background-color: #f8fafc;
+    border-left: 4px solid #2563eb;
+    border-radius: 6px;
+}
+
+.copy-status-help p {
+    margin: 7px 0;
+}
+
+.button-status {
+    background-color: #7c3aed;
+}
+
+.button-status:hover {
+    background-color: #6d28d9;
+}
+
+@media (max-width: 650px) {
+    .selected-copy-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   STEP 7: UNAVAILABLE AND REPAIRED PHYSICAL COPIES
+   ========================================================= */
+
+.copy-unavailable-page {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.copy-unavailable-card {
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.unavailable-help {
+    margin-bottom: 22px;
+    padding: 16px;
+    color: #475569;
+    background-color: #fff7ed;
+    border-left: 4px solid #f97316;
+    border-radius: 6px;
+}
+
+.unavailable-help p {
+    margin: 8px 0;
+}
+
+.copy-action-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.inline-action-form {
+    display: inline;
+    margin: 0;
+}
+
+.button-warning {
+    color: white;
+    background-color: #ea580c;
+}
+
+.button-warning:hover {
+    background-color: #c2410c;
+}
+
+.button-restore {
+    color: white;
+    background-color: #16a34a;
+    border: none;
+    cursor: pointer;
+}
+
+.button-restore:hover {
+    background-color: #15803d;
+}
+/* =========================================================
+   WHOLE-BOOK CATALOGUE ACTIVATION
+   ========================================================= */
+
+.book-unavailable-page {
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.book-unavailable-card {
+    padding: 25px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+}
+
+.catalogue-warning {
+    margin-bottom: 22px;
+    padding: 16px;
+    color: #9a3412;
+    background-color: #fff7ed;
+    border-left: 4px solid #ea580c;
+    border-radius: 6px;
+    line-height: 1.5;
+}
+
+.book-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    resize: vertical;
+    font: inherit;
+}
+
+.book-form textarea:focus,
+.form-group select:focus {
+    border-color: #2563eb;
+    outline: 2px solid rgba(37, 99, 235, 0.15);
+}
+
+.details-header-actions {
+    flex-wrap: wrap;
+}

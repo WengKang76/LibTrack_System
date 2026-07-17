@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero">
+    <h1>Welcome to LibTrack System</h1>
+    <p>Please select your role to continue.</p>
+</section>
+
+<div class="role-container">
+    <a href="/librarian" class="role-card">
+        <div class="role-icon">👩‍💼</div>
+        <h2>Librarian</h2>
+        <p>Manage books, users, borrowing records, penalties and transactions.</p>
+    </a>
+
+    <a href="/student" class="role-card">
+        <div class="role-icon">🎓</div>
+        <h2>Student</h2>
+        <p>Browse catalogue, view book details, reservations and penalty payments.</p>
+    </a>
+</div>
+
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for(
+        'static',
+        filename='css/book_catalogue.css'
+    ) }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<div class="copy-status-page">
+
+    <div class="page-heading">
+
+        <div>
+            <h1>Update Physical Copy Status</h1>
+
+            <p>
+                Change the current status of the selected
+                physical book copy.
+            </p>
+        </div>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.librarian_book_details',
+                book_id=book.book_id
+            ) }}"
+            class="button button-secondary"
+        >
+            Back to Book Details
+        </a>
+
+    </div>
+
+    <div class="copy-status-card">
+
+        <section class="selected-copy-information">
+
+            <h2>
+                {{ book.get('title', 'Untitled Book') }}
+            </h2>
+
+            <div class="selected-copy-grid">
+
+                <div class="copy-information-item">
+                    <span class="copy-information-label">
+                        Copy ID
+                    </span>
+
+                    <span class="copy-information-value">
+                        {{ copy_record.get('copy_id', '-') }}
+                    </span>
+                </div>
+
+                <div class="copy-information-item">
+                    <span class="copy-information-label">
+                        Copy Number
+                    </span>
+
+                    <span class="copy-information-value">
+                        {{ copy_record.get('copy_number', '-') }}
+                    </span>
+                </div>
+
+                <div class="copy-information-item">
+                    <span class="copy-information-label">
+                        Current Status
+                    </span>
+
+                    <span
+                        class="copy-status status-{{
+                            copy_record.get(
+                                'status',
+                                'unknown'
+                            ) | lower
+                        }}"
+                    >
+                        {{ copy_record.get('status', '-') }}
+                    </span>
+                </div>
+
+                <div class="copy-information-item">
+                    <span class="copy-information-label">
+                        Condition
+                    </span>
+
+                    <span class="copy-information-value">
+                        {{ copy_record.get('condition', '-') }}
+                    </span>
+                </div>
+
+            </div>
+
+        </section>
+
+        {% if error %}
+        <div class="form-error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'book_catalogue.update_copy_status',
+                book_id=book.book_id,
+                copy_id=copy_record.document_id
+            ) }}"
+        >
+
+            <div class="form-group">
+
+                <label for="status">
+                    New Copy Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required
+                >
+
+                    {% for status in copy_statuses %}
+
+                    <option
+                        value="{{ status }}"
+                        {% if (
+                            status
+                            == copy_record.get('status')
+                        ) %}
+                        selected
+                        {% endif %}
+                    >
+                        {{ status }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <div class="copy-status-help">
+
+                <p>
+                    <strong>Available:</strong>
+                    The copy can be borrowed.
+                </p>
+
+                <p>
+                    <strong>Borrowed:</strong>
+                    The copy is currently borrowed.
+                </p>
+
+                <p>
+                    <strong>Reserved:</strong>
+                    The copy is reserved for a student.
+                </p>
+
+                <p>
+                    <strong>Lost:</strong>
+                    The copy has been reported lost.
+                </p>
+
+                <p>
+                    <strong>Damaged:</strong>
+                    The copy requires inspection or repair.
+                </p>
+
+            </div>
+
+            <div class="form-actions">
+
+                <button
+                    type="submit"
+                    class="button"
+                >
+                    Update Status
+                </button>
+
+                <a
+                    href="{{ url_for(
+                        'book_catalogue.librarian_book_details',
+                        book_id=book.book_id
+                    ) }}"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/book_catalogue.css') }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<h1>📚 Book Catalogue Management</h1>
+<h2>Edit Book Details</h2>
+
+<p class="form-note">
+    Update the book's catalogue information. Copy quantities and book
+    status are handled in later user stories.
+</p>
+
+{% if error %}
+<div class="alert error" role="alert">
+    {{ error }}
+</div>
+{% endif %}
+
+<form
+    method="POST"
+    action="{{ url_for(
+        'book_catalogue.edit_book',
+        book_id=book.book_id
+    ) }}"
+    class="book-form"
+>
+
+    <label for="title">
+        Book Title <span class="required">*</span>
+    </label>
+
+    <input
+        id="title"
+        type="text"
+        name="title"
+        value="{{ book.get('title', '') }}"
+        maxlength="150"
+        required
+    >
+
+    <label for="author">
+        Author <span class="required">*</span>
+    </label>
+
+    <input
+        id="author"
+        type="text"
+        name="author"
+        value="{{ book.get('author', '') }}"
+        maxlength="120"
+        required
+    >
+
+    <label for="isbn">
+        ISBN <span class="required">*</span>
+    </label>
+
+    <input
+        id="isbn"
+        type="text"
+        name="isbn"
+        value="{{ book.get('isbn', '') }}"
+        maxlength="20"
+        required
+    >
+
+    <label for="category">
+        Category <span class="required">*</span>
+    </label>
+
+    <input
+        id="category"
+        type="text"
+        name="category"
+        value="{{ book.get('category', '') }}"
+        maxlength="80"
+        required
+    >
+
+    <label for="publisher">Publisher</label>
+
+    <input
+        id="publisher"
+        type="text"
+        name="publisher"
+        value="{{ book.get('publisher', '') }}"
+        maxlength="120"
+    >
+
+    <label for="publication_year">Publication Year</label>
+
+    <input
+        id="publication_year"
+        type="text"
+        inputmode="numeric"
+        name="publication_year"
+        value="{{ book.get('publication_year', '') }}"
+        maxlength="4"
+        placeholder="For example: 2024"
+    >
+
+    <p class="required-note">
+        <span class="required">*</span> Required fields
+    </p>
+
+    <div class="form-actions">
+        <button type="submit" class="button">
+            Save Changes
+        </button>
+
+        <a
+    href="{{ url_for('book_catalogue.manage_books') }}"
+    class="button button-secondary"
+>
+    Cancel
+</a>
+    </div>
+
+</form>
+
+{% endblock %}

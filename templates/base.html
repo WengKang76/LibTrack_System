@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LibTrack System</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="logo">📚 LibTrack</div>
+
+        <nav>
+            <a href="/">Home</a>
+            <a href="/librarian">Librarian</a>
+            <a href="/student">Student</a>
+        </nav>
+    </header>
+
+    <main class="page-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
