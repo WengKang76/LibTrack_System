@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ book.get('title', 'Book Details') }} | LibTrack
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/catalogue_reservation.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="student-details-page">
+
+    <a href="{{ url_for('catalogue_reservation.view_catalogue') }}"
+       class="back-link">
+        ← Back to Book Catalogue
+    </a>
+
+    <section class="student-details-card">
+        <div class="details-book-icon" aria-hidden="true">
+            📖
+        </div>
+
+        <div class="details-content">
+            <span class="book-category">
+                {{ book.get('category', 'Uncategorised') }}
+            </span>
+
+            <h1>{{ book.get('title', 'Untitled Book') }}</h1>
+
+            <p class="details-author">
+                By {{ book.get('author', 'Unknown Author') }}
+            </p>
+
+            <div class="student-detail-list">
+                <div class="student-detail-row">
+                    <span class="student-detail-label">Book ID</span>
+                    <span>{{ book.get('book_id', '-') }}</span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">ISBN</span>
+                    <span>{{ book.get('isbn', '-') or '-' }}</span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">Category</span>
+                    <span>{{ book.get('category', '-') or '-' }}</span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">Publisher</span>
+                    <span>{{ book.get('publisher', '-') or '-' }}</span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">Publication Year</span>
+                    <span>{{ book.get('publication_year', '-') or '-' }}</span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">Total Copies</span>
+                    <span>{{ book.get('total_copies', 0) }}</span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">Available Copies</span>
+                    <span class="availability-copy-count">
+                        {{ book.get('available_copies', 0) }}
+                    </span>
+                </div>
+
+                <div class="student-detail-row">
+                    <span class="student-detail-label">
+                        Current Availability Status
+                    </span>
+
+                    <span>
+                        {% if is_available %}
+                            <span class="availability available">
+                                Available
+                            </span>
+                        {% else %}
+                            <span class="availability unavailable">
+                                Unavailable
+                            </span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            {% if is_available %}
+                <p class="availability-message availability-message-success">
+                    {{ book.get('available_copies', 0) }}
+                    {% if book.get('available_copies', 0) == 1 %}
+                        copy is available
+                    {% else %}
+                        copies are available
+                    {% endif %}
+                    for borrowing.
+                </p>
+            {% else %}
+                <p class="availability-message availability-message-warning">
+                    This book is currently unavailable. You may reserve it
+                    and wait until a copy becomes available.
+                </p>
+            {% endif %}
+
+            <div class="book-detail-actions">
+                {% if is_available %}
+                    <a href="{{ url_for(
+                        'catalogue_reservation.request_borrow_book',
+                        book_id=book.book_id
+                    ) }}"
+                       class="view-details-button">
+                        Request Borrow
+                    </a>
+                {% else %}
+                    <a href="{{ url_for(
+                        'catalogue_reservation.reserve_book',
+                        book_id=book.book_id
+                    ) }}"
+                       class="view-details-button">
+                        Reserve This Book
+                    </a>
+                {% endif %}
+
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_my_reservations'
+                ) }}"
+                   class="view-details-button view-details-button-secondary">
+                    My Reservations
+                </a>
+
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_currently_borrowed_books'
+                ) }}"
+                   class="view-details-button view-details-button-secondary">
+                    Borrowed Books
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

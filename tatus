@@ -1,0 +1,9 @@
+modules/book_catalogue/add_book.html
+modules/book_catalogue/deactivate_book.html
+modules/book_catalogue/librarian_book_details.html
+modules/book_catalogue/routes.py
+modules/student_catalogue/routes.py
+static/css/book_catalogue.css
+tests/test_delete_book.py
+tests/test_scrum695_update_copy_status.py
+tests/test_step7_catalogue_and_restore.py

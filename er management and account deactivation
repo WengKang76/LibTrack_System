@@ -1,0 +1,11 @@
+app.py
+config/firebase_config.py
+modules/user_management/__init__.py
+modules/user_management/manage_users.html
+modules/user_management/routes.py
+modules/user_management/user_details.html
+scripts/seed_dummy_users.py
+static/css/user_management.css
+templates/base.html
+tests/conftest.py
+tests/test_user_management.py
