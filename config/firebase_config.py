@@ -21,7 +21,7 @@ def init_firebase():
     return firestore.client()
 
 
-# Prevent real Firebase initialization during automated testing.
+# Prevent automated tests from connecting to real Firebase.
 if os.getenv("TESTING") == "1":
     db = None
 else:
