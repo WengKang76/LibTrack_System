@@ -33,7 +33,6 @@ sys.modules["config.firebase_config"] = fake_firebase_config
 
 from modules.penalty_transaction.routes import penalty_bp
 from modules.book_catalogue.routes import book_bp
-from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
 
 
@@ -52,7 +51,6 @@ def app():
 
     test_app.register_blueprint(penalty_bp)
     test_app.register_blueprint(book_bp)
-    test_app.register_blueprint(student_catalogue_bp)
     test_app.register_blueprint(user_management_bp)
 
     return test_app
