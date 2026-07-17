@@ -4,6 +4,11 @@
 Dashboard | LibTrack
 {% endblock %}
 
+        <a href="index.html">Dashboard</a>
+        <a href="#">Book Catalogue</a>
+        <a href="#">Catalogue Reservation</a>
+        <a href="{{ url_for('borrowing.borrowing_home') }}">Borrowing & Returning</a>
+        <a href="#">Penalty & Transactions</a>
 {% block content %}
 <section class="dashboard-hero">
     <div class="dashboard-hero-content">

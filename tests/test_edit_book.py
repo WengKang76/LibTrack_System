@@ -6,13 +6,13 @@ from flask import Flask
 
 import modules.book_catalogue.routes as book_routes
 
-
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 
 # ============================================================
 # FAKE FIREBASE CLASSES
 # ============================================================
+
 
 class FakeDocumentSnapshot:
     def __init__(self, document_id, data):
@@ -80,12 +80,10 @@ class FakeQuery:
             )
 
             if matches_query:
-                results.append(
-                    FakeDocumentSnapshot(document_id, data)
-                )
+                results.append(FakeDocumentSnapshot(document_id, data))
 
         if self.maximum_results is not None:
-            results = results[:self.maximum_results]
+            results = results[: self.maximum_results]
 
         return results
 
@@ -134,6 +132,7 @@ class FakeDB:
 # FIXTURE
 # ============================================================
 
+
 @pytest.fixture
 def book_client():
     app = Flask(
@@ -170,6 +169,7 @@ def valid_edit_data():
 # ============================================================
 # SCRUM-40 TESTS
 # ============================================================
+
 
 def test_scrum_40_manage_books_page_loads(
     book_client,
@@ -300,10 +300,7 @@ def test_scrum_40_success_message_displayed(
 
     assert response.status_code == 200
 
-    assert (
-        b"Book details updated successfully."
-        in response.data
-    )
+    assert b"Book details updated successfully." in response.data
 
     assert b"Updated Python Book" in response.data
 
@@ -330,15 +327,9 @@ def test_scrum_40_reject_empty_book_title(
 
     assert response.status_code == 400
 
-    assert (
-        b"Please fill in all required fields."
-        in response.data
-    )
+    assert b"Please fill in all required fields." in response.data
 
-    assert (
-        fake_db.books["B001"]["title"]
-        == "Python Programming"
-    )
+    assert fake_db.books["B001"]["title"] == "Python Programming"
 
 
 def test_scrum_40_reject_empty_author(
@@ -363,10 +354,7 @@ def test_scrum_40_reject_empty_author(
 
     assert response.status_code == 400
 
-    assert (
-        b"Please fill in all required fields."
-        in response.data
-    )
+    assert b"Please fill in all required fields." in response.data
 
 
 def test_scrum_40_reject_duplicate_isbn(
@@ -393,10 +381,7 @@ def test_scrum_40_reject_duplicate_isbn(
 
     assert response.status_code == 400
 
-    assert (
-        b"A book with this ISBN already exists."
-        in response.data
-    )
+    assert b"A book with this ISBN already exists." in response.data
 
     assert fake_db.books["B001"]["isbn"] == "123456789"
 
@@ -447,10 +432,7 @@ def test_scrum_40_reject_invalid_publication_year(
 
     assert response.status_code == 400
 
-    assert (
-        b"Publication year must be a valid four-digit year."
-        in response.data
-    )
+    assert b"Publication year must be a valid four-digit year." in response.data
 
 
 def test_scrum_40_reject_future_publication_year(
@@ -467,9 +449,7 @@ def test_scrum_40_reject_future_publication_year(
 
     submitted_data = valid_edit_data()
 
-    submitted_data["publication_year"] = str(
-        datetime.now().year + 1
-    )
+    submitted_data["publication_year"] = str(datetime.now().year + 1)
 
     response = book_client.post(
         "/books/edit/B001",
@@ -492,9 +472,7 @@ def test_scrum_40_unknown_book_returns_404(
         fake_db,
     )
 
-    response = book_client.get(
-        "/books/edit/UNKNOWN"
-    )
+    response = book_client.get("/books/edit/UNKNOWN")
 
     assert response.status_code == 404
     assert b"Book record not found." in response.data

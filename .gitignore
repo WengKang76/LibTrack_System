@@ -1,14 +1,8 @@
-# Firebase credential
 config/serviceAccountKey.json
-
-# Python cache
-__pycache__/
-*.py[cod]
-.pytest_cache/
-
-# Virtual environment
 .venv/
-venv/
-
-# VS Code
+__pycache__/
+*.pyc
+.env
 .vscode/
+.idea/
+.pytest_cache/

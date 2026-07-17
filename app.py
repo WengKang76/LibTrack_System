@@ -2,6 +2,7 @@ import importlib
 import os
 
 from flask import Flask, render_template
+from modules.borrowing.routes import borrowing_bp
 
 from modules.book_catalogue.routes import book_bp
 from modules.student_catalogue.routes import student_catalogue_bp
@@ -26,16 +27,13 @@ def register_blueprint_if_missing(blueprint):
 
 register_blueprint_if_missing(book_bp)
 register_blueprint_if_missing(student_catalogue_bp)
-register_blueprint_if_missing(
-    user_management_bp
-)
+register_blueprint_if_missing(user_management_bp)
 
 
 # flash() requires a secret key. Set SECRET_KEY in the environment for
 # production; this fallback is only for local development.
 app.config["SECRET_KEY"] = os.environ.get(
-    "SECRET_KEY",
-    "libtrack-local-development-key"
+    "SECRET_KEY", "libtrack-local-development-key"
 )
 
 # This branch already contains the Catalogue Browsing & Reservation module.
@@ -56,16 +54,24 @@ for module_name, blueprint_name in OPTIONAL_BLUEPRINTS:
         app.register_blueprint(blueprint)
     except (ModuleNotFoundError, AttributeError) as error:
         app.logger.warning(
-            "Optional module %s was not registered: %s",
-            module_name,
-            error
+            "Optional module %s was not registered: %s", module_name, error
         )
+
+
+app.secret_key = "libtrack-dev-secret-key"
+
+app.register_blueprint(borrowing_bp)
 
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
+# Add health check server endpoint for CI/CD purpose
+@app.route("/health")
+def health():
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":

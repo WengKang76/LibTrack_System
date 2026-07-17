@@ -2,7 +2,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -16,7 +15,6 @@ from config.firebase_config import (  # noqa: E402
     COLLECTION_USERS,
     db,
 )
-
 
 DUMMY_USERS = [
     {
@@ -63,13 +61,9 @@ DUMMY_USERS = [
 
 
 def seed_dummy_users():
-    current_time = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    users_collection = db.collection(
-        COLLECTION_USERS
-    )
+    users_collection = db.collection(COLLECTION_USERS)
 
     for user in DUMMY_USERS:
         user_data = {
@@ -79,22 +73,14 @@ def seed_dummy_users():
             "is_dummy_account": True,
         }
 
-        users_collection.document(
-            user["user_id"]
-        ).set(
+        users_collection.document(user["user_id"]).set(
             user_data,
             merge=True,
         )
 
-        print(
-            f"Seeded {user['user_id']}: "
-            f"{user['full_name']}"
-        )
+        print(f"Seeded {user['user_id']}: " f"{user['full_name']}")
 
-    print(
-        f"\n{len(DUMMY_USERS)} dummy users "
-        "were seeded successfully."
-    )
+    print(f"\n{len(DUMMY_USERS)} dummy users " "were seeded successfully.")
 
 
 if __name__ == "__main__":

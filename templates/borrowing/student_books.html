@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Borrowed Books</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet"
+      href="{{ url_for('static', filename='borrowing/student.css') }}">
+</head>
+
+<body>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="main-content">
+
+    <h1>My Borrowed Books</h1>
+
+    {% if books %}
+
+        {% for book in books %}
+
+    {% if book.show_renewal_message %}
+
+    <div class="alert">
+
+        {{ book.renewal_message }}
+
+    </div>
+
+    {% endif %}
+        
+        <div class="card">
+
+            <h3>{{ book.book }}</h3>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                    Borrow Date
+
+                </span>
+
+                <span>
+
+                  {{ book.borrow_date }}
+
+                 </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                    Due Date
+
+                </span>
+
+                <span>
+
+                 {{ book.due_date }}
+
+                </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                 Return Date
+
+                </span>
+
+                <span>
+
+                    {% if book.return_date %}
+                        {{ book.return_date }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+
+                </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                 Status
+
+                </span>
+
+                <span class="badge
+                    {% if book.status == 'Borrowed' %}
+                    borrowed
+                    {% elif book.status == 'Return Pending' %}
+                    return-pending
+                    {% elif book.status == 'Returned' %}
+                    returned
+                    {% endif %}
+                    ">
+
+                    {{ book.status }}
+
+                </span>
+
+            </div>
+
+            <div class="detail-row">
+
+                <span class="detail-title">
+
+                    Renewal
+
+                </span>
+
+                <span>
+
+                    {{ book.renewal_status or "None" }}
+
+                </span>
+
+            </div>
+
+            <div class="action-buttons">
+            {% if book.status == "Borrowed" %}
+
+            <form method="POST"
+                    action="{{ url_for('borrowing.renew_book',
+                                        transaction_id=book.id) }}"
+                    onsubmit="return confirmRenewal();">
+
+                <button class="button">
+                    Renew Book
+                </button>
+
+            </form>
+
+            {% if book.renewal_status == "Pending" %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'borrowing.cancel_renewal',
+                    transaction_id=book.id
+                ) }}"
+                onsubmit="return cancelRenewal();"
+            >
+
+            <button class="button">
+                Cancel Renewal Request
+            </button>
+
+            </form>
+
+            {% endif %}
+
+
+            <form method="POST"
+                  action="{{ url_for('borrowing.return_book',
+                  transaction_id=book.id) }}">
+
+                <button class="button">
+                    Return Book
+                </button>
+
+            </form>
+
+            {% endif %}
+            </div>
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>
+            No borrowed books.
+        </p>
+
+    {% endif %}
+
+</div>
+
+</body>
+
+<script>
+function confirmRenewal() {
+
+    return confirm(
+        "Are you sure you want to request a renewal for this book?"
+    );
+
+}
+
+function cancelRenewal() {
+
+    return confirm(
+        "Are you sure you want to cancel this renewal request?"
+    );
+
+}
+
+fetch(
+    "{{ url_for('borrowing.clear_alert') }}",
+    {
+        method: "POST"
+    }
+);
+</script>
+
+</html>

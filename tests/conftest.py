@@ -1,9 +1,13 @@
+
 from pathlib import Path
+from flask import Flask
 import sys
 import types
 
+# Prevent automated tests from loading the real Firebase credential file.
+import config
 import pytest
-from flask import Flask
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -11,7 +15,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # Prevent automated tests from loading the real Firebase credential file.
-import config
 
 fake_firebase_config = types.ModuleType("config.firebase_config")
 fake_firebase_config.db = None
@@ -24,8 +27,7 @@ fake_firebase_config.COLLECTION_RESERVATIONS = "reservations"
 sys.modules["config.firebase_config"] = fake_firebase_config
 setattr(config, "firebase_config", fake_firebase_config)
 
-from modules.catalogue_reservation import routes as catalogue_routes
-
+from modules.catalogue_reservation import routes as catalogue_routes # noqa: E402
 
 COLLECTION_ID_FIELDS = {
     "books": "book_id",
@@ -170,12 +172,10 @@ class FakeFirestore:
         self.collections = {
             "books": [book.copy() for book in (books or [])],
             "reservations": [
-                reservation.copy()
-                for reservation in (reservations or [])
+                reservation.copy() for reservation in (reservations or [])
             ],
             "borrow_requests": [
-                borrow_request.copy()
-                for borrow_request in (borrow_requests or [])
+                borrow_request.copy() for borrow_request in (borrow_requests or [])
             ],
         }
 

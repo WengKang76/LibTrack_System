@@ -48,9 +48,7 @@ def test_post_cancels_active_reservation(app_factory):
 
 
 def test_cancelled_reservation_cannot_be_cancelled_again(app_factory):
-    app = app_factory(
-        reservations=[active_reservation(status="Cancelled")]
-    )
+    app = app_factory(reservations=[active_reservation(status="Cancelled")])
     client = app.test_client()
 
     response = client.post(
@@ -82,9 +80,7 @@ def test_missing_reservation_cannot_be_cancelled(app_factory):
 
 
 def test_student_cannot_cancel_another_students_reservation(app_factory):
-    app = app_factory(
-        reservations=[active_reservation(student_id="S999")]
-    )
+    app = app_factory(reservations=[active_reservation(student_id="S999")])
     client = app.test_client()
 
     response = client.post(

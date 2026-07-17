@@ -13,7 +13,6 @@ from config.firebase_config import (
     db,
 )
 
-
 user_management_bp = Blueprint(
     "user_management",
     __name__,
@@ -23,20 +22,14 @@ user_management_bp = Blueprint(
 
 
 def _current_timestamp():
-    return datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_user_by_id(user_id):
     """
     Retrieve one user using the Firestore document ID.
     """
-    user_document = (
-        db.collection(COLLECTION_USERS)
-        .document(user_id)
-        .get()
-    )
+    user_document = db.collection(COLLECTION_USERS).document(user_id).get()
 
     if not user_document.exists:
         return None
@@ -56,15 +49,13 @@ def get_user_by_id(user_id):
 # SCRUM-511: VIEW ALL REGISTERED USERS
 # ============================================================
 
+
 @user_management_bp.route(
     "/",
     methods=["GET"],
 )
 def manage_users():
-    user_documents = (
-        db.collection(COLLECTION_USERS)
-        .stream()
-    )
+    user_documents = db.collection(COLLECTION_USERS).stream()
 
     users = []
 
@@ -98,6 +89,7 @@ def manage_users():
 # SCRUM-512: VIEW SELECTED USER DETAILS
 # ============================================================
 
+
 @user_management_bp.route(
     "/details/<user_id>",
     methods=["GET"],
@@ -118,6 +110,7 @@ def user_details(user_id):
 # SCRUM-509: DEACTIVATE STUDENT ACCOUNT
 # ============================================================
 
+
 @user_management_bp.route(
     "/deactivate/<user_id>",
     methods=["POST"],
@@ -128,12 +121,16 @@ def deactivate_student(user_id):
     if user is None:
         return "User record not found.", 404
 
-    user_role = str(
-        user.get(
-            "role",
-            "",
+    user_role = (
+        str(
+            user.get(
+                "role",
+                "",
+            )
         )
-    ).strip().lower()
+        .strip()
+        .lower()
+    )
 
     if user_role != "student":
         return (
@@ -141,12 +138,16 @@ def deactivate_student(user_id):
             400,
         )
 
-    current_status = str(
-        user.get(
-            "account_status",
-            "",
+    current_status = (
+        str(
+            user.get(
+                "account_status",
+                "",
+            )
         )
-    ).strip().lower()
+        .strip()
+        .lower()
+    )
 
     if current_status == "inactive":
         return (

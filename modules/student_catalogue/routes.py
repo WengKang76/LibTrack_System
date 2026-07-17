@@ -2,7 +2,6 @@ from flask import Blueprint, render_template
 
 from config.firebase_config import COLLECTION_BOOKS, db
 
-
 student_catalogue_bp = Blueprint(
     "student_catalogue",
     __name__,
@@ -21,11 +20,7 @@ def _is_visible_in_student_catalogue(book):
 
 
 def get_student_book_by_id(book_id):
-    book_document = (
-        db.collection(COLLECTION_BOOKS)
-        .document(book_id)
-        .get()
-    )
+    book_document = db.collection(COLLECTION_BOOKS).document(book_id).get()
 
     if not book_document.exists:
         return None

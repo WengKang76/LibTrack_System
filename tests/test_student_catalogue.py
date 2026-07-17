@@ -69,9 +69,7 @@ def test_student_catalogue_page_loads(
     app,
     monkeypatch,
 ):
-    app.register_blueprint(
-        student_routes.student_catalogue_bp
-    )
+    app.register_blueprint(student_routes.student_catalogue_bp)
 
     fake_database = FakeDatabase()
 
@@ -95,9 +93,7 @@ def test_student_book_details_page_loads(
     app,
     monkeypatch,
 ):
-    app.register_blueprint(
-        student_routes.student_catalogue_bp
-    )
+    app.register_blueprint(student_routes.student_catalogue_bp)
 
     fake_database = FakeDatabase()
 
@@ -109,9 +105,7 @@ def test_student_book_details_page_loads(
 
     client = app.test_client()
 
-    response = client.get(
-        "/student/catalogue/details/B001"
-    )
+    response = client.get("/student/catalogue/details/B001")
 
     assert response.status_code == 200
     assert b"Python Programming" in response.data
@@ -124,9 +118,7 @@ def test_student_catalogue_displays_availability(
     app,
     monkeypatch,
 ):
-    app.register_blueprint(
-        student_routes.student_catalogue_bp
-    )
+    app.register_blueprint(student_routes.student_catalogue_bp)
 
     fake_database = FakeDatabase()
 
@@ -148,9 +140,7 @@ def test_student_unknown_book_returns_404(
     app,
     monkeypatch,
 ):
-    app.register_blueprint(
-        student_routes.student_catalogue_bp
-    )
+    app.register_blueprint(student_routes.student_catalogue_bp)
 
     fake_database = FakeDatabase()
 
@@ -162,9 +152,7 @@ def test_student_unknown_book_returns_404(
 
     client = app.test_client()
 
-    response = client.get(
-        "/student/catalogue/details/UNKNOWN"
-    )
+    response = client.get("/student/catalogue/details/UNKNOWN")
 
     assert response.status_code == 404
     assert b"Book record not found." in response.data

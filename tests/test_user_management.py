@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import pytest
 
 
 import modules.user_management.routes as user_routes
@@ -26,9 +25,7 @@ class FakeUserDocumentReference:
         self.id = user_id
 
     def get(self):
-        user_data = self.database.users.get(
-            self.user_id
-        )
+        user_data = self.database.users.get(self.user_id)
 
         return FakeDocumentSnapshot(
             self.user_id,
@@ -37,13 +34,9 @@ class FakeUserDocumentReference:
 
     def update(self, updated_data):
         if self.user_id not in self.database.users:
-            raise KeyError(
-                f"Unknown user ID: {self.user_id}"
-            )
+            raise KeyError(f"Unknown user ID: {self.user_id}")
 
-        self.database.users[
-            self.user_id
-        ].update(dict(updated_data))
+        self.database.users[self.user_id].update(dict(updated_data))
 
         self.database.update_history.append(
             {
@@ -66,8 +59,7 @@ class FakeUsersCollection:
     def stream(self):
         return [
             FakeDocumentSnapshot(user_id, data)
-            for user_id, data
-            in self.database.users.items()
+            for user_id, data in self.database.users.items()
         ]
 
 
@@ -77,69 +69,45 @@ class FakeDatabase:
             "USR001": {
                 "user_id": "USR001",
                 "full_name": "Alicia Tan",
-                "email": (
-                    "alicia.tan@student.demo"
-                ),
+                "email": ("alicia.tan@student.demo"),
                 "phone_number": "012-3456789",
                 "role": "Student",
                 "account_status": "Active",
-                "created_at": (
-                    "2026-07-16 10:00:00"
-                ),
-                "updated_at": (
-                    "2026-07-16 10:00:00"
-                ),
+                "created_at": ("2026-07-16 10:00:00"),
+                "updated_at": ("2026-07-16 10:00:00"),
                 "is_dummy_account": True,
             },
             "USR002": {
                 "user_id": "USR002",
                 "full_name": "Daniel Lee",
-                "email": (
-                    "daniel.lee@student.demo"
-                ),
+                "email": ("daniel.lee@student.demo"),
                 "phone_number": "013-4567890",
                 "role": "Student",
                 "account_status": "Active",
-                "created_at": (
-                    "2026-07-16 10:00:00"
-                ),
-                "updated_at": (
-                    "2026-07-16 10:00:00"
-                ),
+                "created_at": ("2026-07-16 10:00:00"),
+                "updated_at": ("2026-07-16 10:00:00"),
                 "is_dummy_account": True,
             },
             "USR003": {
                 "user_id": "USR003",
                 "full_name": "Nur Aisyah",
-                "email": (
-                    "nur.aisyah@student.demo"
-                ),
+                "email": ("nur.aisyah@student.demo"),
                 "phone_number": "014-5678901",
                 "role": "Student",
                 "account_status": "Inactive",
-                "created_at": (
-                    "2026-07-16 10:00:00"
-                ),
-                "updated_at": (
-                    "2026-07-16 10:00:00"
-                ),
+                "created_at": ("2026-07-16 10:00:00"),
+                "updated_at": ("2026-07-16 10:00:00"),
                 "is_dummy_account": True,
             },
             "USR005": {
                 "user_id": "USR005",
                 "full_name": "Sarah Wong",
-                "email": (
-                    "sarah.wong@staff.demo"
-                ),
+                "email": ("sarah.wong@staff.demo"),
                 "phone_number": "017-7890123",
                 "role": "Librarian",
                 "account_status": "Active",
-                "created_at": (
-                    "2026-07-16 10:00:00"
-                ),
-                "updated_at": (
-                    "2026-07-16 10:00:00"
-                ),
+                "created_at": ("2026-07-16 10:00:00"),
+                "updated_at": ("2026-07-16 10:00:00"),
                 "is_dummy_account": True,
             },
         }
@@ -150,7 +118,6 @@ class FakeDatabase:
         assert collection_name == "users"
 
         return FakeUsersCollection(self)
-
 
 
 def use_fake_database(monkeypatch):
@@ -233,23 +200,11 @@ def test_scrum_511_sorts_users_by_full_name(
 
     page_text = response.data.decode("utf-8")
 
-    assert page_text.index(
-        "Alicia Tan"
-    ) < page_text.index(
-        "Daniel Lee"
-    )
+    assert page_text.index("Alicia Tan") < page_text.index("Daniel Lee")
 
-    assert page_text.index(
-        "Daniel Lee"
-    ) < page_text.index(
-        "Nur Aisyah"
-    )
+    assert page_text.index("Daniel Lee") < page_text.index("Nur Aisyah")
 
-    assert page_text.index(
-        "Nur Aisyah"
-    ) < page_text.index(
-        "Sarah Wong"
-    )
+    assert page_text.index("Nur Aisyah") < page_text.index("Sarah Wong")
 
 
 def test_scrum_511_empty_database_displays_message(
@@ -282,18 +237,13 @@ def test_scrum_512_student_details_page_loads(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/users/details/USR001"
-    )
+    response = client.get("/users/details/USR001")
 
     assert response.status_code == 200
     assert b"User Details" in response.data
     assert b"USR001" in response.data
     assert b"Alicia Tan" in response.data
-    assert (
-        b"alicia.tan@student.demo"
-        in response.data
-    )
+    assert b"alicia.tan@student.demo" in response.data
     assert b"012-3456789" in response.data
     assert b"Student" in response.data
     assert b"Active" in response.data
@@ -305,16 +255,11 @@ def test_scrum_512_active_student_shows_deactivate_button(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/users/details/USR001"
-    )
+    response = client.get("/users/details/USR001")
 
     assert response.status_code == 200
 
-    assert (
-        b"Deactivate Student Account"
-        in response.data
-    )
+    assert b"Deactivate Student Account" in response.data
 
 
 def test_scrum_512_inactive_student_shows_inactive_message(
@@ -323,21 +268,13 @@ def test_scrum_512_inactive_student_shows_inactive_message(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/users/details/USR003"
-    )
+    response = client.get("/users/details/USR003")
 
     assert response.status_code == 200
 
-    assert (
-        b"This Student account is currently inactive."
-        in response.data
-    )
+    assert b"This Student account is currently inactive." in response.data
 
-    assert (
-        b"Deactivate Student Account"
-        not in response.data
-    )
+    assert b"Deactivate Student Account" not in response.data
 
 
 def test_scrum_512_librarian_is_protected(
@@ -346,21 +283,13 @@ def test_scrum_512_librarian_is_protected(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/users/details/USR005"
-    )
+    response = client.get("/users/details/USR005")
 
     assert response.status_code == 200
 
-    assert (
-        b"Librarian accounts cannot be deactivated"
-        in response.data
-    )
+    assert b"Librarian accounts cannot be deactivated" in response.data
 
-    assert (
-        b"Deactivate Student Account"
-        not in response.data
-    )
+    assert b"Deactivate Student Account" not in response.data
 
 
 def test_scrum_512_unknown_user_returns_404(
@@ -369,9 +298,7 @@ def test_scrum_512_unknown_user_returns_404(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/users/details/UNKNOWN"
-    )
+    response = client.get("/users/details/UNKNOWN")
 
     assert response.status_code == 404
     assert b"User record not found." in response.data
@@ -386,24 +313,15 @@ def test_scrum_509_deactivates_active_student(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/users/deactivate/USR001"
-    )
+    response = client.post("/users/deactivate/USR001")
 
     assert response.status_code == 302
 
-    updated_user = fake_database.users[
-        "USR001"
-    ]
+    updated_user = fake_database.users["USR001"]
 
-    assert (
-        updated_user["account_status"]
-        == "Inactive"
-    )
+    assert updated_user["account_status"] == "Inactive"
 
     assert "deactivated_at" in updated_user
     assert "updated_at" in updated_user
@@ -418,59 +336,32 @@ def test_scrum_509_updates_only_selected_student(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    second_user_before = dict(
-        fake_database.users["USR002"]
-    )
+    second_user_before = dict(fake_database.users["USR002"])
 
-    client.post(
-        "/users/deactivate/USR001"
-    )
+    client.post("/users/deactivate/USR001")
 
-    assert (
-        fake_database.users["USR001"][
-            "account_status"
-        ]
-        == "Inactive"
-    )
+    assert fake_database.users["USR001"]["account_status"] == "Inactive"
 
-    assert (
-        fake_database.users["USR002"]
-        == second_user_before
-    )
+    assert fake_database.users["USR002"] == second_user_before
 
 
 def test_scrum_509_records_one_database_update(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    client.post(
-        "/users/deactivate/USR001"
-    )
+    client.post("/users/deactivate/USR001")
 
-    assert len(
-        fake_database.update_history
-    ) == 1
+    assert len(fake_database.update_history) == 1
 
-    update_record = (
-        fake_database.update_history[0]
-    )
+    update_record = fake_database.update_history[0]
 
     assert update_record["user_id"] == "USR001"
 
-    assert (
-        update_record["updated_data"][
-            "account_status"
-        ]
-        == "Inactive"
-    )
+    assert update_record["updated_data"]["account_status"] == "Inactive"
 
 
 def test_scrum_509_redirects_to_selected_user_details(
@@ -479,17 +370,11 @@ def test_scrum_509_redirects_to_selected_user_details(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/users/deactivate/USR001"
-    )
+    response = client.post("/users/deactivate/USR001")
 
     assert response.status_code == 302
 
-    assert response.headers[
-        "Location"
-    ].endswith(
-        "/users/details/USR001"
-    )
+    assert response.headers["Location"].endswith("/users/details/USR001")
 
 
 def test_scrum_509_displays_success_message(
@@ -505,31 +390,20 @@ def test_scrum_509_displays_success_message(
 
     assert response.status_code == 200
 
-    assert (
-        b"Alicia Tan account was "
-        b"deactivated successfully."
-        in response.data
-    )
+    assert b"Alicia Tan account was " b"deactivated successfully." in response.data
 
 
 def test_scrum_509_rejects_already_inactive_student(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/users/deactivate/USR003"
-    )
+    response = client.post("/users/deactivate/USR003")
 
     assert response.status_code == 400
 
-    assert (
-        b"This Student account is already inactive."
-        in response.data
-    )
+    assert b"This Student account is already inactive." in response.data
 
     assert fake_database.update_history == []
 
@@ -538,27 +412,15 @@ def test_scrum_509_rejects_librarian_account(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/users/deactivate/USR005"
-    )
+    response = client.post("/users/deactivate/USR005")
 
     assert response.status_code == 400
 
-    assert (
-        b"Only Student accounts can be deactivated."
-        in response.data
-    )
+    assert b"Only Student accounts can be deactivated." in response.data
 
-    assert (
-        fake_database.users["USR005"][
-            "account_status"
-        ]
-        == "Active"
-    )
+    assert fake_database.users["USR005"]["account_status"] == "Active"
 
     assert fake_database.update_history == []
 
@@ -567,13 +429,9 @@ def test_scrum_509_unknown_user_returns_404(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/users/deactivate/UNKNOWN"
-    )
+    response = client.post("/users/deactivate/UNKNOWN")
 
     assert response.status_code == 404
     assert b"User record not found." in response.data
