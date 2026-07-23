@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, date, timedelta
 
 try:
@@ -507,6 +507,17 @@ def penalty_record_exists_for_rejected_return(transaction_id):
 
     return False
 
+def validate_penalty_amount(penalty_amount):
+    try:
+        valid_amount = float(penalty_amount)
+    except (TypeError, ValueError):
+        return False, "Invalid penalty amount.", None
+
+    if valid_amount <= 0:
+        return False, "Penalty amount must be greater than zero.", None
+
+    return True, "Penalty amount is valid.", round(valid_amount, 2)
+
 
 def create_penalty_record_for_rejected_return(
     transaction_id,
@@ -527,13 +538,12 @@ def create_penalty_record_for_rejected_return(
     if penalty_record_exists_for_rejected_return(transaction_id):
         return False, "Penalty record already exists for this rejected return."
 
-    try:
-        penalty_amount = float(penalty_amount)
-    except ValueError:
-        return False, "Invalid penalty amount."
+    amount_success, amount_message, valid_penalty_amount = validate_penalty_amount(
+        penalty_amount
+    )
 
-    if penalty_amount <= 0:
-        return False, "Penalty amount must be greater than zero."
+    if not amount_success:
+        return False, amount_message
 
     penalty_reason = penalty_reason.strip()
 
@@ -550,7 +560,7 @@ def create_penalty_record_for_rejected_return(
         "book_title": transaction.get("book_title"),
         "penalty_type": "Rejected Return",
         "penalty_reason": penalty_reason,
-        "penalty_amount": penalty_amount,
+        "penalty_amount": valid_penalty_amount,
         "status": "Outstanding",
         "created_by": created_by,
         "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -785,6 +795,157 @@ def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian
 
     return True, "Borrow request approved successfully."
 
+
+
+    # =========================================================
+# Sprint 2 - S2-YK-01 and S2-YK-02
+# Penalty Amount Validation and Student Penalty Access Check
+# =========================================================
+
+def validate_penalty_amount(penalty_amount):
+    try:
+        penalty_amount = float(penalty_amount)
+    except (TypeError, ValueError):
+        return False, "Invalid penalty amount.", None
+
+    if penalty_amount <= 0:
+        return False, "Penalty amount must be greater than zero.", None
+
+    return True, "Penalty amount is valid.", round(penalty_amount, 2)
+
+
+def get_current_student_id(student_id=None):
+    if student_id:
+        return student_id
+
+    try:
+        session_student_id = session.get("student_id")
+
+        if session_student_id:
+            return session_student_id
+
+        form_student_id = request.form.get("student_id")
+
+        if form_student_id:
+            return form_student_id
+
+        query_student_id = request.args.get("student_id")
+
+        if query_student_id:
+            return query_student_id
+
+    except RuntimeError:
+        pass
+
+    # Demo student ID for testing
+    return "S001"
+
+
+def get_penalty_by_id(penalty_id):
+    # During testing/demo, check demo data first
+    if penalty_id in DEMO_PENALTIES:
+        penalty = DEMO_PENALTIES[penalty_id].copy()
+        penalty["penalty_id"] = penalty_id
+        return penalty
+
+    # Then check Firebase if demo data does not have it
+    try:
+        penalty_doc = db.collection("penalties").document(penalty_id).get()
+
+        if penalty_doc.exists:
+            penalty = penalty_doc.to_dict()
+            penalty["penalty_id"] = penalty_doc.id
+            return penalty
+
+    except Exception:
+        pass
+
+    return None
+    try:
+        penalty_doc = db.collection("penalties").document(penalty_id).get()
+
+        if penalty_doc.exists:
+            penalty = penalty_doc.to_dict()
+            penalty["penalty_id"] = penalty_doc.id
+            return penalty
+
+    except Exception:
+        pass
+
+    if penalty_id in DEMO_PENALTIES:
+        penalty = DEMO_PENALTIES[penalty_id].copy()
+        penalty["penalty_id"] = penalty_id
+        return penalty
+
+    return None
+
+
+def update_penalty_record(penalty_id, update_data):
+    try:
+        db.collection("penalties").document(penalty_id).update(update_data)
+    except Exception:
+        pass
+
+    if penalty_id in DEMO_PENALTIES:
+        DEMO_PENALTIES[penalty_id].update(update_data)
+
+
+def validate_student_penalty_access(penalty_id, student_id):
+    penalty = get_penalty_by_id(penalty_id)
+
+    if penalty is None:
+        return False, "Penalty record not found.", None
+
+    if penalty.get("student_id") != student_id:
+        return False, "You are not allowed to access another student's penalty record.", penalty
+
+    return True, "Student is allowed to access this penalty.", penalty
+
+
+def pay_student_own_penalty(
+    penalty_id,
+    student_id,
+    payment_amount,
+    payment_method="Credit Card"
+):
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return False, access_message
+
+    amount_success, amount_message, valid_amount = validate_penalty_amount(
+        payment_amount
+    )
+
+    if not amount_success:
+        return False, amount_message
+
+    penalty_status = str(penalty.get("status", "")).lower()
+
+    if penalty_status not in ["outstanding", "unpaid", "pending"]:
+        return False, "Only outstanding penalties can be paid."
+
+    expected_amount = float(penalty.get("penalty_amount", 0))
+
+    if valid_amount != expected_amount:
+        return False, "Payment amount does not match the penalty amount."
+
+    update_data = {
+        "status": "Paid",
+        "payment_method": payment_method,
+        "paid_by": student_id,
+        "paid_amount": valid_amount,
+        "paid_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    update_penalty_record(penalty_id, update_data)
+
+    return True, "Penalty paid successfully."
+
 # =========================================================
 # ROUTES
 # =========================================================
@@ -821,6 +982,45 @@ def view_outstanding_penalties():
 @penalty_bp.route("/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 @penalty_bp.route("/student/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 def student_pay_credit_card(penalty_id):
+    student_id = get_current_student_id()
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return access_message, 403
+
+    if request.method == "POST":
+        payment_amount = (
+            request.form.get("payment_amount")
+            or request.form.get("amount")
+            or penalty.get("penalty_amount")
+        )
+
+        success, message = pay_student_own_penalty(
+            penalty_id,
+            student_id,
+            payment_amount,
+            "Credit Card"
+        )
+
+        if success:
+            flash(message, "success")
+            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+
+        return render_template(
+            "student/pay_credit_card.html",
+            penalty=penalty,
+            student_id=student_id,
+            error=message
+        ), 400
+
+    return render_template(
+        "student/pay_credit_card.html",
+        penalty=penalty,
+        student_id=student_id
+    )
     penalty = get_penalty_by_id(penalty_id)
 
     if penalty is None:
@@ -852,6 +1052,45 @@ def student_pay_credit_card(penalty_id):
 
 @penalty_bp.route("/student/pay-cash/<penalty_id>", methods=["GET", "POST"])
 def student_pay_cash(penalty_id):
+    student_id = get_current_student_id()
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return access_message, 403
+
+    if request.method == "POST":
+        payment_amount = (
+            request.form.get("payment_amount")
+            or request.form.get("cash_amount")
+            or penalty.get("penalty_amount")
+        )
+
+        success, message = pay_student_own_penalty(
+            penalty_id,
+            student_id,
+            payment_amount,
+            "Cash"
+        )
+
+        if success:
+            flash(message, "success")
+            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+
+        return render_template(
+            "student/pay_cash.html",
+            penalty=penalty,
+            student_id=student_id,
+            error=message
+        ), 400
+
+    return render_template(
+        "student/pay_cash.html",
+        penalty=penalty,
+        student_id=student_id
+    )
     penalty = get_penalty_by_id(penalty_id)
 
     if penalty is None:

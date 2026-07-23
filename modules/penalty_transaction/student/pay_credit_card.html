@@ -32,6 +32,18 @@
 
 <div class="penalty-card">
     <form method="POST" class="penalty-payment-form">
+        <input type="hidden" name="student_id" value="{{ student_id }}">
+
+        <label>Payment Amount</label>
+        <input 
+            type="number" 
+            step="0.01" 
+            name="payment_amount" 
+            value="{{ penalty.penalty_amount }}" 
+            readonly 
+            required
+        >
+
         <label>Credit Card Number</label>
         <input type="text" name="card_number" placeholder="Example: 4111 1111 1111 1111" required>
 

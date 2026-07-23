@@ -8,4 +8,4 @@ venv/
 .vscode/
 
 config/serviceAccountKey.json
-**/serviceAccountKey.json
+**/serviceAccountKey.jsonpy
