@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="../../static/css/penalty_transaction.css">
+{% endblock %}
+
+{% block content %}
+<h1>💰 Penalty, Transactions & Exception Handling</h1>
+<h2>Identify Overdue Books</h2>
+
+{% if overdue_books %}
+<div class="penalty-alert penalty-warning">
+    {{ overdue_books|length }} overdue book(s) found.
+</div>
+
+<table class="penalty-table">
+    <tr>
+        <th>Transaction ID</th>
+        <th>Student ID</th>
+        <th>Book ID</th>
+        <th>Book Title</th>
+        <th>Borrow Date</th>
+        <th>Due Date</th>
+        <th>Status</th>
+    </tr>
+
+    {% for book in overdue_books %}
+    <tr>
+        <td>{{ book.transaction_id }}</td>
+        <td>{{ book.student_id }}</td>
+        <td>{{ book.book_id }}</td>
+        <td>{{ book.book_title }}</td>
+        <td>{{ book.borrow_date }}</td>
+        <td>{{ book.due_date }}</td>
+        <td>{{ book.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<div class="penalty-alert penalty-success">
+    No overdue books found.
+</div>
+{% endif %}
+{% endblock %}

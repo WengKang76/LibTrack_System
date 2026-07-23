@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Borrowing & Returning</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet"
+      href="{{ url_for('static', filename='borrowing/librarian.css') }}">
+</head>
+
+
+<body>
+
+<div class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h1>Borrowing & Returning</h1>
+
+    <h2>Pending Borrow Requests</h2>
+
+<table class="data-table">
+
+    <thead>
+
+        <tr>
+            <th>Request ID</th>
+            <th>Student</th>
+            <th>Book</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for request in requests %}
+
+        <tr>
+
+            <td>{{ request.id }}</td>
+
+            <td>{{ request.student }}</td>
+
+            <td>{{ request.book }}</td>
+
+            <td>
+
+                <span class="badge pending">
+
+                    {{ request.status }}
+
+                </span>
+
+            </td>
+
+            <td>
+
+            {% if request.status == "Pending" %}
+
+                <form
+                    method="POST"
+                    action="{{ url_for('borrowing.approve_request',
+                                    request_id=request.id) }}">
+
+                    <button class="btn btn-success">
+
+                        Approve
+
+                    </button>
+
+                </form>
+
+            {% else %}
+
+                -
+
+            {% endif %}
+
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+
+    
+
+<h2>Borrow Transactions</h2>
+
+{% if transactions %}
+
+<table class="data-table">
+
+    <thead>
+
+        <tr>
+
+            <th>Transaction ID</th>
+            <th>Student</th>
+            <th>Book</th>
+            <th>Borrow</th>
+            <th>Due</th>
+            <th>Return</th>
+            <th>Status</th>
+            <th>Renewal</th>
+            <th>Actions</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for transaction in transactions %}
+
+    <tr>
+
+        <td>{{ transaction.id }}</td>
+
+        <td>{{ transaction.student }}</td>
+
+        <td>{{ transaction.book }}</td>
+
+        <td>{{ transaction.borrow_date }}</td>
+
+        <td>{{ transaction.due_date }}</td>
+
+        <td>
+
+            {% if transaction.return_date %}
+                {{ transaction.return_date }}
+            {% else %}
+                -
+            {% endif %}
+
+        </td>
+
+        <td>
+
+            <span class="badge
+            {% if transaction.status == 'Borrowed' %}
+                borrowed
+            {% elif transaction.status == 'Return Pending' %}
+                return-pending
+            {% elif transaction.status == 'Returned' %}
+                returned
+            {% elif transaction.status == 'Closed' %}
+                closed
+            {% endif %}
+            ">
+
+                {{ transaction.status }}
+
+            </span>
+
+        </td>
+
+        <td>
+
+            {% if transaction.renewal_status %}
+
+                {{ transaction.renewal_status }}
+
+            {% else %}
+
+                -
+
+            {% endif %}
+
+        </td>
+
+        <td>
+
+            <div class="action-group">
+            <!-- Manual Extension -->
+
+            {% if transaction.status == "Borrowed" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.manual_extend',
+                transaction_id=transaction.id) }}">
+
+                <label class="action-label">
+                    New Due Date
+                </label>
+                
+                <input
+                    type="date"
+                    name="new_due_date"
+                    min="{{ transaction.due_date }}"
+                    required>
+
+                <button class="btn btn-primary">
+
+                    Extend
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            <!-- Renewal Approval -->
+
+            {% if transaction.renewal_status == "Pending" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.approve_renewal',
+                transaction_id=transaction.id) }}">
+
+                <button class="btn btn-success">
+
+                    Approve
+
+                </button>
+
+            </form>
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.reject_renewal',
+                transaction_id=transaction.id) }}">
+
+                <button class="btn btn-danger">
+
+                    Reject
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            <!-- Return -->
+
+            {% if transaction.status == "Return Pending" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.confirm_return',
+                transaction_id=transaction.id) }}">
+
+                <button class="btn btn-warning">
+
+                    Confirm
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            <!-- Close -->
+
+            {% if transaction.status == "Returned" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.close_transaction',
+                transaction_id=transaction.id) }}">
+
+                <button class="btn btn-secondary">
+
+                    Close
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+            </div>
+
+        </td>
+
+    </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% else %}
+
+<p>No active borrowing transactions.</p>
+
+{% endif %}
+</div>
+
+</body>
+
+<script>
+function confirmApproveRenewal() {
+    return confirm(
+        "Are you sure you want to approve this renewal request?"
+    );
+}
+
+function confirmRejectRenewal() {
+    return confirm(
+        "Are you sure you want to reject this renewal request?"
+    );
+}
+</script>
+
+</html>

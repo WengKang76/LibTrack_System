@@ -4,23 +4,29 @@
     <meta charset="UTF-8">
     <title>LibTrack System</title>
 
-    <!-- Common CSS for whole system -->
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/main.css') }}"
-    >
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <!-- Module CSS will be inserted here -->
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
+<<<<<<< HEAD
     <div class="sidebar">
         <h2>ðŸ“š LibTrack</h2>
         <p>Library Management System</p>
+=======
+    <header class="topbar">
+        <div class="logo">📚 LibTrack</div>
+>>>>>>> origin/TestMain2
 
-        <a href="/">Dashboard</a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/librarian">Librarian</a>
+            <a href="/student">Student</a>
+        </nav>
+    </header>
 
+<<<<<<< HEAD
       <a href="{{ url_for('book_catalogue.manage_books') }}">
     Book Catalogue
 </a>
@@ -36,13 +42,13 @@
     <div class="main-content">
 
         <!-- Display Flask success and error messages -->
+=======
+    <main class="page-container">
+>>>>>>> origin/TestMain2
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div
-                        class="alert {{ category }}"
-                        role="alert"
-                    >
+                    <div class="alert {{ category }}">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -50,7 +56,6 @@
         {% endwith %}
 
         {% block content %}{% endblock %}
-
-    </div>
+    </main>
 </body>
 </html>

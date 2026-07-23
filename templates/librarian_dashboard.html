@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero">
+    <h1>Librarian Dashboard</h1>
+    <p>Select a function to manage the library system.</p>
+</section>
+
+<div class="dashboard-card">
+    <h3>Book Catalogue Management</h3>
+    <p>Manage book records and physical book copies.</p>
+    <a href="/books/" class="button">Open</a>
+</div>
+
+    <div class="dashboard-card">
+        <h3>User Management</h3>
+        <p>Manage user accounts and roles.</p>
+        <a href="/users/" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Borrowing & Returning</h3>
+        <p>Manage borrowing requests and return transactions.</p>
+        <a href="/borrowing" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Catalogue Reservation</h3>
+        <p>Manage catalogue browsing and reservations.</p>
+        <a href="/catalogue/" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Overdue Books</h3>
+        <p>Identify overdue books and calculate penalties.</p>
+        <a href="/penalty/librarian/overdue" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Outstanding Penalties</h3>
+        <p>View students with unpaid penalties.</p>
+        <a href="/penalty/librarian/penalties" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Payment Records</h3>
+        <p>View penalty payment transaction records.</p>
+        <a href="/penalty/librarian/payment-records" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Waive Penalty</h3>
+        <p>Waive a student penalty with reason.</p>
+        <a href="/penalty/librarian/waive/P001" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Return Exception</h3>
+        <p>Reject return exception and create penalty.</p>
+        <a href="/penalty/librarian/reject-return/RT001" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Lost / Damaged Book</h3>
+        <p>Record lost or damaged book exception.</p>
+        <a href="/penalty/librarian/book-exception/RT001" class="button">Open</a>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Borrow Approval Check</h3>
+        <p>Check unpaid penalties before approving borrowing.</p>
+        <a href="/penalty/librarian/check-borrow-approval/BR001" class="button">Open</a>
+    </div>
+</div>
+
+{% endblock %}  

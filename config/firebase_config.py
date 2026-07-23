@@ -1,6 +1,8 @@
 import os
+
 import firebase_admin
 from firebase_admin import credentials, firestore
+
 
 _current_dir = os.path.dirname(os.path.abspath(__file__))
 _key_path = os.path.join(_current_dir, "serviceAccountKey.json")
@@ -19,11 +21,20 @@ def init_firebase():
     return firestore.client()
 
 
-db = init_firebase()
+# Prevent automated tests from connecting to real Firebase.
+if os.getenv("TESTING") == "1":
+    db = None
+else:
+    db = init_firebase()
+
 
 COLLECTION_BOOKS = "books"
 COLLECTION_USERS = "users"
 COLLECTION_BORROW_REQUESTS = "borrow_requests"
 COLLECTION_BORROW_TRANSACTIONS = "borrow_transactions"
 COLLECTION_PENALTIES = "penalties"
+<<<<<<< HEAD
 COLLECTION_RESERVATIONS = "reservations"
+=======
+COLLECTION_RESERVATIONS = "reservations"
+>>>>>>> origin/TestMain2

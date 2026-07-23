@@ -1,78 +1,146 @@
-.form-card {
-    background-color: white;
-    padding: 25px;
-    border-radius: 12px;
-    max-width: 500px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+* {
+    box-sizing: border-box;
 }
 
-.form-card label {
-    display: block;
-    margin-top: 12px;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+    color: #1f2937;
+}
+
+.topbar {
+    background-color: #1f2937;
+    color: white;
+    padding: 16px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 22px;
     font-weight: bold;
 }
 
-.form-card input {
-    width: 100%;
-    padding: 10px;
-    margin-top: 6px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
+.topbar nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    font-size: 15px;
 }
 
-.form-card button,
+.topbar nav a:hover {
+    text-decoration: underline;
+}
+
+.page-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 25px;
+}
+
+.hero {
+    background-color: white;
+    padding: 35px;
+    border-radius: 14px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.hero h1 {
+    margin-top: 0;
+    font-size: 32px;
+}
+
+.hero p {
+    color: #6b7280;
+    font-size: 16px;
+}
+
+.role-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+.role-card {
+    background-color: white;
+    padding: 35px;
+    border-radius: 14px;
+    text-align: center;
+    text-decoration: none;
+    color: #1f2937;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: 0.2s;
+}
+
+.role-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.role-icon {
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+}
+
+.dashboard-card {
+    background-color: white;
+    padding: 25px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-card h3 {
+    margin-top: 0;
+}
+
+.dashboard-card p {
+    color: #6b7280;
+    min-height: 45px;
+}
+
 .button {
     display: inline-block;
-    margin-top: 15px;
+    margin-top: 10px;
     background-color: #2563eb;
     color: white;
     padding: 10px 15px;
-    border-radius: 7px;
-    border: none;
+    border-radius: 8px;
     text-decoration: none;
-    cursor: pointer;
+    font-size: 14px;
 }
 
-.form-card button:hover,
 .button:hover {
     background-color: #1d4ed8;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: white;
-    margin-top: 20px;
-}
-
-th {
-    background-color: #1f2937;
-    color: white;
-    padding: 12px;
-    text-align: left;
-}
-
-td {
-    padding: 12px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
 .alert {
-    padding: 15px;
+    padding: 12px 15px;
     border-radius: 8px;
-    margin-top: 20px;
+    margin-bottom: 15px;
+    background-color: #e5e7eb;
 }
 
-.success {
+.alert.success {
     background-color: #dcfce7;
     color: #166534;
 }
 
-.warning {
-    background-color: #fef3c7;
-    color: #92400e;
+.alert.error {
+    background-color: #fee2e2;
+    color: #991b1b;
 }
 
+<<<<<<< HEAD
 .info {
     background-color: #dbeafe;
     color: #1e40af;
@@ -90,4 +158,25 @@ td {
 
 .student-catalogue-button:hover {
     background-color: #1d4ed8;
+=======
+@media (max-width: 900px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .role-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .topbar {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+>>>>>>> origin/TestMain2
 }

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿{% extends "base.html" %}
+=======
+{% extends "base.html" %}
+>>>>>>> origin/TestMain2
 
 {% block extra_css %}
 <link
@@ -137,19 +141,36 @@
 
         </div>
 
+<<<<<<< HEAD
         {% set normalized_role =
             user.get('role', '') | string | trim | lower
         %}
 
         {% set normalized_status =
             user.get('account_status', '') | string | trim | lower
+=======
+        {% set user_role =
+            user.get('role', '') | lower
+        %}
+
+        {% set account_status =
+            user.get(
+                'account_status',
+                ''
+            ) | lower
+>>>>>>> origin/TestMain2
         %}
 
         <div class="user-account-actions">
 
             {% if (
+<<<<<<< HEAD
                 normalized_role == 'student'
                 and normalized_status == 'active'
+=======
+                user_role == 'student'
+                and account_status == 'active'
+>>>>>>> origin/TestMain2
             ) %}
 
             <form
@@ -162,15 +183,19 @@
                 <button
                     type="submit"
                     class="button button-danger"
+<<<<<<< HEAD
                     onclick="return confirm(
                         'Are you sure you want to deactivate this Student account?'
                     );"
+=======
+>>>>>>> origin/TestMain2
                 >
                     Deactivate Student Account
                 </button>
             </form>
 
             {% elif (
+<<<<<<< HEAD
                 normalized_role == 'student'
                 and normalized_status == 'inactive'
             ) %}
@@ -193,12 +218,30 @@
                     Reactivate Student Account
                 </button>
             </form>
+=======
+                user_role == 'student'
+                and account_status == 'inactive'
+            ) %}
+
+            <div class="inactive-account-message">
+
+                This Student account is currently inactive.
+
+            </div>
+>>>>>>> origin/TestMain2
 
             {% else %}
 
             <div class="protected-account-message">
+<<<<<<< HEAD
                 Librarian accounts cannot be activated or deactivated
                 through this function.
+=======
+
+                Librarian accounts cannot be deactivated
+                through this function.
+
+>>>>>>> origin/TestMain2
             </div>
 
             {% endif %}
@@ -209,4 +252,8 @@
 
 </div>
 
+<<<<<<< HEAD
 {% endblock %}
+=======
+{% endblock %}
+>>>>>>> origin/TestMain2

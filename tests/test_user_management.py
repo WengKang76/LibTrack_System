@@ -183,7 +183,11 @@ def test_scrum_511_manage_users_page_loads(
     assert b"Demonstration data" in response.data
 
 
+<<<<<<< HEAD
 def test_scrum_511_displays_only_student_users(
+=======
+def test_scrum_511_displays_all_dummy_users(
+>>>>>>> origin/TestMain2
     client,
     monkeypatch,
 ):
@@ -193,13 +197,18 @@ def test_scrum_511_displays_only_student_users(
 
     assert response.status_code == 200
 
+<<<<<<< HEAD
     expected_students = [
+=======
+    expected_users = [
+>>>>>>> origin/TestMain2
         b"USR001",
         b"Alicia Tan",
         b"USR002",
         b"Daniel Lee",
         b"USR003",
         b"Nur Aisyah",
+<<<<<<< HEAD
     ]
 
     for expected_value in expected_students:
@@ -211,6 +220,17 @@ def test_scrum_511_displays_only_student_users(
 
 
 def test_scrum_511_displays_student_roles_and_statuses(
+=======
+        b"USR005",
+        b"Sarah Wong",
+    ]
+
+    for expected_value in expected_users:
+        assert expected_value in response.data
+
+
+def test_scrum_511_displays_roles_and_statuses(
+>>>>>>> origin/TestMain2
     client,
     monkeypatch,
 ):
@@ -220,6 +240,7 @@ def test_scrum_511_displays_student_roles_and_statuses(
 
     assert response.status_code == 200
     assert b"Student" in response.data
+<<<<<<< HEAD
     assert b"Active" in response.data
     assert b"Inactive" in response.data
 
@@ -227,6 +248,14 @@ def test_scrum_511_displays_student_roles_and_statuses(
 
 
 def test_scrum_511_sorts_students_by_full_name(
+=======
+    assert b"Librarian" in response.data
+    assert b"Active" in response.data
+    assert b"Inactive" in response.data
+
+
+def test_scrum_511_sorts_users_by_full_name(
+>>>>>>> origin/TestMain2
     client,
     monkeypatch,
 ):
@@ -234,8 +263,11 @@ def test_scrum_511_sorts_students_by_full_name(
 
     response = client.get("/users/")
 
+<<<<<<< HEAD
     assert response.status_code == 200
 
+=======
+>>>>>>> origin/TestMain2
     page_text = response.data.decode("utf-8")
 
     assert page_text.index(
@@ -250,7 +282,15 @@ def test_scrum_511_sorts_students_by_full_name(
         "Nur Aisyah"
     )
 
+<<<<<<< HEAD
     assert "Sarah Wong" not in page_text
+=======
+    assert page_text.index(
+        "Nur Aisyah"
+    ) < page_text.index(
+        "Sarah Wong"
+    )
+>>>>>>> origin/TestMain2
 
 
 def test_scrum_511_empty_database_displays_message(
@@ -354,8 +394,13 @@ def test_scrum_512_librarian_is_protected(
     assert response.status_code == 200
 
     assert (
+<<<<<<< HEAD
     b"Librarian accounts cannot be activated or deactivated"
     in response.data
+=======
+        b"Librarian accounts cannot be deactivated"
+        in response.data
+>>>>>>> origin/TestMain2
     )
 
     assert (
@@ -579,4 +624,7 @@ def test_scrum_509_unknown_user_returns_404(
     assert response.status_code == 404
     assert b"User record not found." in response.data
     assert fake_database.update_history == []
+<<<<<<< HEAD
     
+=======
+>>>>>>> origin/TestMain2
