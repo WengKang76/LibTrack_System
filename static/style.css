@@ -140,25 +140,6 @@ body {
     color: #991b1b;
 }
 
-<<<<<<< HEAD
-.info {
-    background-color: #dbeafe;
-    color: #1e40af;
-}
-
-.student-catalogue-button {
-    display: inline-block;
-    padding: 12px 20px;
-    color: white;
-    background-color: #2563eb;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.student-catalogue-button:hover {
-    background-color: #1d4ed8;
-=======
 @media (max-width: 900px) {
     .card-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -178,5 +159,4 @@ body {
     .card-grid {
         grid-template-columns: 1fr;
     }
->>>>>>> origin/TestMain2
 }

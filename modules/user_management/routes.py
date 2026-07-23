@@ -71,7 +71,6 @@ def manage_users():
     for document in user_documents:
         user = document.to_dict() or {}
 
-<<<<<<< HEAD
         role = str(
             user.get("role", "")
         ).strip().lower()
@@ -82,9 +81,7 @@ def manage_users():
 
         user["document_id"] = document.id
 
-=======
         user["document_id"] = document.id
->>>>>>> origin/TestMain2
         user.setdefault(
             "user_id",
             document.id,
@@ -94,14 +91,7 @@ def manage_users():
 
     users.sort(
         key=lambda user: str(
-<<<<<<< HEAD
             user.get("full_name", "")
-=======
-            user.get(
-                "full_name",
-                "",
-            )
->>>>>>> origin/TestMain2
         ).lower()
     )
 
@@ -110,10 +100,7 @@ def manage_users():
         users=users,
     )
 
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/TestMain2
 # ============================================================
 # SCRUM-512: VIEW SELECTED USER DETAILS
 # ============================================================
@@ -201,7 +188,6 @@ def deactivate_student(user_id):
             "user_management.user_details",
             user_id=user_id,
         )
-<<<<<<< HEAD
     )
 
 # ============================================================
@@ -272,6 +258,4 @@ def reactivate_student(user_id):
             user_id=user_id,
         )
     )
-=======
-    )
->>>>>>> origin/TestMain2
+    

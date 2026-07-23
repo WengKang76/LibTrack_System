@@ -12,12 +12,6 @@ from flask import Flask
 os.environ["TESTING"] = "1"
 
 
-<<<<<<< HEAD
-# Prevent automated tests from connecting to real Firebase.
-fake_firebase_config = ModuleType(
-    "config.firebase_config"
-)
-=======
 # Add the project root to the Python import path.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,17 +23,10 @@ if str(PROJECT_ROOT) not in sys.path:
 import config
 
 fake_firebase_config = ModuleType("config.firebase_config")
->>>>>>> origin/TestMain2
 fake_firebase_config.db = MagicMock()
 
 fake_firebase_config.COLLECTION_BOOKS = "books"
 fake_firebase_config.COLLECTION_USERS = "users"
-<<<<<<< HEAD
-
-sys.modules[
-    "config.firebase_config"
-] = fake_firebase_config
-=======
 fake_firebase_config.COLLECTION_BORROW_REQUESTS = "borrow_requests"
 fake_firebase_config.COLLECTION_BORROW_TRANSACTIONS = (
     "borrow_transactions"
@@ -49,20 +36,13 @@ fake_firebase_config.COLLECTION_RESERVATIONS = "reservations"
 
 sys.modules["config.firebase_config"] = fake_firebase_config
 setattr(config, "firebase_config", fake_firebase_config)
->>>>>>> origin/TestMain2
 
 
 # Import blueprints only after the fake Firebase module is installed.
 from modules.book_catalogue.routes import book_bp
-<<<<<<< HEAD
-from modules.user_management.routes import (
-    user_management_bp,
-)
-=======
 from modules.catalogue_reservation import routes as catalogue_routes
 from modules.penalty_transaction.routes import penalty_bp
 from modules.user_management.routes import user_management_bp
->>>>>>> origin/TestMain2
 
 
 # ============================================================
@@ -73,17 +53,8 @@ from modules.user_management.routes import user_management_bp
 def app():
     test_app = Flask(
         "test_app",
-<<<<<<< HEAD
-        template_folder=str(
-            BASE_DIR / "templates"
-        ),
-        static_folder=str(
-            BASE_DIR / "static"
-        ),
-=======
         template_folder=str(PROJECT_ROOT / "templates"),
         static_folder=str(PROJECT_ROOT / "static"),
->>>>>>> origin/TestMain2
     )
 
     test_app.config.update(
@@ -91,18 +62,9 @@ def app():
         SECRET_KEY="test-secret-key",
     )
 
-<<<<<<< HEAD
-    # base.html contains links to both blueprints.
-    # Therefore both must be registered in the test app.
-    test_app.register_blueprint(book_bp)
-    test_app.register_blueprint(
-        user_management_bp
-    )
-=======
     test_app.register_blueprint(penalty_bp)
     test_app.register_blueprint(book_bp)
     test_app.register_blueprint(user_management_bp)
->>>>>>> origin/TestMain2
 
     return test_app
 
@@ -110,8 +72,6 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
-<<<<<<< HEAD
-=======
 
 
 # ============================================================
@@ -402,4 +362,3 @@ def app_factory(monkeypatch):
         return test_app
 
     return create_app
->>>>>>> origin/TestMain2

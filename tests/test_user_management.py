@@ -1,8 +1,5 @@
 from datetime import datetime
 
-import pytest
-
-
 import modules.user_management.routes as user_routes
 
 
@@ -152,7 +149,6 @@ class FakeDatabase:
         return FakeUsersCollection(self)
 
 
-
 def use_fake_database(monkeypatch):
     fake_database = FakeDatabase()
 
@@ -183,11 +179,7 @@ def test_scrum_511_manage_users_page_loads(
     assert b"Demonstration data" in response.data
 
 
-<<<<<<< HEAD
 def test_scrum_511_displays_only_student_users(
-=======
-def test_scrum_511_displays_all_dummy_users(
->>>>>>> origin/TestMain2
     client,
     monkeypatch,
 ):
@@ -197,40 +189,24 @@ def test_scrum_511_displays_all_dummy_users(
 
     assert response.status_code == 200
 
-<<<<<<< HEAD
     expected_students = [
-=======
-    expected_users = [
->>>>>>> origin/TestMain2
         b"USR001",
         b"Alicia Tan",
         b"USR002",
         b"Daniel Lee",
         b"USR003",
         b"Nur Aisyah",
-<<<<<<< HEAD
     ]
 
     for expected_value in expected_students:
         assert expected_value in response.data
 
-    # Librarian account must not appear.
     assert b"USR005" not in response.data
     assert b"Sarah Wong" not in response.data
+    assert b"Librarian" not in response.data
 
 
 def test_scrum_511_displays_student_roles_and_statuses(
-=======
-        b"USR005",
-        b"Sarah Wong",
-    ]
-
-    for expected_value in expected_users:
-        assert expected_value in response.data
-
-
-def test_scrum_511_displays_roles_and_statuses(
->>>>>>> origin/TestMain2
     client,
     monkeypatch,
 ):
@@ -240,22 +216,12 @@ def test_scrum_511_displays_roles_and_statuses(
 
     assert response.status_code == 200
     assert b"Student" in response.data
-<<<<<<< HEAD
     assert b"Active" in response.data
     assert b"Inactive" in response.data
-
-    assert b"Sarah Wong" not in response.data
+    assert b"Librarian" not in response.data
 
 
 def test_scrum_511_sorts_students_by_full_name(
-=======
-    assert b"Librarian" in response.data
-    assert b"Active" in response.data
-    assert b"Inactive" in response.data
-
-
-def test_scrum_511_sorts_users_by_full_name(
->>>>>>> origin/TestMain2
     client,
     monkeypatch,
 ):
@@ -263,34 +229,17 @@ def test_scrum_511_sorts_users_by_full_name(
 
     response = client.get("/users/")
 
-<<<<<<< HEAD
     assert response.status_code == 200
 
-=======
->>>>>>> origin/TestMain2
     page_text = response.data.decode("utf-8")
 
-    assert page_text.index(
-        "Alicia Tan"
-    ) < page_text.index(
-        "Daniel Lee"
+    assert (
+        page_text.index("Alicia Tan")
+        < page_text.index("Daniel Lee")
+        < page_text.index("Nur Aisyah")
     )
 
-    assert page_text.index(
-        "Daniel Lee"
-    ) < page_text.index(
-        "Nur Aisyah"
-    )
-
-<<<<<<< HEAD
     assert "Sarah Wong" not in page_text
-=======
-    assert page_text.index(
-        "Nur Aisyah"
-    ) < page_text.index(
-        "Sarah Wong"
-    )
->>>>>>> origin/TestMain2
 
 
 def test_scrum_511_empty_database_displays_message(
@@ -331,10 +280,12 @@ def test_scrum_512_student_details_page_loads(
     assert b"User Details" in response.data
     assert b"USR001" in response.data
     assert b"Alicia Tan" in response.data
+
     assert (
         b"alicia.tan@student.demo"
         in response.data
     )
+
     assert b"012-3456789" in response.data
     assert b"Student" in response.data
     assert b"Active" in response.data
@@ -355,6 +306,11 @@ def test_scrum_512_active_student_shows_deactivate_button(
     assert (
         b"Deactivate Student Account"
         in response.data
+    )
+
+    assert (
+        b"Reactivate Student Account"
+        not in response.data
     )
 
 
@@ -394,17 +350,17 @@ def test_scrum_512_librarian_is_protected(
     assert response.status_code == 200
 
     assert (
-<<<<<<< HEAD
-    b"Librarian accounts cannot be activated or deactivated"
-    in response.data
-=======
-        b"Librarian accounts cannot be deactivated"
+        b"Librarian accounts cannot be"
         in response.data
->>>>>>> origin/TestMain2
     )
 
     assert (
         b"Deactivate Student Account"
+        not in response.data
+    )
+
+    assert (
+        b"Reactivate Student Account"
         not in response.data
     )
 
@@ -624,7 +580,3 @@ def test_scrum_509_unknown_user_returns_404(
     assert response.status_code == 404
     assert b"User record not found." in response.data
     assert fake_database.update_history == []
-<<<<<<< HEAD
-    
-=======
->>>>>>> origin/TestMain2

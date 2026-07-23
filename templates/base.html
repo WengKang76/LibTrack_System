@@ -10,28 +10,14 @@
 </head>
 
 <body>
-<<<<<<< HEAD
     <div class="sidebar">
-        <h2>ðŸ“š LibTrack</h2>
+        <h2>📚 LibTrack</h2>
         <p>Library Management System</p>
-=======
-    <header class="topbar">
-        <div class="logo">📚 LibTrack</div>
->>>>>>> origin/TestMain2
 
-        <nav>
-            <a href="/">Home</a>
-            <a href="/librarian">Librarian</a>
-            <a href="/student">Student</a>
-        </nav>
-    </header>
+        <a href="/">Dashboard</a>
 
-<<<<<<< HEAD
-      <a href="{{ url_for('book_catalogue.manage_books') }}">
+      <a href="/books/">
     Book Catalogue
-</a>
-<a href="/users/">
-    User Management
 </a>
 
         <a href="/catalogue/">Catalogue Reservation</a>
@@ -39,12 +25,7 @@
         <a href="/penalty/overdue">Penalty & Transactions</a>
     </div>
 
-    <div class="main-content">
-
-        <!-- Display Flask success and error messages -->
-=======
     <main class="page-container">
->>>>>>> origin/TestMain2
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -59,3 +40,4 @@
     </main>
 </body>
 </html>
+

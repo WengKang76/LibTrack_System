@@ -7,14 +7,8 @@ from modules.borrowing.routes import borrowing_bp
 from modules.catalogue_reservation.routes import catalogue_bp
 from modules.penalty_transaction.routes import penalty_bp
 from modules.student_catalogue.routes import student_catalogue_bp
-<<<<<<< HEAD
-from modules.user_management.routes import (
-    user_management_bp,
-)
-=======
 from modules.user_management.routes import user_management_bp
 
->>>>>>> origin/TestMain2
 
 app = Flask(__name__)
 
@@ -28,16 +22,10 @@ app.config["SECRET_KEY"] = os.environ.get(
 # Register each integrated module exactly once.
 app.register_blueprint(book_bp)
 app.register_blueprint(student_catalogue_bp)
-<<<<<<< HEAD
-app.register_blueprint(
-    user_management_bp
-)
-=======
 app.register_blueprint(user_management_bp)
 app.register_blueprint(catalogue_bp)
 app.register_blueprint(penalty_bp)
 app.register_blueprint(borrowing_bp)
->>>>>>> origin/TestMain2
 
 
 @app.route("/")
