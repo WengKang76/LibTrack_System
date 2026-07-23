@@ -3,9 +3,11 @@ import sys
 from pathlib import Path
 from types import ModuleType
 from unittest.mock import MagicMock
+from modules.authentication.routes import authentication_bp
 
 import pytest
 from flask import Flask
+from werkzeug.testapp import test_app
 
 
 # Prevent automated tests from connecting to real Firebase.
@@ -39,6 +41,7 @@ setattr(config, "firebase_config", fake_firebase_config)
 
 
 # Import blueprints only after the fake Firebase module is installed.
+from modules.authentication.routes import authentication_bp
 from modules.book_catalogue.routes import book_bp
 from modules.catalogue_reservation import routes as catalogue_routes
 from modules.penalty_transaction.routes import penalty_bp
@@ -62,9 +65,11 @@ def app():
         SECRET_KEY="test-secret-key",
     )
 
+    test_app.register_blueprint(authentication_bp)
     test_app.register_blueprint(penalty_bp)
     test_app.register_blueprint(book_bp)
     test_app.register_blueprint(user_management_bp)
+    
 
     return test_app
 

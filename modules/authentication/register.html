@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link
+    rel="stylesheet"
+    href="{{ url_for(
+        'static',
+        filename='css/authentication.css'
+    ) }}"
+>
+{% endblock %}
+
+{% block content %}
+
+<div class="authentication-page">
+
+    <div class="authentication-card">
+
+        <div class="authentication-header">
+            <h1>Student Registration</h1>
+
+            <p>
+                Register using your student information.
+                Your account must be activated by a librarian
+                before it can be used.
+            </p>
+        </div>
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'authentication.register'
+            ) }}"
+            class="authentication-form"
+            novalidate
+        >
+
+            <div class="form-group">
+                <label for="student_id">
+                    Student ID
+                </label>
+
+                <input
+                    type="text"
+                    id="student_id"
+                    name="student_id"
+                    value="{{ form_data.get(
+                        'student_id',
+                        ''
+                    ) }}"
+                    maxlength="20"
+                    autocomplete="username"
+                    required
+                >
+
+                {% if errors.get('student_id') %}
+                <p class="field-error">
+                    {{ errors.get('student_id') }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    id="full_name"
+                    name="full_name"
+                    value="{{ form_data.get(
+                        'full_name',
+                        ''
+                    ) }}"
+                    maxlength="100"
+                    autocomplete="name"
+                    required
+                >
+
+                {% if errors.get('full_name') %}
+                <p class="field-error">
+                    {{ errors.get('full_name') }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="email">
+                    Email Address
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="{{ form_data.get(
+                        'email',
+                        ''
+                    ) }}"
+                    maxlength="120"
+                    autocomplete="email"
+                    required
+                >
+
+                {% if errors.get('email') %}
+                <p class="field-error">
+                    {{ errors.get('email') }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">
+                    Phone Number
+                </label>
+
+                <input
+                    type="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    value="{{ form_data.get(
+                        'phone_number',
+                        ''
+                    ) }}"
+                    maxlength="20"
+                    autocomplete="tel"
+                    required
+                >
+
+                {% if errors.get('phone_number') %}
+                <p class="field-error">
+                    {{ errors.get('phone_number') }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="password-input"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <p class="password-requirements">
+                    Use at least 8 characters with uppercase,
+                    lowercase, number and special character.
+                </p>
+
+                {% if errors.get('password') %}
+                <p class="field-error">
+                    {{ errors.get('password') }}
+                </p>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">
+                    Confirm Password
+                </label>
+
+                <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    class="password-input"
+                    autocomplete="new-password"
+                    required
+                >
+
+                {% if errors.get('confirm_password') %}
+                <p class="field-error">
+                    {{ errors.get(
+                        'confirm_password'
+                    ) }}
+                </p>
+                {% endif %}
+            </div>
+
+            <label class="show-password-control">
+                <input
+                    type="checkbox"
+                    id="show_passwords"
+                >
+
+                Show passwords
+            </label>
+
+            <button
+                type="submit"
+                class="button authentication-button"
+            >
+                Register Student Account
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    const showPasswordsCheckbox =
+        document.getElementById("show_passwords");
+
+    const passwordInputs =
+        document.querySelectorAll(".password-input");
+
+    showPasswordsCheckbox.addEventListener(
+        "change",
+        function () {
+            const inputType = this.checked
+                ? "text"
+                : "password";
+
+            passwordInputs.forEach(
+                function (passwordInput) {
+                    passwordInput.type = inputType;
+                }
+            );
+        }
+    );
+</script>
+
+{% endblock %}
