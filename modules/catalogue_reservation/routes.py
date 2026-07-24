@@ -1,4 +1,15 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from functools import wraps
+
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from datetime import date, datetime, timedelta
 
 from config.firebase_config import db
@@ -14,6 +25,102 @@ RESERVATIONS_COLLECTION = "reservations"
 BORROW_REQUESTS_COLLECTION = "borrow_requests"
 BORROWING_PERIOD_DAYS = 14
 CURRENT_BORROWING_STATUSES = {"approved", "borrowed", "issued", "active"}
+ACTIVE_RESERVATION_STATUSES = {
+    "active",
+    "pending",
+    "approved",
+    "ready for collection",
+    "ready_for_collection",
+}
+
+
+def _first_session_value(*keys):
+    """Return the first non-empty value stored under the supplied keys."""
+    for key in keys:
+        value = session.get(key)
+        if value is not None and str(value).strip():
+            return value
+
+    return None
+
+
+def _get_authenticated_student():
+    """Return the shared login identity used by student-only routes.
+
+    ``user_id`` and ``role`` are the preferred integration fields. The
+    alternative names keep the module compatible with the earlier Sprint 1
+    session convention until the User Management login branch is merged.
+    """
+    user_id = _first_session_value("user_id", "student_id")
+    role = _first_session_value("role", "user_role")
+
+    normalised_user_id = str(user_id).strip() if user_id is not None else None
+    normalised_role = str(role).strip().lower() if role is not None else None
+
+    return normalised_user_id, normalised_role
+
+
+def _authenticated_student_id():
+    """Return the current student ID after ``student_required`` succeeds."""
+    student_id, _ = _get_authenticated_student()
+    return student_id
+
+
+def student_required(view_function):
+    """Restrict a catalogue or reservation route to logged-in students."""
+    @wraps(view_function)
+    def protected_view(*args, **kwargs):
+        student_id, role = _get_authenticated_student()
+        login_url = current_app.config.get("STUDENT_LOGIN_URL", "/")
+
+        if student_id is None:
+            flash(
+                "Please log in before accessing the student catalogue.",
+                "warning",
+            )
+            return redirect(login_url)
+
+        if role != "student":
+            flash(
+                "Access denied. This function is available to students only.",
+                "danger",
+            )
+            return redirect(login_url)
+
+        return view_function(*args, **kwargs)
+
+    return protected_view
+
+
+def _normalise_status(value):
+    """Normalise a stored workflow status for reliable comparisons."""
+    return " ".join(str(value or "").strip().lower().replace("_", " ").split())
+
+
+def _student_has_active_reservation(student_id, book_id):
+    """Return True when the student already has an active reservation.
+
+    The query intentionally retrieves all reservation states for the student
+    and book, then evaluates them locally. This supports the different active
+    statuses used by the Reservation and Borrowing integration workflows.
+    """
+    reservations = (
+        db.collection(RESERVATIONS_COLLECTION)
+        .where("student_id", "==", student_id)
+        .where("book_id", "==", book_id)
+        .stream()
+    )
+
+    normalised_active_statuses = {
+        _normalise_status(status)
+        for status in ACTIVE_RESERVATION_STATUSES
+    }
+
+    return any(
+        _normalise_status((reservation.to_dict() or {}).get("status"))
+        in normalised_active_statuses
+        for reservation in reservations
+    )
 
 
 def _safe_int(value, default=0):
@@ -152,6 +259,7 @@ def _matches_search(book, search_keyword):
 
 # SCRUM-44: Setup module + View book catalogue
 @catalogue_bp.route("/")
+@student_required
 def view_catalogue():
     books = []
     search_keyword = request.args.get("search", "").strip().lower()
@@ -191,6 +299,7 @@ def view_catalogue():
 
 # SCRUM-684: Display all available books
 @catalogue_bp.route("/available")
+@student_required
 def view_available_books():
     books = []
     search_keyword = request.args.get("search", "").strip().lower()
@@ -202,17 +311,12 @@ def view_available_books():
             book = doc.to_dict() or {}
             book["book_id"] = doc.id
 
-            status = str(book.get("status", "")).strip().lower()
             available_copies = _safe_int(
                 book.get("available_copies", 0)
             )
 
             book["available_copies"] = available_copies
-
-            is_available = (
-                status == "available"
-                and available_copies > 0
-            )
+            is_available = _book_is_currently_available(book)
 
             if is_available and _matches_search(book, search_keyword):
                 books.append(book)
@@ -237,9 +341,25 @@ def view_available_books():
     )
 
 
-# SCRUM-685: View current availability status and book details
+# SCRUM-685 and SCRUM-1187: Load the latest Book Catalogue snapshot.
+def _book_is_currently_available(book):
+    """Return availability using the Book Catalogue inventory fields.
+
+    ``available_copies`` is maintained from the physical-copy records by the
+    Book Catalogue module, so it is authoritative when present. The legacy
+    status field is used only when older records do not contain a copy count.
+    """
+    raw_available_copies = book.get("available_copies")
+    stored_status = str(book.get("status", "")).strip().lower()
+
+    if raw_available_copies is None:
+        return stored_status == "available"
+
+    return _safe_int(raw_available_copies, 0) > 0
+
+
 def _load_selected_book(book_id):
-    """Load and normalise one selected book from Firestore."""
+    """Load and normalise the latest selected-book record from Firestore."""
     book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
 
     if not book_doc.exists:
@@ -248,25 +368,24 @@ def _load_selected_book(book_id):
     book = book_doc.to_dict() or {}
     book["book_id"] = book_doc.id
 
+    has_copy_count = book.get("available_copies") is not None
     available_copies = _safe_int(
         book.get("available_copies", 0)
     )
     total_copies = _safe_int(
         book.get("total_copies", 0)
     )
-    stored_status = str(
-        book.get("status", "")
-    ).strip().lower()
-
-    is_available = (
-        stored_status == "available"
-        and available_copies > 0
-    )
+    is_available = _book_is_currently_available(book)
 
     book["available_copies"] = available_copies
     book["total_copies"] = total_copies
     book["current_status"] = (
         "Available" if is_available else "Unavailable"
+    )
+    book["availability_source"] = (
+        "available_copies"
+        if has_copy_count
+        else "status"
     )
 
     return book, is_available
@@ -299,12 +418,14 @@ def _render_selected_book_details(book_id):
 
 
 @catalogue_bp.route("/details/<book_id>")
+@student_required
 def view_book_details(book_id):
     """Display the complete details and current availability of a book."""
     return _render_selected_book_details(book_id)
 
 
 @catalogue_bp.route("/availability/<book_id>")
+@student_required
 def view_book_availability(book_id):
     """Keep the previous SCRUM-685 URL working for compatibility."""
     return _render_selected_book_details(book_id)
@@ -312,6 +433,7 @@ def view_book_availability(book_id):
 
 # SCRUM-689: Reserve an unavailable book
 @catalogue_bp.route("/reserve/<book_id>", methods=["GET", "POST"])
+@student_required
 def reserve_book(book_id):
     """Allow a student to reserve a book that is currently unavailable.
 
@@ -319,26 +441,16 @@ def reserve_book(book_id):
     creates one active reservation when no duplicate active reservation
     exists for the same student and book.
     """
-    student_id = session.get("student_id", "S001")
+    student_id = _authenticated_student_id()
 
     try:
-        book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
+        selected_book = _load_selected_book(book_id)
 
-        if not book_doc.exists:
+        if selected_book is None:
             flash("Book not found.", "danger")
             return redirect(url_for("catalogue_reservation.view_catalogue"))
 
-        book = book_doc.to_dict() or {}
-        book["book_id"] = book_doc.id
-        book["available_copies"] = _safe_int(
-            book.get("available_copies", 0)
-        )
-
-        stored_status = str(book.get("status", "")).strip().lower()
-        is_available = (
-            stored_status == "available"
-            and book["available_copies"] > 0
-        )
+        book, is_available = selected_book
 
         if is_available:
             flash(
@@ -353,15 +465,7 @@ def reserve_book(book_id):
                 )
             )
 
-        existing_reservations = (
-            db.collection(RESERVATIONS_COLLECTION)
-            .where("student_id", "==", student_id)
-            .where("book_id", "==", book_id)
-            .where("status", "==", "Active")
-            .stream()
-        )
-
-        if any(True for _ in existing_reservations):
+        if _student_has_active_reservation(student_id, book_id):
             flash("You already have an active reservation for this book.", "info")
             return redirect(
                 url_for("catalogue_reservation.view_my_reservations")
@@ -373,14 +477,52 @@ def reserve_book(book_id):
                 book=book
             )
 
+        # SCRUM-1187: Read the Book Catalogue record again immediately before
+        # creating the reservation. This catches availability changes that
+        # happen after the confirmation page was opened.
+        latest_selected_book = _load_selected_book(book_id)
+
+        if latest_selected_book is None:
+            flash("Book not found.", "danger")
+            return redirect(url_for("catalogue_reservation.view_catalogue"))
+
+        book, is_available = latest_selected_book
+
+        if is_available:
+            flash(
+                "This book has become available. "
+                "Please submit a borrowing request instead.",
+                "info",
+            )
+            return redirect(
+                url_for(
+                    "catalogue_reservation.view_book_availability",
+                    book_id=book_id,
+                )
+            )
+
+        # SCRUM-1188: Repeat the duplicate check immediately before the write
+        # so a reservation created in another request is not ignored.
+        if _student_has_active_reservation(student_id, book_id):
+            flash(
+                "You already have an active reservation for this book.",
+                "info",
+            )
+            return redirect(
+                url_for("catalogue_reservation.view_my_reservations")
+            )
+
+        availability_checked_at = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         reservation_data = {
             "student_id": student_id,
             "book_id": book_id,
             "book_title": book.get("title", "Untitled Book"),
-            "reservation_date": datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
-            "status": "Active"
+            "reservation_date": availability_checked_at,
+            "status": "Active",
+            "availability_checked_at": availability_checked_at,
+            "book_updated_at": book.get("updated_at"),
         }
 
         db.collection(RESERVATIONS_COLLECTION).add(reservation_data)
@@ -403,13 +545,14 @@ def reserve_book(book_id):
     "/cancel-reservation/<reservation_id>",
     methods=["GET", "POST"]
 )
+@student_required
 def cancel_reservation(reservation_id):
     """Allow the current student to cancel one active reservation.
 
     GET displays a simple confirmation page. POST validates the reservation
     again before updating its status in Firestore.
     """
-    student_id = session.get("student_id", "S001")
+    student_id = _authenticated_student_id()
 
     try:
         reservation_ref = (
@@ -475,8 +618,9 @@ def cancel_reservation(reservation_id):
 
 # View student's own reservations
 @catalogue_bp.route("/my-reservations")
+@student_required
 def view_my_reservations():
-    student_id = session.get("student_id", "S001")
+    student_id = _authenticated_student_id()
     reservations = []
 
     try:
@@ -511,6 +655,7 @@ def view_my_reservations():
 # SCRUM-16, SCRUM-36, SCRUM-691 and SCRUM-692:
 # Request to borrow a book, display the borrowing period, and validate requests.
 @catalogue_bp.route("/borrow/<book_id>", methods=["GET", "POST"])
+@student_required
 def request_borrow_book(book_id):
     """Display and submit a borrowing request for an available book.
 
@@ -518,30 +663,18 @@ def request_borrow_book(book_id):
     before confirmation. POST repeats the validations and stores one pending
     request in Firestore.
     """
-    student_id = session.get("student_id", "S001")
+    student_id = _authenticated_student_id()
 
     try:
-        book_doc = db.collection(BOOKS_COLLECTION).document(book_id).get()
+        selected_book = _load_selected_book(book_id)
 
-        if not book_doc.exists:
+        if selected_book is None:
             flash("Book not found.", "danger")
             return redirect(
                 url_for("catalogue_reservation.view_catalogue")
             )
 
-        book = book_doc.to_dict() or {}
-        book["book_id"] = book_doc.id
-        book["available_copies"] = _safe_int(
-            book.get("available_copies", 0)
-        )
-
-        stored_status = str(
-            book.get("status", "")
-        ).strip().lower()
-        is_available = (
-            stored_status == "available"
-            and book["available_copies"] > 0
-        )
+        book, is_available = selected_book
 
         # SCRUM-691: Unavailable books cannot be borrowed.
         if not is_available:
@@ -586,6 +719,33 @@ def request_borrow_book(book_id):
                 borrowing_period_days=BORROWING_PERIOD_DAYS
             )
 
+        # SCRUM-1189: Re-read the latest Book Catalogue inventory immediately
+        # before the borrowing request is stored. The confirmation page may
+        # have been open while another borrower took the last available copy.
+        latest_selected_book = _load_selected_book(book_id)
+
+        if latest_selected_book is None:
+            flash("Book not found.", "danger")
+            return redirect(
+                url_for("catalogue_reservation.view_catalogue")
+            )
+
+        book, is_available = latest_selected_book
+
+        if not is_available:
+            flash(
+                "This book is no longer available. "
+                "Your borrow request was not submitted. "
+                "Please reserve it instead.",
+                "info",
+            )
+            return redirect(
+                url_for(
+                    "catalogue_reservation.view_book_details",
+                    book_id=book_id,
+                )
+            )
+
         # SCRUM-16: Store the confirmed borrowing request in Firestore.
         request_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         borrow_request_data = {
@@ -595,7 +755,9 @@ def request_borrow_book(book_id):
             "request_date": request_date,
             "borrowing_period": f"{BORROWING_PERIOD_DAYS} days",
             "borrowing_period_days": BORROWING_PERIOD_DAYS,
-            "status": "Pending"
+            "status": "Pending",
+            "availability_checked_at": request_date,
+            "book_updated_at": book.get("updated_at"),
         }
 
         db.collection(BORROW_REQUESTS_COLLECTION).add(
@@ -623,9 +785,10 @@ def request_borrow_book(book_id):
 
 # SCRUM-675 and SCRUM-677: View currently borrowed books and remaining period
 @catalogue_bp.route("/my-borrowed-books")
+@student_required
 def view_currently_borrowed_books():
     """Display the current student's approved or issued borrowing records."""
-    student_id = session.get("student_id", "S001")
+    student_id = _authenticated_student_id()
     borrowed_books = []
 
     try:

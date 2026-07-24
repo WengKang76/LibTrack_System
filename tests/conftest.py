@@ -5,7 +5,7 @@ from types import ModuleType
 from unittest.mock import MagicMock
 
 import pytest
-from flask import Flask
+from flask import Flask, session
 
 
 # Prevent automated tests from connecting to real Firebase.
@@ -321,6 +321,9 @@ def app_factory(monkeypatch):
         books=None,
         reservations=None,
         borrow_requests=None,
+        authenticated=True,
+        session_user_id="S001",
+        session_role="student",
     ):
         fake_db = FakeFirestore(
             books=books,
@@ -354,6 +357,13 @@ def app_factory(monkeypatch):
         @test_app.route("/")
         def home():
             return "LibTrack Test Home"
+
+        if authenticated:
+            @test_app.before_request
+            def seed_authenticated_student():
+                """Keep Sprint 1 tests authenticated after route protection."""
+                session.setdefault("user_id", session_user_id)
+                session.setdefault("role", session_role)
 
         test_app.register_blueprint(
             catalogue_routes.catalogue_bp
