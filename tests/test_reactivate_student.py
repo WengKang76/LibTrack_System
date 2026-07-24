@@ -1,12 +1,20 @@
 """Additional tests for student account reactivation.
 
-This is a new test file. It does not replace tests/test_user_management.py.
+This is a new test file. It does not replace
+tests/test_user_management.py.
 """
 
+import pytest
 from datetime import datetime
 
-from tests.test_user_management import use_fake_database
+from tests.test_user_management import (
+    use_fake_database,
+)
 
+
+pytestmark = pytest.mark.usefixtures(
+    "login_as_librarian"
+)
 
 def test_inactive_student_shows_reactivate_button(client, monkeypatch):
     use_fake_database(monkeypatch)

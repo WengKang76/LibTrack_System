@@ -1,15 +1,21 @@
 import re
+import time
 from datetime import datetime
 
 from flask import (
     Blueprint,
+    current_app,
     flash,
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
-from werkzeug.security import generate_password_hash
+from werkzeug.security import (
+    check_password_hash,
+    generate_password_hash,
+)
 
 from config.firebase_config import (
     COLLECTION_USERS,
@@ -24,6 +30,50 @@ authentication_bp = Blueprint(
     template_folder=".",
 )
 
+@authentication_bp.before_app_request
+def check_session_expiration():
+    """
+    Automatically expire an authenticated session after
+    the configured inactivity period.
+    """
+
+    if not session.get("user_id"):
+        return None
+
+    current_time = time.time()
+    last_activity = session.get("last_activity")
+
+    timeout_seconds = (
+        current_app.permanent_session_lifetime.total_seconds()
+    )
+
+    if last_activity is not None:
+        try:
+            inactivity_period = (
+                current_time - float(last_activity)
+            )
+        except (TypeError, ValueError):
+            inactivity_period = timeout_seconds + 1
+
+        if inactivity_period > timeout_seconds:
+            session.clear()
+
+            flash(
+                (
+                    "Your session has expired due to inactivity. "
+                    "Please log in again."
+                ),
+                "warning",
+            )
+
+            return redirect(
+                url_for("authentication.login")
+            )
+
+    session["last_activity"] = current_time
+    session.modified = True
+
+    return None
 
 EMAIL_PATTERN = re.compile(
     r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
@@ -46,6 +96,33 @@ def _current_timestamp():
 
 def _normalise_email(email):
     return str(email).strip().lower()
+
+def _find_user_by_email(email):
+    normalised_email = _normalise_email(email)
+
+    user_documents = (
+        db.collection(
+            COLLECTION_USERS
+        ).stream()
+    )
+
+    for document in user_documents:
+        user = document.to_dict() or {}
+
+        existing_email = _normalise_email(
+            user.get("email", "")
+        )
+
+        if existing_email == normalised_email:
+            user["document_id"] = document.id
+            user.setdefault(
+                "user_id",
+                document.id,
+            )
+
+            return user
+
+    return None
 
 
 def _validate_password(password):
@@ -380,4 +457,166 @@ def register():
         "register.html",
         form_data=form_data,
         errors=errors,
+    )
+
+@authentication_bp.route(
+    "/login",
+    methods=["GET", "POST"],
+)
+def login():
+    form_data = {
+        "email": "",
+    }
+
+    error_message = None
+
+    if request.method == "POST":
+        email = _normalise_email(
+            request.form.get(
+                "email",
+                "",
+            )
+        )
+
+        password = request.form.get(
+            "password",
+            "",
+        )
+
+        form_data["email"] = email
+
+        if not email or not password:
+            error_message = (
+                "Email and password are required."
+            )
+
+            return (
+                render_template(
+                    "login.html",
+                    form_data=form_data,
+                    error_message=error_message,
+                ),
+                400,
+            )
+
+        user = _find_user_by_email(email)
+
+        password_is_valid = False
+
+        if user:
+            stored_password_hash = str(
+                user.get(
+                    "password_hash",
+                    "",
+                )
+            )
+
+            if stored_password_hash:
+                try:
+                    password_is_valid = (
+                        check_password_hash(
+                            stored_password_hash,
+                            password,
+                        )
+                    )
+                except (TypeError, ValueError):
+                    password_is_valid = False
+
+        if not user or not password_is_valid:
+            error_message = (
+                "Invalid email or password."
+            )
+
+            return (
+                render_template(
+                    "login.html",
+                    form_data=form_data,
+                    error_message=error_message,
+                ),
+                401,
+            )
+
+        account_status = str(
+            user.get(
+                "account_status",
+                "Inactive",
+            )
+        ).strip().lower()
+
+        if account_status != "active":
+            error_message = (
+                "Your account is currently inactive. "
+                "Please contact a librarian."
+            )
+
+            return (
+                render_template(
+                    "login.html",
+                    form_data=form_data,
+                    error_message=error_message,
+                ),
+                403,
+            )
+
+        user_role = str(
+            user.get(
+                "role",
+                "",
+            )
+        ).strip().lower()
+
+        session.clear()
+        session.permanent = True
+        session["last_activity"] = time.time()
+
+        session["user_id"] = user.get(
+            "user_id",
+            user.get("document_id"),
+        )
+
+        session["full_name"] = user.get(
+            "full_name",
+            "",
+        )
+
+        session["email"] = user.get(
+            "email",
+            "",
+        )
+
+        session["role"] = user_role
+
+        flash(
+            (
+                f"Welcome, "
+                f"{user.get('full_name', 'User')}."
+            ),
+            "success",
+        )
+
+        return redirect("/")
+    
+    return render_template(
+        "login.html",
+        form_data=form_data,
+        error_message=error_message,
+    )
+
+
+@authentication_bp.route(
+    "/logout",
+    methods=["POST"],
+)
+def logout():
+    session.clear()
+
+    flash(
+        "You have logged out successfully.",
+        "success",
+    )
+
+    return redirect(
+        url_for(
+            "authentication.login"
+        )
     )

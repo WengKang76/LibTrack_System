@@ -87,3 +87,29 @@
     width: 100%;
     font-size: 15px;
 }
+
+.authentication-error {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    color: #991b1b;
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.authentication-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.authentication-links a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.authentication-links a:hover {
+    text-decoration: underline;
+}

@@ -1,7 +1,11 @@
+﻿import pytest
 from datetime import datetime
 
 import modules.book_catalogue.routes as book_routes
 
+pytestmark = pytest.mark.usefixtures(
+    "login_as_librarian"
+)
 
 class FakeDocumentSnapshot:
     def __init__(self, document_id, data):
@@ -452,3 +456,4 @@ def test_scrum_897_future_publication_year_creates_nothing(
     assert response.status_code == 400
     assert fake_database.books == {}
     assert fake_database.copies == {}
+

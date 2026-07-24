@@ -4,6 +4,10 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from config.firebase_config import COLLECTION_BOOKS, db
 
+from modules.authentication.decorators import (
+    librarian_required,
+)
+
 
 book_bp = Blueprint(
     "book_catalogue",
@@ -168,6 +172,7 @@ def _is_book_active(book):
 # ============================================================
 
 @book_bp.route("/", methods=["GET"])
+@librarian_required
 def manage_books():
     books = []
 
@@ -188,6 +193,7 @@ def manage_books():
 # ============================================================
 
 @book_bp.route("/add", methods=["GET", "POST"])
+@librarian_required
 def add_book():
     form_data = {}
 
@@ -307,6 +313,7 @@ def get_book_by_id(book_id):
 # ============================================================
 
 @book_bp.route("/details/<book_id>", methods=["GET"])
+@librarian_required
 def librarian_book_details(book_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -327,6 +334,7 @@ def librarian_book_details(book_id):
 
 @book_bp.route("/catalogue/deactivate/<book_id>", methods=["GET", "POST"])
 @book_bp.route("/catalogue/unavailable/<book_id>", methods=["GET", "POST"])
+@librarian_required
 def deactivate_book(book_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -372,6 +380,7 @@ def deactivate_book(book_id):
 
 @book_bp.route("/catalogue/activate/<book_id>", methods=["POST"])
 @book_bp.route("/catalogue/restore/<book_id>", methods=["POST"])
+@librarian_required
 def activate_book(book_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -411,6 +420,7 @@ def activate_book(book_id):
     "/copies/status/<book_id>/<copy_id>",
     methods=["GET", "POST"],
 )
+@librarian_required
 def update_copy_status(book_id, copy_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -477,6 +487,7 @@ def update_copy_status(book_id, copy_id):
     "/copies/restore/<book_id>/<copy_id>",
     methods=["POST"],
 )
+@librarian_required
 def restore_damaged_copy(book_id, copy_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -535,6 +546,7 @@ def _validate_publication_year(publication_year):
 # ============================================================
 
 @book_bp.route("/edit/<book_id>", methods=["GET", "POST"])
+@librarian_required
 def edit_book(book_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -613,6 +625,7 @@ def edit_book(book_id):
 # ============================================================
 
 @book_bp.route("/copies/add/<book_id>", methods=["GET", "POST"])
+@librarian_required
 def add_book_copies(book_id):
     book = get_book_by_id(book_id)
     if book is None:
@@ -677,6 +690,7 @@ def add_book_copies(book_id):
 # ============================================================
 
 @book_bp.route("/delete/<book_id>", methods=["GET", "POST"])
+@librarian_required
 def delete_book(book_id):
     book = get_book_by_id(book_id)
     if book is None:

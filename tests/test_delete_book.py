@@ -1,5 +1,9 @@
+﻿import pytest
 import modules.book_catalogue.routes as book_routes
 
+pytestmark = pytest.mark.usefixtures(
+    "login_as_librarian"
+)
 
 class FakeDocumentSnapshot:
     def __init__(self, document_id, data, reference=None):
@@ -160,3 +164,4 @@ def test_scrum_704_unknown_book_returns_404(client, monkeypatch):
     response = client.get("/books/delete/UNKNOWN")
 
     assert response.status_code == 404
+

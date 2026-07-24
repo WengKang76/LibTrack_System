@@ -1,6 +1,14 @@
+from urllib import response
+
+import pytest
 from datetime import datetime
 
 import modules.user_management.routes as user_routes
+
+
+pytestmark = pytest.mark.usefixtures(
+    "login_as_librarian"
+)
 
 
 class FakeDocumentSnapshot:
@@ -201,9 +209,9 @@ def test_scrum_511_displays_only_student_users(
     for expected_value in expected_students:
         assert expected_value in response.data
 
-    assert b"USR005" not in response.data
-    assert b"Sarah Wong" not in response.data
-    assert b"Librarian" not in response.data
+        assert b"USR005" not in response.data
+        assert b"Sarah Wong" not in response.data
+        assert b"sarah.wong@staff.demo" not in response.data
 
 
 def test_scrum_511_displays_student_roles_and_statuses(
@@ -218,7 +226,10 @@ def test_scrum_511_displays_student_roles_and_statuses(
     assert b"Student" in response.data
     assert b"Active" in response.data
     assert b"Inactive" in response.data
-    assert b"Librarian" not in response.data
+
+    assert b"USR005" not in response.data
+    assert b"Sarah Wong" not in response.data
+    assert b"sarah.wong@staff.demo" not in response.data
 
 
 def test_scrum_511_sorts_students_by_full_name(

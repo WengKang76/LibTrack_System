@@ -13,6 +13,10 @@ from config.firebase_config import (
     db,
 )
 
+from modules.authentication.decorators import (
+    librarian_required,
+)
+
 
 user_management_bp = Blueprint(
     "user_management",
@@ -60,6 +64,7 @@ def get_user_by_id(user_id):
     "/",
     methods=["GET"],
 )
+@librarian_required
 def manage_users():
     user_documents = (
         db.collection(COLLECTION_USERS)
@@ -78,8 +83,6 @@ def manage_users():
         # User Management displays only Student accounts.
         if role != "student":
             continue
-
-        user["document_id"] = document.id
 
         user["document_id"] = document.id
         user.setdefault(
@@ -109,6 +112,7 @@ def manage_users():
     "/details/<user_id>",
     methods=["GET"],
 )
+@librarian_required
 def user_details(user_id):
     user = get_user_by_id(user_id)
 
@@ -129,6 +133,7 @@ def user_details(user_id):
     "/deactivate/<user_id>",
     methods=["POST"],
 )
+@librarian_required
 def deactivate_student(user_id):
     user = get_user_by_id(user_id)
 
@@ -198,6 +203,7 @@ def deactivate_student(user_id):
     "/reactivate/<user_id>",
     methods=["POST"],
 )
+@librarian_required
 def reactivate_student(user_id):
     user = get_user_by_id(user_id)
 

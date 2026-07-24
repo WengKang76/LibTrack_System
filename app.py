@@ -9,7 +9,7 @@ from modules.catalogue_reservation.routes import catalogue_bp
 from modules.penalty_transaction.routes import penalty_bp
 from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
-
+from datetime import timedelta
 
 
 app = Flask(__name__)
@@ -18,6 +18,15 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get(
     "SECRET_KEY",
     "libtrack-local-development-key",
+)
+
+app.config.update(
+    PERMANENT_SESSION_LIFETIME=timedelta(
+        minutes=30
+    ),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_REFRESH_EACH_REQUEST=True,
 )
 
 

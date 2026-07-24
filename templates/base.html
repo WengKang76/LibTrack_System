@@ -1,43 +1,128 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>LibTrack System</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='style.css'
+        ) }}"
+    >
 
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
+
     <div class="sidebar">
+
         <h2>📚 LibTrack</h2>
+
         <p>Library Management System</p>
 
-        <a href="/">Dashboard</a>
+        <a href="/">
+            Dashboard
+        </a>
+        {% if session.get('user_id') %}
 
-      <a href="/books/">
-    Book Catalogue
-</a>
+    <div class="sidebar-user">
+        <strong>
+            {{ session.get('full_name', 'User') }}
+        </strong>
 
-        <a href="/catalogue/">Catalogue Reservation</a>
-        <a href="/borrowing/requests">Borrowing & Returning</a>
-        <a href="/penalty/overdue">Penalty & Transactions</a>
+        <span>
+            {{ session.get('role', '') | title }}
+        </span>
+    </div>
+
+    <form
+        method="POST"
+        action="/auth/logout"
+        class="sidebar-logout-form"
+    >
+        <button
+            type="submit"
+            class="sidebar-logout-button"
+        >
+            Logout
+        </button>
+    </form>
+
+{% else %}
+
+    <a href="/auth/login">
+        Login
+    </a>
+
+    <a href="/auth/register">
+        Student Registration
+    </a>
+
+    
+{% endif %}
+
+        <a href="/auth/register">
+            Student Registration
+        </a>
+
+        <a href="/books/">
+            Book Catalogue Management
+        </a>
+
+        <a href="/users/">
+            User Management
+        </a>
+
+        <a href="/catalogue/">
+            Catalogue Reservation
+        </a>
+
+        <a href="/borrowing/requests">
+            Borrowing &amp; Returning
+        </a>
+
+        <a href="/penalty/overdue">
+            Penalty &amp; Transactions
+        </a>
+
     </div>
 
     <main class="page-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% with messages =
+            get_flashed_messages(
+                with_categories=true
+            )
+        %}
+
             {% if messages %}
+
                 {% for category, message in messages %}
+
                     <div class="alert {{ category }}">
                         {{ message }}
                     </div>
+
                 {% endfor %}
+
             {% endif %}
+
         {% endwith %}
 
         {% block content %}{% endblock %}
-    </main>
-</body>
-</html>
 
+    </main>
+
+</body>
+
+</html>
