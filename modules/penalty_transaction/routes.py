@@ -5,14 +5,12 @@ try:
     from config.firebase_config import db, COLLECTION_BORROW_TRANSACTIONS
 except ImportError:
     from config.firebase_config import db
+
     COLLECTION_BORROW_TRANSACTIONS = "borrow_transactions"
 
 
 penalty_bp = Blueprint(
-    "penalty_transaction",
-    __name__,
-    url_prefix="/penalty",
-    template_folder="."
+    "penalty_transaction", __name__, url_prefix="/penalty", template_folder="."
 )
 
 
@@ -29,7 +27,7 @@ DEMO_BORROW_TRANSACTIONS = {
         "book_title": "Python Programming",
         "borrow_date": "2026-07-01",
         "due_date": (date.today() - timedelta(days=5)).strftime("%Y-%m-%d"),
-        "status": "Borrowed"
+        "status": "Borrowed",
     },
     "T002": {
         "student_id": "S002",
@@ -37,7 +35,7 @@ DEMO_BORROW_TRANSACTIONS = {
         "book_title": "Database System",
         "borrow_date": "2026-07-05",
         "due_date": (date.today() + timedelta(days=3)).strftime("%Y-%m-%d"),
-        "status": "Borrowed"
+        "status": "Borrowed",
     },
     "T003": {
         "student_id": "S003",
@@ -45,8 +43,8 @@ DEMO_BORROW_TRANSACTIONS = {
         "book_title": "Software Engineering",
         "borrow_date": "2026-07-01",
         "due_date": (date.today() - timedelta(days=2)).strftime("%Y-%m-%d"),
-        "status": "Returned"
-    }
+        "status": "Returned",
+    },
 }
 
 
@@ -58,7 +56,7 @@ DEMO_PENALTIES = {
         "book_title": "Python Programming",
         "overdue_days": 5,
         "penalty_amount": 5.00,
-        "status": "Outstanding"
+        "status": "Outstanding",
     },
     "P002": {
         "penalty_id": "P002",
@@ -72,7 +70,7 @@ DEMO_PENALTIES = {
         "paid_by": "Student",
         "cash_amount_received": 3.00,
         "change_amount": 0.00,
-        "payment_date": "2026-07-14 10:30:00"
+        "payment_date": "2026-07-14 10:30:00",
     },
     "P003": {
         "penalty_id": "P003",
@@ -84,14 +82,15 @@ DEMO_PENALTIES = {
         "status": "Waived",
         "waiver_reason": "Approved by librarian.",
         "waived_by": "Librarian",
-        "waived_date": "2026-07-14 11:00:00"
-    }
+        "waived_date": "2026-07-14 11:00:00",
+    },
 }
 
 
 # =========================================================
 # HELPER FUNCTIONS
 # =========================================================
+
 
 def convert_to_date(value):
     if isinstance(value, datetime):
@@ -151,18 +150,12 @@ def calculate_penalty_amount(due_date):
     today = date.today()
 
     if due_date is None or due_date >= today:
-        return {
-            "overdue_days": 0,
-            "penalty_amount": 0.00
-        }
+        return {"overdue_days": 0, "penalty_amount": 0.00}
 
     overdue_days = (today - due_date).days
     penalty_amount = overdue_days * PENALTY_RATE_PER_DAY
 
-    return {
-        "overdue_days": overdue_days,
-        "penalty_amount": penalty_amount
-    }
+    return {"overdue_days": overdue_days, "penalty_amount": penalty_amount}
 
 
 def get_outstanding_penalties(student_id=None):
@@ -241,7 +234,7 @@ def pay_penalty_with_credit_card(penalty_id, card_number):
         "paid_by": "Student",
         "payment_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "card_last_four": card_number[-4:],
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     try:
@@ -285,7 +278,7 @@ def pay_penalty_with_cash(penalty_id, cash_amount):
         "cash_amount_received": cash_amount,
         "change_amount": change_amount,
         "payment_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     try:
@@ -353,7 +346,7 @@ def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
         "waiver_reason": waiver_reason,
         "waived_by": waived_by,
         "waived_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     try:
@@ -365,6 +358,8 @@ def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
         DEMO_PENALTIES[penalty_id].update(waiver_data)
 
     return True, "Penalty waived successfully."
+
+
 # =========================================================
 # SCRUM-705 and SCRUM-706: Return Exception Handling
 # =========================================================
@@ -376,7 +371,7 @@ DEMO_RETURN_TRANSACTIONS = {
         "book_id": "B001",
         "book_title": "Python Programming",
         "return_date": "2026-07-15",
-        "status": "Return Requested"
+        "status": "Return Requested",
     },
     "RT002": {
         "transaction_id": "RT002",
@@ -385,7 +380,7 @@ DEMO_RETURN_TRANSACTIONS = {
         "book_title": "Database System",
         "return_date": "2026-07-15",
         "status": "Rejected",
-        "rejection_reason": "Book condition unacceptable"
+        "rejection_reason": "Book condition unacceptable",
     },
     "RT003": {
         "transaction_id": "RT003",
@@ -393,14 +388,16 @@ DEMO_RETURN_TRANSACTIONS = {
         "book_id": "B003",
         "book_title": "Software Engineering",
         "return_date": "2026-07-15",
-        "status": "Closed"
-    }
+        "status": "Closed",
+    },
 }
 
 
 def get_return_transaction_by_id(transaction_id):
     try:
-        transaction_doc = db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).get()
+        transaction_doc = (
+            db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).get()
+        )
 
         if transaction_doc.exists:
             transaction = transaction_doc.to_dict()
@@ -441,11 +438,13 @@ def reject_return_exception(transaction_id, rejection_reason, rejected_by="Libra
         "rejection_reason": rejection_reason,
         "rejected_by": rejected_by,
         "rejected_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     try:
-        db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(rejection_data)
+        db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(
+            rejection_data
+        )
     except Exception:
         pass
 
@@ -509,10 +508,7 @@ def penalty_record_exists_for_rejected_return(transaction_id):
 
 
 def create_penalty_record_for_rejected_return(
-    transaction_id,
-    penalty_amount,
-    penalty_reason,
-    created_by="Librarian"
+    transaction_id, penalty_amount, penalty_reason, created_by="Librarian"
 ):
     transaction = get_return_transaction_by_id(transaction_id)
 
@@ -554,7 +550,7 @@ def create_penalty_record_for_rejected_return(
         "status": "Outstanding",
         "created_by": created_by,
         "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     saved_to_database = False
@@ -602,10 +598,7 @@ def book_exception_exists(transaction_id):
 
 
 def record_lost_damaged_book_exception(
-    transaction_id,
-    exception_type,
-    exception_description,
-    recorded_by="Librarian"
+    transaction_id, exception_type, exception_description, recorded_by="Librarian"
 ):
     transaction = get_return_transaction_by_id(transaction_id)
 
@@ -638,7 +631,7 @@ def record_lost_damaged_book_exception(
         "exception_status": "Exception Recorded",
         "recorded_by": recorded_by,
         "recorded_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     saved_to_database = False
@@ -653,11 +646,13 @@ def record_lost_damaged_book_exception(
         "status": exception_type + " Exception Recorded",
         "book_exception_status": "Exception Recorded",
         "exception_type": exception_type,
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     try:
-        db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(update_data)
+        db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).update(
+            update_data
+        )
     except Exception:
         pass
 
@@ -668,6 +663,7 @@ def record_lost_damaged_book_exception(
         DEMO_BOOK_EXCEPTIONS[exception_id] = exception_data
 
     return True, "Lost or damaged book exception recorded successfully."
+
 
 # =========================================================
 # SCRUM-709: Prevent Borrowing Approval for Unpaid Penalties
@@ -680,7 +676,7 @@ DEMO_BORROW_REQUESTS = {
         "book_id": "B001",
         "book_title": "Python Programming",
         "request_date": "2026-07-15",
-        "status": "Pending"
+        "status": "Pending",
     },
     "BR002": {
         "request_id": "BR002",
@@ -688,8 +684,8 @@ DEMO_BORROW_REQUESTS = {
         "book_id": "B002",
         "book_title": "Database System",
         "request_date": "2026-07-15",
-        "status": "Pending"
-    }
+        "status": "Pending",
+    },
 }
 
 
@@ -705,10 +701,11 @@ def get_unpaid_penalties_by_student(student_id):
 
             status = str(penalty.get("status", "")).lower()
 
-            if (
-                penalty.get("student_id") == student_id
-                and status in ["outstanding", "unpaid", "pending"]
-            ):
+            if penalty.get("student_id") == student_id and status in [
+                "outstanding",
+                "unpaid",
+                "pending",
+            ]:
                 unpaid_penalties.append(penalty)
 
     except Exception:
@@ -721,10 +718,11 @@ def get_unpaid_penalties_by_student(student_id):
 
             status = str(demo_penalty.get("status", "")).lower()
 
-            if (
-                demo_penalty.get("student_id") == student_id
-                and status in ["outstanding", "unpaid", "pending"]
-            ):
+            if demo_penalty.get("student_id") == student_id and status in [
+                "outstanding",
+                "unpaid",
+                "pending",
+            ]:
                 unpaid_penalties.append(demo_penalty)
 
     return unpaid_penalties
@@ -766,13 +764,16 @@ def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian
     unpaid_penalties = get_unpaid_penalties_by_student(student_id)
 
     if len(unpaid_penalties) > 0:
-        return False, "Borrowing approval blocked because the student has unpaid penalties."
+        return (
+            False,
+            "Borrowing approval blocked because the student has unpaid penalties.",
+        )
 
     approval_data = {
         "status": "Approved",
         "approved_by": approved_by,
         "approved_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     try:
@@ -785,19 +786,18 @@ def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian
 
     return True, "Borrow request approved successfully."
 
+
 # =========================================================
 # ROUTES
 # =========================================================
+
 
 @penalty_bp.route("/overdue")
 @penalty_bp.route("/librarian/overdue")
 def identify_overdue_books():
     overdue_books = get_overdue_books()
 
-    return render_template(
-        "librarian/overdue_book.html",
-        overdue_books=overdue_books
-    )
+    return render_template("librarian/overdue_book.html", overdue_books=overdue_books)
 
 
 @penalty_bp.route("/penalties")
@@ -814,7 +814,7 @@ def view_outstanding_penalties():
     return render_template(
         "librarian/outstanding_penalties.html",
         outstanding_penalties=outstanding_penalties,
-        student_id=student_id
+        student_id=student_id,
     )
 
 
@@ -829,25 +829,20 @@ def student_pay_credit_card(penalty_id):
     if request.method == "POST":
         card_number = request.form.get("card_number", "").strip()
 
-        success, message = pay_penalty_with_credit_card(
-            penalty_id,
-            card_number
-        )
+        success, message = pay_penalty_with_credit_card(penalty_id, card_number)
 
         if success:
             flash(message, "success")
             return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
 
-        return render_template(
-            "student/pay_credit_card.html",
-            penalty=penalty,
-            error=message
-        ), 400
+        return (
+            render_template(
+                "student/pay_credit_card.html", penalty=penalty, error=message
+            ),
+            400,
+        )
 
-    return render_template(
-        "student/pay_credit_card.html",
-        penalty=penalty
-    )
+    return render_template("student/pay_credit_card.html", penalty=penalty)
 
 
 @penalty_bp.route("/student/pay-cash/<penalty_id>", methods=["GET", "POST"])
@@ -860,25 +855,18 @@ def student_pay_cash(penalty_id):
     if request.method == "POST":
         cash_amount = request.form.get("cash_amount", "").strip()
 
-        success, message = pay_penalty_with_cash(
-            penalty_id,
-            cash_amount
-        )
+        success, message = pay_penalty_with_cash(penalty_id, cash_amount)
 
         if success:
             flash(message, "success")
             return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
 
-        return render_template(
-            "student/pay_cash.html",
-            penalty=penalty,
-            error=message
-        ), 400
+        return (
+            render_template("student/pay_cash.html", penalty=penalty, error=message),
+            400,
+        )
 
-    return render_template(
-        "student/pay_cash.html",
-        penalty=penalty
-    )
+    return render_template("student/pay_cash.html", penalty=penalty)
 
 
 @penalty_bp.route("/payment-records")
@@ -894,7 +882,7 @@ def view_payment_records():
     return render_template(
         "librarian/payment_records.html",
         payment_records=payment_records,
-        student_id=student_id
+        student_id=student_id,
     )
 
 
@@ -909,26 +897,21 @@ def librarian_waive_penalty(penalty_id):
         waiver_reason = request.form.get("waiver_reason", "").strip()
         waived_by = request.form.get("waived_by", "Librarian").strip()
 
-        success, message = waive_penalty(
-            penalty_id,
-            waiver_reason,
-            waived_by
-        )
+        success, message = waive_penalty(penalty_id, waiver_reason, waived_by)
 
         if success:
             flash(message, "success")
             return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
 
-        return render_template(
-            "librarian/waive_penalty.html",
-            penalty=penalty,
-            error=message
-        ), 400
+        return (
+            render_template(
+                "librarian/waive_penalty.html", penalty=penalty, error=message
+            ),
+            400,
+        )
 
-    return render_template(
-        "librarian/waive_penalty.html",
-        penalty=penalty
-    )
+    return render_template("librarian/waive_penalty.html", penalty=penalty)
+
 
 @penalty_bp.route("/librarian/reject-return/<transaction_id>", methods=["GET", "POST"])
 def librarian_reject_return_exception(transaction_id):
@@ -943,39 +926,40 @@ def librarian_reject_return_exception(transaction_id):
         penalty_amount = request.form.get("penalty_amount", "").strip()
 
         success, message = reject_return_exception(
-            transaction_id,
-            rejection_reason,
-            rejected_by
+            transaction_id, rejection_reason, rejected_by
         )
 
         if not success:
-            return render_template(
-                "librarian/reject_return_exception.html",
-                transaction=transaction,
-                error=message
-            ), 400
+            return (
+                render_template(
+                    "librarian/reject_return_exception.html",
+                    transaction=transaction,
+                    error=message,
+                ),
+                400,
+            )
 
         penalty_success, penalty_message = create_penalty_record_for_rejected_return(
-            transaction_id,
-            penalty_amount,
-            rejection_reason,
-            rejected_by
+            transaction_id, penalty_amount, rejection_reason, rejected_by
         )
 
         if not penalty_success:
-            return render_template(
-                "librarian/reject_return_exception.html",
-                transaction=transaction,
-                error=penalty_message
-            ), 400
+            return (
+                render_template(
+                    "librarian/reject_return_exception.html",
+                    transaction=transaction,
+                    error=penalty_message,
+                ),
+                400,
+            )
 
         flash(message + " " + penalty_message, "success")
         return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
 
     return render_template(
-        "librarian/reject_return_exception.html",
-        transaction=transaction
+        "librarian/reject_return_exception.html", transaction=transaction
     )
+
 
 @penalty_bp.route("/librarian/book-exception/<transaction_id>", methods=["GET", "POST"])
 def librarian_record_book_exception(transaction_id):
@@ -990,28 +974,26 @@ def librarian_record_book_exception(transaction_id):
         recorded_by = request.form.get("recorded_by", "Librarian").strip()
 
         success, message = record_lost_damaged_book_exception(
-            transaction_id,
-            exception_type,
-            exception_description,
-            recorded_by
+            transaction_id, exception_type, exception_description, recorded_by
         )
 
         if success:
             flash(message, "success")
             return redirect(url_for("penalty_transaction.identify_overdue_books"))
 
-        return render_template(
-            "librarian/book_exception.html",
-            transaction=transaction,
-            error=message
-        ), 400
+        return (
+            render_template(
+                "librarian/book_exception.html", transaction=transaction, error=message
+            ),
+            400,
+        )
 
-    return render_template(
-        "librarian/book_exception.html",
-        transaction=transaction
-    )
+    return render_template("librarian/book_exception.html", transaction=transaction)
 
-@penalty_bp.route("/librarian/check-borrow-approval/<request_id>", methods=["GET", "POST"])
+
+@penalty_bp.route(
+    "/librarian/check-borrow-approval/<request_id>", methods=["GET", "POST"]
+)
 def librarian_check_borrow_approval(request_id):
     borrow_request = get_borrow_request_by_id(request_id)
 
@@ -1025,23 +1007,30 @@ def librarian_check_borrow_approval(request_id):
         approved_by = request.form.get("approved_by", "Librarian").strip()
 
         success, message = approve_borrow_request_with_penalty_check(
-            request_id,
-            approved_by
+            request_id, approved_by
         )
 
         if success:
             flash(message, "success")
-            return redirect(url_for("penalty_transaction.librarian_check_borrow_approval", request_id=request_id))
+            return redirect(
+                url_for(
+                    "penalty_transaction.librarian_check_borrow_approval",
+                    request_id=request_id,
+                )
+            )
 
-        return render_template(
-            "librarian/check_borrow_approval.html",
-            borrow_request=borrow_request,
-            unpaid_penalties=unpaid_penalties,
-            error=message
-        ), 400
+        return (
+            render_template(
+                "librarian/check_borrow_approval.html",
+                borrow_request=borrow_request,
+                unpaid_penalties=unpaid_penalties,
+                error=message,
+            ),
+            400,
+        )
 
     return render_template(
         "librarian/check_borrow_approval.html",
         borrow_request=borrow_request,
-        unpaid_penalties=unpaid_penalties
+        unpaid_penalties=unpaid_penalties,
     )

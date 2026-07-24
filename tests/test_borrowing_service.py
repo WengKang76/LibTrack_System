@@ -42,7 +42,7 @@ def fake_repository(monkeypatch):
     book = {
         "id": "BOOK001",
         "title": "Database System Concepts",
-        "available_copies": 0,
+        "available_copies": 1,
     }
 
     def fake_find_request(request_id):
@@ -476,7 +476,7 @@ def test_confirm_return_updates_book_availability():
 
     book = service.find_book("BOOK001")
 
-    assert book["available_copies"] == 1
+    assert book["available_copies"] == 2
 
 
 def test_return_without_matching_book_does_not_fail():

@@ -9,6 +9,7 @@ from modules.borrowing.repository import (
     update_book,
     update_borrow_transaction,
     update_request_status,
+    has_outstanding_penalty,
 )
 
 from datetime import date, timedelta
@@ -58,6 +59,17 @@ def approve_borrow_request(request_id: str):
     if request["status"] != "Pending":
         return False
 
+    if has_outstanding_penalty(request["student_id"]):
+        return False
+
+    book = find_book(request["book_id"])
+
+    if book is None:
+        return False
+
+    if book["available_copies"] <= 0:
+        return False
+
     update_request_status(request_id, "Approved")
 
     borrow_date = date.today()
@@ -79,6 +91,30 @@ def approve_borrow_request(request_id: str):
     transaction_id = add_borrow_transaction(transaction)
 
     return transaction_id
+
+
+def get_borrow_approval_error(request_id: str):
+
+    request = find_request(request_id)
+
+    if request is None:
+        return "Borrow request not found."
+
+    if request["status"] != "Pending":
+        return "This borrow request has already been processed."
+
+    if has_outstanding_penalty(request["student_id"]):
+        return "Student has outstanding unpaid penalties."
+
+    book = find_book(request["book_id"])
+
+    if book is None:
+        return "Book record not found."
+
+    if book["available_copies"] <= 0:
+        return "Book is currently unavailable."
+
+    return None
 
 
 def request_book_return(transaction_id: str) -> bool:

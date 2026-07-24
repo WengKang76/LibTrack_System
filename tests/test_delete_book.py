@@ -38,9 +38,7 @@ class FakeCopiesCollection:
                 self.book_id,
                 copy_id,
             )
-            results.append(
-                FakeDocumentSnapshot(copy_id, data, reference=reference)
-            )
+            results.append(FakeDocumentSnapshot(copy_id, data, reference=reference))
         return results
 
 

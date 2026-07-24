@@ -41,7 +41,7 @@ class FakeDB:
                 "book_title": "Python Programming",
                 "overdue_days": 5,
                 "penalty_amount": 5.00,
-                "status": "Outstanding"
+                "status": "Outstanding",
             },
             "P002": {
                 "student_id": "S002",
@@ -49,7 +49,7 @@ class FakeDB:
                 "book_title": "Database System",
                 "overdue_days": 3,
                 "penalty_amount": 3.00,
-                "status": "Paid"
+                "status": "Paid",
             },
             "P003": {
                 "student_id": "S003",
@@ -57,8 +57,8 @@ class FakeDB:
                 "book_title": "Software Engineering",
                 "overdue_days": 2,
                 "penalty_amount": 2.00,
-                "status": "Waived"
-            }
+                "status": "Waived",
+            },
         }
 
     def collection(self, collection_name):
@@ -72,10 +72,7 @@ def test_scrum_680_student_cash_payment_success(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.pay_penalty_with_cash(
-        "P001",
-        "10.00"
-    )
+    success, message = penalty_routes.pay_penalty_with_cash("P001", "10.00")
 
     assert success is True
     assert fake_db.penalties["P001"]["status"] == "Paid"
@@ -89,10 +86,7 @@ def test_scrum_680_reject_insufficient_cash(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.pay_penalty_with_cash(
-        "P001",
-        "2.00"
-    )
+    success, message = penalty_routes.pay_penalty_with_cash("P001", "2.00")
 
     assert success is False
     assert fake_db.penalties["P001"]["status"] == "Outstanding"
@@ -102,10 +96,7 @@ def test_scrum_680_reject_invalid_cash_amount(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.pay_penalty_with_cash(
-        "P001",
-        "abc"
-    )
+    success, message = penalty_routes.pay_penalty_with_cash("P001", "abc")
 
     assert success is False
     assert fake_db.penalties["P001"]["status"] == "Outstanding"
@@ -115,10 +106,7 @@ def test_scrum_680_reject_already_paid_penalty(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.pay_penalty_with_cash(
-        "P002",
-        "5.00"
-    )
+    success, message = penalty_routes.pay_penalty_with_cash("P002", "5.00")
 
     assert success is False
     assert fake_db.penalties["P002"]["status"] == "Paid"
@@ -128,10 +116,7 @@ def test_scrum_680_reject_waived_penalty(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.pay_penalty_with_cash(
-        "P003",
-        "5.00"
-    )
+    success, message = penalty_routes.pay_penalty_with_cash("P003", "5.00")
 
     assert success is False
     assert fake_db.penalties["P003"]["status"] == "Waived"
@@ -150,9 +135,9 @@ def test_scrum_680_student_cash_payment_route_updates_status(client, monkeypatch
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    response = client.post("/penalty/student/pay-cash/P001", data={
-        "cash_amount": "10.00"
-    })
+    response = client.post(
+        "/penalty/student/pay-cash/P001", data={"cash_amount": "10.00"}
+    )
 
     assert response.status_code == 302
     assert fake_db.penalties["P001"]["status"] == "Paid"

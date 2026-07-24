@@ -9,7 +9,6 @@ from modules.penalty_transaction.routes import penalty_bp
 from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
 
-
 app = Flask(__name__)
 
 # Required for Flask sessions and flash messages.
@@ -32,6 +31,7 @@ app.register_blueprint(borrowing_bp)
 def home():
     return render_template("index.html")
 
+
 @app.route("/")
 def role_selection():
     return render_template("role_selection.html")
@@ -51,8 +51,6 @@ def student_dashboard():
 @app.route("/health")
 def health():
     return {"status": "ok"}
-
-    
 
 
 if __name__ == "__main__":

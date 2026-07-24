@@ -9,9 +9,7 @@ def build_fake_db(existing_isbn=False):
     query = collection.where.return_value
     limited_query = query.limit.return_value
     limited_query.stream.return_value = (
-        [MagicMock(id="EXISTING_BOOK")]
-        if existing_isbn
-        else []
+        [MagicMock(id="EXISTING_BOOK")] if existing_isbn else []
     )
 
     book_reference = MagicMock()

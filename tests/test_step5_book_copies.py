@@ -35,9 +35,7 @@ class FakeCopyDocumentReference:
             {},
         )
 
-        self.database.copies[self.book_id][
-            self.copy_id
-        ] = dict(data)
+        self.database.copies[self.book_id][self.copy_id] = dict(data)
 
 
 class FakeCopiesCollection:
@@ -71,9 +69,7 @@ class FakeBookDocumentReference:
         self.book_id = book_id
 
     def get(self):
-        book_data = self.database.books.get(
-            self.book_id
-        )
+        book_data = self.database.books.get(self.book_id)
 
         return FakeDocumentSnapshot(
             self.book_id,
@@ -90,13 +86,9 @@ class FakeBookDocumentReference:
 
     def update(self, updated_data):
         if self.book_id not in self.database.books:
-            raise KeyError(
-                f"Unknown book ID: {self.book_id}"
-            )
+            raise KeyError(f"Unknown book ID: {self.book_id}")
 
-        self.database.books[self.book_id].update(
-            dict(updated_data)
-        )
+        self.database.books[self.book_id].update(dict(updated_data))
 
         self.database.update_history.append(
             {
@@ -119,8 +111,7 @@ class FakeBooksCollection:
     def stream(self):
         return [
             FakeDocumentSnapshot(book_id, data)
-            for book_id, data
-            in self.database.books.items()
+            for book_id, data in self.database.books.items()
         ]
 
 
@@ -134,18 +125,14 @@ class FakeDatabase:
                 "category": "Programming",
                 "publisher": "Technology Press",
                 "publication_year": "2024",
-                "description": (
-                    "A beginner-friendly programming book."
-                ),
+                "description": ("A beginner-friendly programming book."),
                 "total_copies": 5,
                 "available_copies": 1,
                 "status": "Available",
             }
         }
 
-        self.copies = {
-            "BOOK001": {}
-        }
+        self.copies = {"BOOK001": {}}
 
         if include_copies:
             self.copies["BOOK001"] = {
@@ -208,9 +195,7 @@ class FakeDatabase:
 
 
 def use_fake_database(monkeypatch, include_copies=True):
-    fake_database = FakeDatabase(
-        include_copies=include_copies
-    )
+    fake_database = FakeDatabase(include_copies=include_copies)
 
     monkeypatch.setattr(
         book_routes,
@@ -235,10 +220,7 @@ def extract_copy_summary(response):
         re.DOTALL,
     )
 
-    return {
-        label.strip(): int(number)
-        for number, label in matches
-    }
+    return {label.strip(): int(number) for number, label in matches}
 
 
 # ============================================================
@@ -252,9 +234,7 @@ def test_scrum_895_add_copies_page_loads(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/copies/add/BOOK001"
-    )
+    response = client.get("/books/copies/add/BOOK001")
 
     assert response.status_code == 200
     assert b"Add Physical Book Copies" in response.data
@@ -266,9 +246,7 @@ def test_scrum_895_generates_sequential_copy_ids(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
     response = client.post(
         "/books/copies/add/BOOK001",
@@ -296,35 +274,25 @@ def test_scrum_895_redirects_to_book_details(
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith(
-        "/books/details/BOOK001"
-    )
+    assert response.headers["Location"].endswith("/books/details/BOOK001")
 
 
 def test_scrum_895_new_copies_have_required_fields(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
     client.post(
         "/books/copies/add/BOOK001",
         data={"quantity": "2"},
     )
 
-    first_new_copy = fake_database.copies[
-        "BOOK001"
-    ]["COPY-BOOK001-006"]
+    first_new_copy = fake_database.copies["BOOK001"]["COPY-BOOK001-006"]
 
-    second_new_copy = fake_database.copies[
-        "BOOK001"
-    ]["COPY-BOOK001-007"]
+    second_new_copy = fake_database.copies["BOOK001"]["COPY-BOOK001-007"]
 
-    assert first_new_copy["copy_id"] == (
-        "COPY-BOOK001-006"
-    )
+    assert first_new_copy["copy_id"] == ("COPY-BOOK001-006")
     assert first_new_copy["book_id"] == "BOOK001"
     assert first_new_copy["copy_number"] == 6
     assert first_new_copy["status"] == "Available"
@@ -344,9 +312,7 @@ def test_scrum_895_updates_book_copy_counts(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
     client.post(
         "/books/copies/add/BOOK001",
@@ -365,27 +331,16 @@ def test_scrum_895_preserves_existing_copy_records(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    original_copy = copy.deepcopy(
-        fake_database.copies["BOOK001"][
-            "COPY-BOOK001-001"
-        ]
-    )
+    original_copy = copy.deepcopy(fake_database.copies["BOOK001"]["COPY-BOOK001-001"])
 
     client.post(
         "/books/copies/add/BOOK001",
         data={"quantity": "2"},
     )
 
-    assert (
-        fake_database.copies["BOOK001"][
-            "COPY-BOOK001-001"
-        ]
-        == original_copy
-    )
+    assert fake_database.copies["BOOK001"]["COPY-BOOK001-001"] == original_copy
 
 
 def test_scrum_895_generates_first_ids_when_no_copies_exist(
@@ -404,9 +359,7 @@ def test_scrum_895_generates_first_ids_when_no_copies_exist(
 
     assert response.status_code == 302
 
-    assert set(
-        fake_database.copies["BOOK001"].keys()
-    ) == {
+    assert set(fake_database.copies["BOOK001"].keys()) == {
         "COPY-BOOK001-001",
         "COPY-BOOK001-002",
     }
@@ -422,17 +375,11 @@ def test_scrum_895_rejects_non_numeric_quantity(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    copies_before = copy.deepcopy(
-        fake_database.copies["BOOK001"]
-    )
+    copies_before = copy.deepcopy(fake_database.copies["BOOK001"])
 
-    book_before = copy.deepcopy(
-        fake_database.books["BOOK001"]
-    )
+    book_before = copy.deepcopy(fake_database.books["BOOK001"])
 
     response = client.post(
         "/books/copies/add/BOOK001",
@@ -441,33 +388,20 @@ def test_scrum_895_rejects_non_numeric_quantity(
 
     assert response.status_code == 400
 
-    assert (
-        b"must be a valid whole number"
-        in response.data
-    )
+    assert b"must be a valid whole number" in response.data
 
-    assert (
-        fake_database.copies["BOOK001"]
-        == copies_before
-    )
+    assert fake_database.copies["BOOK001"] == copies_before
 
-    assert (
-        fake_database.books["BOOK001"]
-        == book_before
-    )
+    assert fake_database.books["BOOK001"] == book_before
 
 
 def test_scrum_895_rejects_zero_quantity(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    copies_before = copy.deepcopy(
-        fake_database.copies["BOOK001"]
-    )
+    copies_before = copy.deepcopy(fake_database.copies["BOOK001"])
 
     response = client.post(
         "/books/copies/add/BOOK001",
@@ -477,23 +411,16 @@ def test_scrum_895_rejects_zero_quantity(
     assert response.status_code == 400
     assert b"must be at least 1" in response.data
 
-    assert (
-        fake_database.copies["BOOK001"]
-        == copies_before
-    )
+    assert fake_database.copies["BOOK001"] == copies_before
 
 
 def test_scrum_895_rejects_negative_quantity(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
-    copies_before = copy.deepcopy(
-        fake_database.copies["BOOK001"]
-    )
+    copies_before = copy.deepcopy(fake_database.copies["BOOK001"])
 
     response = client.post(
         "/books/copies/add/BOOK001",
@@ -503,10 +430,7 @@ def test_scrum_895_rejects_negative_quantity(
     assert response.status_code == 400
     assert b"must be at least 1" in response.data
 
-    assert (
-        fake_database.copies["BOOK001"]
-        == copies_before
-    )
+    assert fake_database.copies["BOOK001"] == copies_before
 
 
 def test_scrum_895_unknown_book_returns_404(
@@ -515,9 +439,7 @@ def test_scrum_895_unknown_book_returns_404(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/copies/add/UNKNOWN"
-    )
+    response = client.get("/books/copies/add/UNKNOWN")
 
     assert response.status_code == 404
     assert b"Book record not found." in response.data
@@ -534,9 +456,7 @@ def test_scrum_898_details_page_loads(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/details/BOOK001"
-    )
+    response = client.get("/books/details/BOOK001")
 
     assert response.status_code == 200
     assert b"Librarian Book Details" in response.data
@@ -548,9 +468,7 @@ def test_scrum_898_displays_complete_book_information(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/details/BOOK001"
-    )
+    response = client.get("/books/details/BOOK001")
 
     assert response.status_code == 200
     assert b"Python Programming" in response.data
@@ -560,10 +478,7 @@ def test_scrum_898_displays_complete_book_information(
     assert b"Technology Press" in response.data
     assert b"2024" in response.data
 
-    assert (
-        b"A beginner-friendly programming book."
-        in response.data
-    )
+    assert b"A beginner-friendly programming book." in response.data
 
 
 def test_scrum_898_displays_correct_copy_summary(
@@ -572,9 +487,7 @@ def test_scrum_898_displays_correct_copy_summary(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/details/BOOK001"
-    )
+    response = client.get("/books/details/BOOK001")
 
     summary = extract_copy_summary(response)
 
@@ -592,16 +505,12 @@ def test_scrum_898_displays_all_individual_copy_ids(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/details/BOOK001"
-    )
+    response = client.get("/books/details/BOOK001")
 
     assert response.status_code == 200
 
     for copy_number in range(1, 6):
-        expected_copy_id = (
-            f"COPY-BOOK001-{copy_number:03d}"
-        ).encode()
+        expected_copy_id = (f"COPY-BOOK001-{copy_number:03d}").encode()
 
         assert expected_copy_id in response.data
 
@@ -612,9 +521,7 @@ def test_scrum_898_displays_copy_statuses(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/details/BOOK001"
-    )
+    response = client.get("/books/details/BOOK001")
 
     assert b"Available" in response.data
     assert b"Borrowed" in response.data
@@ -632,16 +539,11 @@ def test_scrum_898_handles_book_with_no_copy_records(
         include_copies=False,
     )
 
-    response = client.get(
-        "/books/details/BOOK001"
-    )
+    response = client.get("/books/details/BOOK001")
 
     assert response.status_code == 200
 
-    assert (
-        b"No physical-copy records found"
-        in response.data
-    )
+    assert b"No physical-copy records found" in response.data
 
 
 def test_scrum_898_unknown_book_returns_404(
@@ -650,9 +552,7 @@ def test_scrum_898_unknown_book_returns_404(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/details/UNKNOWN"
-    )
+    response = client.get("/books/details/UNKNOWN")
 
     assert response.status_code == 404
     assert b"Book record not found." in response.data

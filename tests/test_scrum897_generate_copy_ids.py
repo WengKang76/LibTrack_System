@@ -42,9 +42,7 @@ class FakeBookDocumentReference:
 
     def collection(self, collection_name):
         assert collection_name == "copies"
-        return FakeCopiesCollection(
-            self.database.copies.setdefault(self.id, {})
-        )
+        return FakeCopiesCollection(self.database.copies.setdefault(self.id, {}))
 
 
 class FakeBookQuery:
@@ -85,9 +83,7 @@ class FakeBookQuery:
                 self.field_name is None
                 or data.get(self.field_name) == self.expected_value
             ):
-                snapshots.append(
-                    FakeDocumentSnapshot(document_id, data)
-                )
+                snapshots.append(FakeDocumentSnapshot(document_id, data))
 
         if self.maximum_results is not None:
             snapshots = snapshots[: self.maximum_results]
@@ -230,9 +226,7 @@ def test_scrum_897_each_copy_has_required_initial_fields(
         assert copy_record["copy_number"] == expected_number
         assert copy_record["status"] == "Available"
         assert copy_record["condition"] == "Good"
-        assert copy_record["copy_id"].endswith(
-            f"-{expected_number:03d}"
-        )
+        assert copy_record["copy_id"].endswith(f"-{expected_number:03d}")
         datetime.strptime(
             copy_record["created_at"],
             "%Y-%m-%d %H:%M:%S",
@@ -273,9 +267,7 @@ def test_scrum_897_supports_single_copy_edge_case(
         valid_book_data(total_copies="1"),
     )
 
-    assert list(fake_database.copies["BOOK001"]) == [
-        "COPY-BOOK001-001"
-    ]
+    assert list(fake_database.copies["BOOK001"]) == ["COPY-BOOK001-001"]
 
 
 def test_scrum_897_two_books_receive_separate_copy_namespaces(
@@ -327,8 +319,7 @@ def test_scrum_897_success_message_reports_generated_quantity(
     assert response.status_code == 200
     assert (
         b"Book record added successfully. "
-        b"4 unique copy IDs were generated."
-        in response.data
+        b"4 unique copy IDs were generated." in response.data
     )
 
 

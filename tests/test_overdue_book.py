@@ -26,10 +26,7 @@ class FakeCollection:
         self.records = records
 
     def stream(self):
-        return [
-            FakeDoc(doc_id, data)
-            for doc_id, data in self.records.items()
-        ]
+        return [FakeDoc(doc_id, data) for doc_id, data in self.records.items()]
 
     def document(self, doc_id):
         return FakeDocumentRef(self.records, doc_id)
@@ -56,34 +53,43 @@ def create_dummy_test_database():
     future_day = date.today() + timedelta(days=7)
 
     # Dummy Data 1: This book is overdue
-    fake_db.insert_dummy_borrow_transaction("T001", {
-        "student_id": "S001",
-        "book_id": "B001",
-        "book_title": "Python Programming",
-        "borrow_date": "2026-07-01",
-        "due_date": yesterday.strftime("%Y-%m-%d"),
-        "status": "Borrowed"
-    })
+    fake_db.insert_dummy_borrow_transaction(
+        "T001",
+        {
+            "student_id": "S001",
+            "book_id": "B001",
+            "book_title": "Python Programming",
+            "borrow_date": "2026-07-01",
+            "due_date": yesterday.strftime("%Y-%m-%d"),
+            "status": "Borrowed",
+        },
+    )
 
     # Dummy Data 2: This book is not overdue because due date is future
-    fake_db.insert_dummy_borrow_transaction("T002", {
-        "student_id": "S002",
-        "book_id": "B002",
-        "book_title": "Database System",
-        "borrow_date": "2026-07-01",
-        "due_date": future_day.strftime("%Y-%m-%d"),
-        "status": "Borrowed"
-    })
+    fake_db.insert_dummy_borrow_transaction(
+        "T002",
+        {
+            "student_id": "S002",
+            "book_id": "B002",
+            "book_title": "Database System",
+            "borrow_date": "2026-07-01",
+            "due_date": future_day.strftime("%Y-%m-%d"),
+            "status": "Borrowed",
+        },
+    )
 
     # Dummy Data 3: This book is overdue by date but already returned
-    fake_db.insert_dummy_borrow_transaction("T003", {
-        "student_id": "S003",
-        "book_id": "B003",
-        "book_title": "Software Engineering",
-        "borrow_date": "2026-07-01",
-        "due_date": yesterday.strftime("%Y-%m-%d"),
-        "status": "Returned"
-    })
+    fake_db.insert_dummy_borrow_transaction(
+        "T003",
+        {
+            "student_id": "S003",
+            "book_id": "B003",
+            "book_title": "Software Engineering",
+            "borrow_date": "2026-07-01",
+            "due_date": yesterday.strftime("%Y-%m-%d"),
+            "status": "Returned",
+        },
+    )
 
     return fake_db
 
@@ -123,9 +129,6 @@ def test_scrum_666_not_include_returned_book(monkeypatch):
     book_titles = [book["book_title"] for book in overdue_books]
 
     assert "Software Engineering" not in book_titles
-
-
-
 
 
 def test_scrum_666_overdue_page_loads(client, monkeypatch):

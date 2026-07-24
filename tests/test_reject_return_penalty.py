@@ -35,10 +35,7 @@ class FakeCollection:
         return FakeDocumentRef(self.records, doc_id)
 
     def stream(self):
-        return [
-            FakeDoc(doc_id, data)
-            for doc_id, data in self.records.items()
-        ]
+        return [FakeDoc(doc_id, data) for doc_id, data in self.records.items()]
 
 
 class FakeDB:
@@ -49,22 +46,22 @@ class FakeDB:
                 "book_id": "B001",
                 "book_title": "Python Programming",
                 "return_date": "2026-07-15",
-                "status": "Return Requested"
+                "status": "Return Requested",
             },
             "RT002": {
                 "student_id": "S002",
                 "book_id": "B002",
                 "book_title": "Database System",
                 "return_date": "2026-07-15",
-                "status": "Rejected"
+                "status": "Rejected",
             },
             "RT003": {
                 "student_id": "S003",
                 "book_id": "B003",
                 "book_title": "Software Engineering",
                 "return_date": "2026-07-15",
-                "status": "Closed"
-            }
+                "status": "Closed",
+            },
         }
 
         self.penalties = {
@@ -74,7 +71,7 @@ class FakeDB:
                 "book_title": "Database System",
                 "penalty_type": "Rejected Return",
                 "penalty_amount": 10.00,
-                "status": "Outstanding"
+                "status": "Outstanding",
             }
         }
 
@@ -92,20 +89,22 @@ class FakeDB:
 # SCRUM-705: Reject Return Exception
 # =========================================================
 
+
 def test_scrum_705_reject_return_exception_success(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.reject_return_exception(
-        "RT001",
-        "Returned book condition is unacceptable.",
-        "Librarian"
+        "RT001", "Returned book condition is unacceptable.", "Librarian"
     )
 
     assert success is True
     assert fake_db.borrow_transactions["RT001"]["status"] == "Rejected"
     assert fake_db.borrow_transactions["RT001"]["return_status"] == "Rejected"
-    assert fake_db.borrow_transactions["RT001"]["rejection_reason"] == "Returned book condition is unacceptable."
+    assert (
+        fake_db.borrow_transactions["RT001"]["rejection_reason"]
+        == "Returned book condition is unacceptable."
+    )
     assert fake_db.borrow_transactions["RT001"]["rejected_by"] == "Librarian"
 
 
@@ -113,11 +112,7 @@ def test_scrum_705_reject_empty_reason(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.reject_return_exception(
-        "RT001",
-        "",
-        "Librarian"
-    )
+    success, message = penalty_routes.reject_return_exception("RT001", "", "Librarian")
 
     assert success is False
     assert fake_db.borrow_transactions["RT001"]["status"] == "Return Requested"
@@ -128,9 +123,7 @@ def test_scrum_705_reject_closed_transaction(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.reject_return_exception(
-        "RT003",
-        "Invalid return.",
-        "Librarian"
+        "RT003", "Invalid return.", "Librarian"
     )
 
     assert success is False
@@ -150,6 +143,7 @@ def test_scrum_705_reject_return_page_loads(client, monkeypatch):
 # SCRUM-706: Create Penalty Record for Rejected Return
 # =========================================================
 
+
 def test_scrum_706_create_penalty_record_for_rejected_return(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
@@ -158,7 +152,7 @@ def test_scrum_706_create_penalty_record_for_rejected_return(monkeypatch):
         "RT002",
         "10.00",
         "Return rejected due to unacceptable book condition.",
-        "Librarian"
+        "Librarian",
     )
 
     assert success is False
@@ -170,16 +164,11 @@ def test_scrum_706_create_new_penalty_after_rejection(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     penalty_routes.reject_return_exception(
-        "RT001",
-        "Returned book condition is unacceptable.",
-        "Librarian"
+        "RT001", "Returned book condition is unacceptable.", "Librarian"
     )
 
     success, message = penalty_routes.create_penalty_record_for_rejected_return(
-        "RT001",
-        "10.00",
-        "Returned book condition is unacceptable.",
-        "Librarian"
+        "RT001", "10.00", "Returned book condition is unacceptable.", "Librarian"
     )
 
     assert success is True
@@ -202,10 +191,7 @@ def test_scrum_706_reject_penalty_if_return_not_rejected(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.create_penalty_record_for_rejected_return(
-        "RT001",
-        "10.00",
-        "Penalty reason.",
-        "Librarian"
+        "RT001", "10.00", "Penalty reason.", "Librarian"
     )
 
     assert success is False
@@ -219,10 +205,7 @@ def test_scrum_706_reject_invalid_penalty_amount(monkeypatch):
     fake_db.borrow_transactions["RT001"]["status"] = "Rejected"
 
     success, message = penalty_routes.create_penalty_record_for_rejected_return(
-        "RT001",
-        "abc",
-        "Penalty reason.",
-        "Librarian"
+        "RT001", "abc", "Penalty reason.", "Librarian"
     )
 
     assert success is False
@@ -232,11 +215,14 @@ def test_scrum_706_route_rejects_return_and_creates_penalty(client, monkeypatch)
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    response = client.post("/penalty/librarian/reject-return/RT001", data={
-        "rejection_reason": "Returned book condition is unacceptable.",
-        "penalty_amount": "10.00",
-        "rejected_by": "Librarian"
-    })
+    response = client.post(
+        "/penalty/librarian/reject-return/RT001",
+        data={
+            "rejection_reason": "Returned book condition is unacceptable.",
+            "penalty_amount": "10.00",
+            "rejected_by": "Librarian",
+        },
+    )
 
     assert response.status_code == 302
     assert fake_db.borrow_transactions["RT001"]["status"] == "Rejected"

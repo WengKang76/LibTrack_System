@@ -2,6 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from modules.borrowing.services import (
     approve_borrow_request,
+    get_borrow_approval_error,
     cancel_renewal_request,
     clear_renewal_alert,
     close_borrow_transaction,
@@ -37,10 +38,16 @@ def borrowing_home():
 
 @borrowing_bp.route("/approve/<request_id>", methods=["POST"])
 def approve_request(request_id: str):
-    success = approve_borrow_request(request_id)
 
-    if not success:
-        return "Invalid borrow request", 400
+    error = get_borrow_approval_error(request_id)
+
+    if error:
+        flash(error, "error")
+        return redirect(url_for("borrowing.borrowing_home"))
+
+    approve_borrow_request(request_id)
+
+    flash("Borrow request approved successfully.", "success")
 
     return redirect(url_for("borrowing.borrowing_home"))
 
