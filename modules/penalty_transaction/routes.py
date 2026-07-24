@@ -456,56 +456,10 @@ def reject_return_exception(transaction_id, rejection_reason, rejected_by="Libra
 
 
 def penalty_record_exists_for_rejected_return(transaction_id):
-    try:
-        penalty_docs = db.collection("penalties").stream()
-
-        for doc in penalty_docs:
-            penalty = doc.to_dict()
-
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-        return False
-
-    except Exception:
-        pass
-
-    if DEMO_UI_MODE:
-        for penalty in DEMO_PENALTIES.values():
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-    return False
-    try:
-        penalty_docs = db.collection("penalties").stream()
-
-        for doc in penalty_docs:
-            penalty = doc.to_dict()
-
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-    except Exception:
-        pass
-
-    if DEMO_UI_MODE:
-        for penalty in DEMO_PENALTIES.values():
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-    return False
+    return penalty_record_exists_for_transaction(
+        transaction_id,
+        "Rejected Return"
+    )
 
 def validate_penalty_amount(penalty_amount):
     try:
@@ -889,6 +843,17 @@ def update_penalty_record(penalty_id, update_data):
     if penalty_id in DEMO_PENALTIES:
         DEMO_PENALTIES[penalty_id].update(update_data)
 
+def validate_penalty_payment_status(penalty):
+    penalty_status = str(penalty.get("status", "")).lower()
+
+    if penalty_status in ["paid", "waived"]:
+        return False, "This penalty has already been paid or waived."
+
+    if penalty_status not in ["outstanding", "unpaid", "pending"]:
+        return False, "Only outstanding penalties can be paid."
+
+    return True, "Penalty can be paid."
+
 
 def validate_student_penalty_access(penalty_id, student_id):
     penalty = get_penalty_by_id(penalty_id)
@@ -923,10 +888,10 @@ def pay_student_own_penalty(
     if not amount_success:
         return False, amount_message
 
-    penalty_status = str(penalty.get("status", "")).lower()
+    status_success, status_message = validate_penalty_payment_status(penalty)
 
-    if penalty_status not in ["outstanding", "unpaid", "pending"]:
-        return False, "Only outstanding penalties can be paid."
+    if not status_success:
+        return False, status_message
 
     expected_amount = float(penalty.get("penalty_amount", 0))
 
@@ -946,6 +911,43 @@ def pay_student_own_penalty(
 
     return True, "Penalty paid successfully."
 
+
+def penalty_record_exists_for_transaction(transaction_id, penalty_type=None):
+    # Check demo data first for testing
+    for penalty in DEMO_PENALTIES.values():
+        same_transaction = penalty.get("transaction_id") == transaction_id
+
+        if penalty_type is None:
+            if same_transaction:
+                return True
+        else:
+            same_penalty_type = penalty.get("penalty_type") == penalty_type
+
+            if same_transaction and same_penalty_type:
+                return True
+
+    # Check Firebase
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict()
+
+            same_transaction = penalty.get("transaction_id") == transaction_id
+
+            if penalty_type is None:
+                if same_transaction:
+                    return True
+            else:
+                same_penalty_type = penalty.get("penalty_type") == penalty_type
+
+                if same_transaction and same_penalty_type:
+                    return True
+
+    except Exception:
+        pass
+
+    return False
 # =========================================================
 # ROUTES
 # =========================================================
