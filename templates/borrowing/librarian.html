@@ -266,6 +266,15 @@
 
             </form>
 
+            <a
+                class="btn btn-danger"
+                href="{{ url_for('penalty_transaction.librarian_reject_return_exception',
+                transaction_id=transaction.id) }}">
+
+                Reject
+
+            </a>
+
             {% endif %}
 
             <!-- Close -->
