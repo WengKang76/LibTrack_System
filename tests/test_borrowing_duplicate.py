@@ -5,6 +5,7 @@ from modules.borrowing.services import (
     get_borrow_approval_error,
 )
 
+
 @pytest.fixture(autouse=True)
 def fake_repository(monkeypatch):
     """
@@ -58,6 +59,7 @@ def fake_repository(monkeypatch):
         lambda student_id, book_id: False,
     )
 
+
 def test_student_cannot_borrow_same_book_twice(monkeypatch):
     """
     GIVEN the student already has an active borrowing transaction
@@ -74,6 +76,7 @@ def test_student_cannot_borrow_same_book_twice(monkeypatch):
 
     assert result is False
 
+
 def test_student_can_borrow_when_no_duplicate_exists(monkeypatch):
     """
     GIVEN the student has no active borrowing transaction
@@ -89,6 +92,7 @@ def test_student_can_borrow_when_no_duplicate_exists(monkeypatch):
     result = approve_borrow_request("REQ001")
 
     assert result == "TRAN001"
+
 
 def test_duplicate_borrow_returns_validation_message(monkeypatch):
     """
@@ -107,6 +111,7 @@ def test_duplicate_borrow_returns_validation_message(monkeypatch):
     assert message == (
         "Student already has an active borrowing transaction for this book."
     )
+
 
 def test_no_validation_error_when_borrow_is_allowed(monkeypatch):
     """

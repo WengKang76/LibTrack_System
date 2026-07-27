@@ -244,6 +244,7 @@ def has_outstanding_penalty(student_id: str) -> bool:
 # Check if a student has an active borrow transaction for that book
 # ==================================================================
 
+
 def has_active_borrow_transaction(
     student_id: str,
     book_id: str,

@@ -74,7 +74,7 @@ def approve_borrow_request(request_id: str):
     if has_active_borrow_transaction(
         request["student_id"],
         request["book_id"],
-):
+    ):
         return False
 
     update_request_status(request_id, "Approved")
@@ -122,13 +122,10 @@ def get_borrow_approval_error(request_id: str):
         return "Book is currently unavailable."
 
     if has_active_borrow_transaction(
-    request["student_id"],
-    request["book_id"],
-):
-        return (
-            "Student already has an active borrowing transaction "
-            "for this book."
-        )
+        request["student_id"],
+        request["book_id"],
+    ):
+        return "Student already has an active borrowing transaction " "for this book."
 
     return None
 
