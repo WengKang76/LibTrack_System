@@ -22,6 +22,11 @@ from config.firebase_config import (
     db,
 )
 
+from itsdangerous import (
+    BadSignature,
+    SignatureExpired,
+    URLSafeTimedSerializer,
+)
 
 authentication_bp = Blueprint(
     "authentication",
@@ -123,6 +128,95 @@ def _find_user_by_email(email):
             return user
 
     return None
+
+def _get_password_reset_serializer():
+    """
+    Create a signed serializer using the Flask secret key.
+    """
+
+    return URLSafeTimedSerializer(
+        current_app.config["SECRET_KEY"],
+        salt="libtrack-password-reset",
+    )
+
+
+def _generate_password_reset_token(user):
+    """
+    Generate a signed reset token for one user.
+    """
+
+    reset_version = int(
+        user.get(
+            "password_reset_version",
+            0,
+        )
+    )
+
+    token_data = {
+        "email": _normalise_email(
+            user.get("email", "")
+        ),
+        "version": reset_version,
+    }
+
+    return (
+        _get_password_reset_serializer()
+        .dumps(token_data)
+    )
+
+
+def _load_password_reset_token(token):
+    """
+    Validate and decode a reset token.
+    """
+
+    maximum_age = int(
+        current_app.config.get(
+            "PASSWORD_RESET_TOKEN_MAX_AGE",
+            900,
+        )
+    )
+
+    try:
+        token_data = (
+            _get_password_reset_serializer()
+            .loads(
+                token,
+                max_age=maximum_age,
+            )
+        )
+    except (
+        BadSignature,
+        SignatureExpired,
+        TypeError,
+        ValueError,
+    ):
+        return None
+
+    if not isinstance(token_data, dict):
+        return None
+
+    email = _normalise_email(
+        token_data.get("email", "")
+    )
+
+    try:
+        reset_version = int(
+            token_data.get(
+                "version",
+                -1,
+            )
+        )
+    except (TypeError, ValueError):
+        return None
+
+    if not email or reset_version < 0:
+        return None
+
+    return {
+        "email": email,
+        "version": reset_version,
+    }
 
 
 def _validate_password(password):
@@ -619,4 +713,275 @@ def logout():
         url_for(
             "authentication.login"
         )
+    )
+
+@authentication_bp.route(
+    "/forgot-password",
+    methods=["GET", "POST"],
+)
+def forgot_password():
+    form_data = {
+        "email": "",
+    }
+
+    error_message = None
+    success_message = None
+    development_reset_url = None
+
+    if request.method == "POST":
+        email = _normalise_email(
+            request.form.get(
+                "email",
+                "",
+            )
+        )
+
+        form_data["email"] = email
+
+        if not email:
+            error_message = (
+                "Email address is required."
+            )
+
+            return (
+                render_template(
+                    "forgot_password.html",
+                    form_data=form_data,
+                    error_message=error_message,
+                    success_message=None,
+                    development_reset_url=None,
+                ),
+                400,
+            )
+
+        if not EMAIL_PATTERN.fullmatch(email):
+            error_message = (
+                "Enter a valid email address."
+            )
+
+            return (
+                render_template(
+                    "forgot_password.html",
+                    form_data=form_data,
+                    error_message=error_message,
+                    success_message=None,
+                    development_reset_url=None,
+                ),
+                400,
+            )
+
+        user = _find_user_by_email(email)
+
+        if user:
+            token = _generate_password_reset_token(
+                user
+            )
+
+            reset_url = url_for(
+                "authentication.reset_password",
+                token=token,
+                _external=True,
+            )
+
+            current_app.logger.info(
+                "Password reset link for %s: %s",
+                email,
+                reset_url,
+            )
+
+            if current_app.config.get(
+                "SHOW_PASSWORD_RESET_LINK",
+                False,
+            ):
+                development_reset_url = reset_url
+
+        # Always display the same response so outsiders
+        # cannot discover whether an email is registered.
+        success_message = (
+            "If an account exists for this email address, "
+            "a password reset link has been generated."
+        )
+
+    return render_template(
+        "forgot_password.html",
+        form_data=form_data,
+        error_message=error_message,
+        success_message=success_message,
+        development_reset_url=development_reset_url,
+    )
+
+
+@authentication_bp.route(
+    "/reset-password/<token>",
+    methods=["GET", "POST"],
+)
+def reset_password(token):
+    token_data = _load_password_reset_token(
+        token
+    )
+
+    if token_data is None:
+        return (
+            render_template(
+                "reset_password.html",
+                token_valid=False,
+                errors={},
+            ),
+            400,
+        )
+
+    user = _find_user_by_email(
+        token_data["email"]
+    )
+
+    if not user:
+        return (
+            render_template(
+                "reset_password.html",
+                token_valid=False,
+                errors={},
+            ),
+            400,
+        )
+
+    current_reset_version = int(
+        user.get(
+            "password_reset_version",
+            0,
+        )
+    )
+
+    if (
+        current_reset_version
+        != token_data["version"]
+    ):
+        return (
+            render_template(
+                "reset_password.html",
+                token_valid=False,
+                errors={},
+            ),
+            400,
+        )
+
+    errors = {}
+
+    if request.method == "POST":
+        password = request.form.get(
+            "password",
+            "",
+        )
+
+        confirm_password = request.form.get(
+            "confirm_password",
+            "",
+        )
+
+        if not password:
+            errors["password"] = (
+                "New password is required."
+            )
+        else:
+            password_errors = (
+                _validate_password(password)
+            )
+
+            if password_errors:
+                errors["password"] = " ".join(
+                    password_errors
+                )
+
+        if not confirm_password:
+            errors["confirm_password"] = (
+                "Password confirmation is required."
+            )
+        elif (
+            password
+            and password != confirm_password
+        ):
+            errors["confirm_password"] = (
+                "Password and confirmation password "
+                "do not match."
+            )
+
+        stored_password_hash = str(
+            user.get(
+                "password_hash",
+                "",
+            )
+        )
+
+        if (
+            password
+            and stored_password_hash
+            and check_password_hash(
+                stored_password_hash,
+                password,
+            )
+        ):
+            errors["password"] = (
+                "The new password must be different "
+                "from the current password."
+            )
+
+        if errors:
+            return (
+                render_template(
+                    "reset_password.html",
+                    token_valid=True,
+                    errors=errors,
+                ),
+                400,
+            )
+
+        document_id = user.get(
+            "document_id",
+            user.get("user_id"),
+        )
+
+        (
+            db.collection(
+                COLLECTION_USERS
+            )
+            .document(document_id)
+            .update(
+                {
+                    "password_hash": (
+                        generate_password_hash(
+                            password
+                        )
+                    ),
+                    "password_reset_version": (
+                        current_reset_version + 1
+                    ),
+                    "password_reset_at": (
+                        _current_timestamp()
+                    ),
+                    "updated_at": (
+                        _current_timestamp()
+                    ),
+                }
+            )
+        )
+
+        session.clear()
+
+        flash(
+            (
+                "Your password was reset successfully. "
+                "You can now log in using your new password."
+            ),
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "authentication.login"
+            )
+        )
+
+    return render_template(
+        "reset_password.html",
+        token_valid=True,
+        errors=errors,
     )

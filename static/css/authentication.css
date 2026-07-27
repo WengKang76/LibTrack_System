@@ -113,3 +113,26 @@
 .authentication-links a:hover {
     text-decoration: underline;
 }
+
+.authentication-success {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    color: #166534;
+    background-color: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.development-reset-link {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.development-reset-link a {
+    margin-left: 5px;
+}

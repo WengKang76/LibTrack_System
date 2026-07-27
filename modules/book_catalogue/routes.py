@@ -16,6 +16,101 @@ book_bp = Blueprint(
     template_folder=".",
 )
 
+# ============================================================
+# SCRUM-1180: BOOK INPUT VALIDATION
+# ============================================================
+
+def _validate_publication_year(publication_year):
+    """
+    Validate an optional publication year.
+    """
+
+    if not publication_year:
+        return None
+
+    if not publication_year.isdigit():
+        return (
+            "Publication year must be a valid "
+            "four-digit year."
+        )
+
+    current_year = datetime.now().year
+    year = int(publication_year)
+
+    if (
+        len(publication_year) != 4
+        or year < 1000
+        or year > current_year
+    ):
+        return (
+            f"Publication year must be between "
+            f"1000 and {current_year}."
+        )
+
+    return None
+
+
+def _validate_isbn_format(isbn):
+    """
+    Validate that an ISBN identifier was provided.
+
+    The project accepts standard ISBN numbers and
+    demonstration identifiers such as ISBN-001.
+    """
+
+    normalised_isbn = str(
+        isbn or ""
+    ).strip()
+
+    if not normalised_isbn:
+        return None, "ISBN is required."
+
+    if len(normalised_isbn) > 30:
+        return (
+            None,
+            "ISBN cannot exceed 30 characters.",
+        )
+
+    return normalised_isbn, None
+
+
+# ============================================================
+# SCRUM-1181: DUPLICATE PREVENTION
+# ============================================================
+
+def _isbn_already_exists(
+    isbn,
+    exclude_book_id=None,
+):
+    """
+    Check whether another book is using the ISBN.
+
+    exclude_book_id allows a book to keep its current
+    ISBN when the Librarian edits that book.
+    """
+
+    matching_books = (
+        db.collection(COLLECTION_BOOKS)
+        .where("isbn", "==", isbn)
+        .limit(10)
+        .stream()
+    )
+
+    for book_document in matching_books:
+        document_id = getattr(
+            book_document,
+            "id",
+            None,
+        )
+
+        if (
+            exclude_book_id is None
+            or document_id != exclude_book_id
+        ):
+            return True
+
+    return False
+
 COPY_STATUSES = (
     "Available",
     "Borrowed",
@@ -54,22 +149,46 @@ def _isbn_already_exists(isbn, exclude_book_id=None):
     return False
 
 
-def _generate_initial_book_copies(book_reference, quantity):
-    """Create one physical-copy record for every initial copy."""
-    copies_collection = book_reference.collection("copies")
+def _generate_initial_book_copies(
+    book_reference,
+    quantity,
+):
+    """
+    Generate one unique record for every physical copy.
 
-    for copy_number in range(1, quantity + 1):
-        copy_id = f"COPY-{book_reference.id.upper()}-{copy_number:03d}"
-        copies_collection.document(copy_id).set(
-            {
-                "copy_id": copy_id,
-                "book_id": book_reference.id,
-                "copy_number": copy_number,
-                "status": "Available",
-                "condition": "Good",
-                "created_at": _current_timestamp(),
-            }
+    The copy ID is unique because it combines:
+    - the unique book document ID
+    - a sequential copy number
+    """
+
+    copies_collection = (
+        book_reference.collection("copies")
+    )
+
+    for copy_number in range(
+        1,
+        quantity + 1,
+    ):
+        copy_id = (
+            f"COPY-"
+            f"{book_reference.id.upper()}-"
+            f"{copy_number:03d}"
         )
+
+        copy_data = {
+            "copy_id": copy_id,
+            "book_id": book_reference.id,
+            "copy_number": copy_number,
+            "status": "Available",
+            "condition": "Good",
+            "created_at": datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        }
+
+        copies_collection.document(
+            copy_id
+        ).set(copy_data)
 
 
 def _get_book_copies(book_id):
@@ -189,27 +308,65 @@ def manage_books():
 
 
 # ============================================================
-# SCRUM-12: ADD NEW BOOK
+# SCRUM-12, SCRUM-1180 AND SCRUM-1181:
+# ADD AND VALIDATE NEW BOOK
 # ============================================================
 
-@book_bp.route("/add", methods=["GET", "POST"])
-@librarian_required
+@book_bp.route(
+    "/add",
+    methods=["GET", "POST"],
+)
 def add_book():
-    form_data = {}
+    form_data = {
+        "title": "",
+        "author": "",
+        "isbn": "",
+        "category": "",
+        "publisher": "",
+        "publication_year": "",
+        "description": "",
+        "total_copies": "",
+    }
 
     if request.method == "POST":
         form_data = {
-            "title": request.form.get("title", "").strip(),
-            "author": request.form.get("author", "").strip(),
-            "isbn": request.form.get("isbn", "").strip(),
-            "category": request.form.get("category", "").strip(),
-            "publisher": request.form.get("publisher", "").strip(),
-            "publication_year": request.form.get(
-                "publication_year", ""
+            "title": request.form.get(
+                "title",
+                "",
             ).strip(),
-            "description": request.form.get("description", "").strip(),
-            "total_copies": request.form.get("total_copies", "").strip(),
+            "author": request.form.get(
+                "author",
+                "",
+            ).strip(),
+            "isbn": request.form.get(
+                "isbn",
+                "",
+            ).strip(),
+            "category": request.form.get(
+                "category",
+                "",
+            ).strip(),
+            "publisher": request.form.get(
+                "publisher",
+                "",
+            ).strip(),
+            "publication_year": request.form.get(
+                "publication_year",
+                "",
+            ).strip(),
+            "description": request.form.get(
+                "description",
+                "",
+            ).strip(),
+            "total_copies": request.form.get(
+                "total_copies",
+                "",
+            ).strip(),
         }
+
+        # ----------------------------------------------------
+        # SCRUM-1180: Required-field validation
+        # ----------------------------------------------------
 
         required_fields = {
             "title": "Book title",
@@ -218,49 +375,164 @@ def add_book():
             "category": "Category",
             "total_copies": "Total copies",
         }
+
         missing_fields = [
             label
-            for field_name, label in required_fields.items()
+            for field_name, label
+            in required_fields.items()
             if not form_data[field_name]
         ]
 
         if missing_fields:
-            return render_template(
-                "add_book.html",
-                form_data=form_data,
-                error="Please fill in all required fields.",
-            ), 400
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Please fill in all required fields."
+                    ),
+                ),
+                400,
+            )
+
+        # ----------------------------------------------------
+        # SCRUM-1180: Text-length validation
+        # ----------------------------------------------------
+
+        if len(form_data["title"]) > 200:
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Book title cannot exceed "
+                        "200 characters."
+                    ),
+                ),
+                400,
+            )
+
+        if len(form_data["author"]) > 150:
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Author name cannot exceed "
+                        "150 characters."
+                    ),
+                ),
+                400,
+            )
+
+        # ----------------------------------------------------
+        # SCRUM-1180: ISBN-format validation
+        # ----------------------------------------------------
+
+        normalised_isbn, isbn_error = (
+            _validate_isbn_format(
+                form_data["isbn"]
+            )
+        )
+
+        if isbn_error:
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=isbn_error,
+                ),
+                400,
+            )
+
+        form_data["isbn"] = normalised_isbn
+
+        # ----------------------------------------------------
+        # SCRUM-1180: Quantity validation
+        # ----------------------------------------------------
 
         try:
-            total_copies = int(form_data["total_copies"])
-        except ValueError:
-            return render_template(
-                "add_book.html",
-                form_data=form_data,
-                error="Total copies must be a valid whole number.",
-            ), 400
+            total_copies = int(
+                form_data["total_copies"]
+            )
+
+        except (TypeError, ValueError):
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Total copies must be a valid "
+                        "whole number."
+                    ),
+                ),
+                400,
+            )
 
         if total_copies < 1:
-            return render_template(
-                "add_book.html",
-                form_data=form_data,
-                error="Total copies must be at least 1.",
-            ), 400
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Total copies must be at least 1."
+                    ),
+                ),
+                400,
+            )
 
-        year_error = _validate_publication_year(form_data["publication_year"])
+        if total_copies > 999:
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "Total copies cannot exceed 999."
+                    ),
+                ),
+                400,
+            )
+
+        # ----------------------------------------------------
+        # SCRUM-1180: Publication-year validation
+        # ----------------------------------------------------
+
+        year_error = _validate_publication_year(
+            form_data["publication_year"]
+        )
+
         if year_error:
-            return render_template(
-                "add_book.html",
-                form_data=form_data,
-                error=year_error,
-            ), 400
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=year_error,
+                ),
+                400,
+            )
 
-        if _isbn_already_exists(form_data["isbn"]):
-            return render_template(
-                "add_book.html",
-                form_data=form_data,
-                error="A book with this ISBN already exists.",
-            ), 400
+        # ----------------------------------------------------
+        # SCRUM-1181: Duplicate-ISBN prevention
+        # ----------------------------------------------------
+
+        if _isbn_already_exists(
+            form_data["isbn"]
+        ):
+            return (
+                render_template(
+                    "add_book.html",
+                    form_data=form_data,
+                    error=(
+                        "A book with this ISBN "
+                        "already exists."
+                    ),
+                ),
+                400,
+            )
+
+        current_time = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
         book_data = {
             "title": form_data["title"],
@@ -268,30 +540,51 @@ def add_book():
             "isbn": form_data["isbn"],
             "category": form_data["category"],
             "publisher": form_data["publisher"],
-            "publication_year": form_data["publication_year"],
+            "publication_year": (
+                form_data["publication_year"]
+            ),
             "description": form_data["description"],
             "total_copies": total_copies,
             "available_copies": total_copies,
             "status": "Available",
-            "catalogue_status": "Active",
+            "catalogue_status": "Available",
             "is_visible_to_students": True,
-            "catalogue_inactive_reason": "",
-            "created_at": _current_timestamp(),
+            "catalogue_unavailable_reason": "",
+            "created_at": current_time,
+            "updated_at": current_time,
         }
 
-        _, book_reference = db.collection(COLLECTION_BOOKS).add(book_data)
-        _generate_initial_book_copies(book_reference, total_copies)
+        _, book_reference = (
+            db.collection(
+                COLLECTION_BOOKS
+            )
+            .add(book_data)
+        )
+
+        _generate_initial_book_copies(
+            book_reference,
+            total_copies,
+        )
 
         flash(
             (
                 "Book record added successfully. "
-                f"{total_copies} unique copy IDs were generated."
+                f"{total_copies} unique copy IDs "
+                "were generated."
             ),
             "success",
         )
-        return redirect(url_for("book_catalogue.add_book"))
 
-    return render_template("add_book.html", form_data=form_data)
+        return redirect(
+            url_for(
+                "book_catalogue.add_book"
+            )
+        )
+
+    return render_template(
+        "add_book.html",
+        form_data=form_data,
+    )
 
 
 def get_book_by_id(book_id):

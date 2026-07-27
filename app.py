@@ -27,6 +27,18 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_REFRESH_EACH_REQUEST=True,
+
+    # Password-reset link expires after 15 minutes.
+    PASSWORD_RESET_TOKEN_MAX_AGE=900,
+
+    # Display the reset link only for local demonstration.
+    SHOW_PASSWORD_RESET_LINK=(
+        os.environ.get(
+            "SHOW_PASSWORD_RESET_LINK",
+            "0",
+        )
+        == "1"
+    ),
 )
 
 

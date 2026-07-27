@@ -18,14 +18,42 @@ Dashboard | LibTrack
             transactions from one central platform.
         </p>
 
-        <div class="dashboard-actions">
-    <a href="/catalogue/" class="primary-button">
-        Browse Book Catalogue
-    </a>
+      <div class="dashboard-actions">
 
-    <a href="/auth/register" class="secondary-button">
-        Register Student Account
-    </a>
+    {% if not session.get("user_id") %}
+
+        <a
+            href="/auth/login"
+            class="primary-button"
+        >
+            Login
+        </a>
+
+        <a
+            href="/auth/register"
+            class="secondary-button"
+        >
+            Register Student Account
+        </a>
+
+    {% else %}
+
+        <a
+            href="/catalogue/"
+            class="primary-button"
+        >
+            Browse Book Catalogue
+        </a>
+
+        <a
+            href="/borrowing/"
+            class="secondary-button"
+        >
+            Borrowing &amp; Returning
+        </a>
+
+    {% endif %}
+
 </div>
     </div>
 </section>
