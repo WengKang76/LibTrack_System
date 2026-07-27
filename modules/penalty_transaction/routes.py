@@ -338,6 +338,42 @@ def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
     if penalty is None:
         return False, "Penalty record not found."
 
+    penalty_status = str(penalty.get("status", "")).lower()
+
+    if penalty_status == "paid":
+        return False, "Paid penalties cannot be waived."
+
+    if penalty_status == "waived":
+        return False, "Penalty has already been waived."
+
+    reason_success, reason_message, valid_waiver_reason = validate_waiver_reason(
+        waiver_reason
+    )
+
+    if not reason_success:
+        return False, reason_message
+
+    audit_details = build_audit_details(
+        "Waive Penalty",
+        waived_by
+    )
+
+    waiver_data = {
+        "status": "Waived",
+        "waiver_reason": valid_waiver_reason,
+        "waived_by": waived_by,
+        "waived_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        **audit_details
+    }
+
+    update_penalty_record(penalty_id, waiver_data)
+
+    return True, "Penalty waived successfully."
+    penalty = get_penalty_by_id(penalty_id)
+
+    if penalty is None:
+        return False, "Penalty record not found."
+
     status = str(penalty.get("status", "")).lower()
 
     if status not in ["outstanding", "unpaid", "pending"]:
@@ -507,19 +543,21 @@ def create_penalty_record_for_rejected_return(
     penalty_id = "P" + datetime.now().strftime("%Y%m%d%H%M%S%f")
 
     penalty_data = {
-        "penalty_id": penalty_id,
-        "student_id": transaction.get("student_id"),
-        "transaction_id": transaction_id,
-        "book_id": transaction.get("book_id"),
-        "book_title": transaction.get("book_title"),
-        "penalty_type": "Rejected Return",
-        "penalty_reason": penalty_reason,
-        "penalty_amount": valid_penalty_amount,
-        "status": "Outstanding",
-        "created_by": created_by,
-        "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
+    "penalty_id": penalty_id,
+    "student_id": transaction.get("student_id"),
+    "transaction_id": transaction_id,
+    "book_id": transaction.get("book_id"),
+    "book_title": transaction.get("book_title"),
+    "penalty_type": "Rejected Return",
+    "penalty_reason": penalty_reason,
+    "penalty_amount": valid_penalty_amount,
+    "status": "Outstanding",
+    "created_by": created_by,
+    "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    "last_action": "Create Penalty",
+    "updated_by": created_by,
+    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+}
 
     saved_to_database = False
 
@@ -898,13 +936,18 @@ def pay_student_own_penalty(
     if valid_amount != expected_amount:
         return False, "Payment amount does not match the penalty amount."
 
+    audit_details = build_audit_details(
+        "Pay Penalty",
+        student_id
+    )
+
     update_data = {
         "status": "Paid",
         "payment_method": payment_method,
         "paid_by": student_id,
         "paid_amount": valid_amount,
         "paid_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        **audit_details
     }
 
     update_penalty_record(penalty_id, update_data)
@@ -948,6 +991,50 @@ def penalty_record_exists_for_transaction(transaction_id, penalty_type=None):
         pass
 
     return False
+
+
+
+# =========================================================
+# Sprint 2 - SCRUM-1081 and SCRUM-1082
+# Waiver Reason Validation and Audit Details
+# =========================================================
+
+def validate_waiver_reason(waiver_reason):
+    if waiver_reason is None:
+        return False, "Waiver reason is required.", None
+
+    waiver_reason = waiver_reason.strip()
+
+    if waiver_reason == "":
+        return False, "Waiver reason is required.", None
+
+    if len(waiver_reason) < 5:
+        return False, "Waiver reason must be at least 5 characters.", None
+
+    return True, "Waiver reason is valid.", waiver_reason
+    if waiver_reason is None:
+        return False, "Waiver reason is required."
+
+    waiver_reason = waiver_reason.strip()
+
+    if waiver_reason == "":
+        return False, "Waiver reason is required."
+
+    if len(waiver_reason) < 5:
+        return False, "Waiver reason must be at least 5 characters."
+
+    return True, "Waiver reason is valid.", waiver_reason
+
+
+def build_audit_details(action_name, actor_name):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return {
+        "last_action": action_name,
+        "updated_by": actor_name,
+        "updated_at": current_time
+    }
+
 # =========================================================
 # ROUTES
 # =========================================================
