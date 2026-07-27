@@ -10,6 +10,7 @@ from modules.borrowing.repository import (
     update_borrow_transaction,
     update_request_status,
     has_outstanding_penalty,
+    has_active_borrow_transaction,
 )
 
 from datetime import date, timedelta
@@ -70,6 +71,12 @@ def approve_borrow_request(request_id: str):
     if book["available_copies"] <= 0:
         return False
 
+    if has_active_borrow_transaction(
+        request["student_id"],
+        request["book_id"],
+):
+        return False
+
     update_request_status(request_id, "Approved")
 
     borrow_date = date.today()
@@ -113,6 +120,15 @@ def get_borrow_approval_error(request_id: str):
 
     if book["available_copies"] <= 0:
         return "Book is currently unavailable."
+
+    if has_active_borrow_transaction(
+    request["student_id"],
+    request["book_id"],
+):
+        return (
+            "Student already has an active borrowing transaction "
+            "for this book."
+        )
 
     return None
 

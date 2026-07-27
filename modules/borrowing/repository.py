@@ -238,3 +238,32 @@ def has_outstanding_penalty(student_id: str) -> bool:
     )
 
     return any(True for _ in docs)
+
+
+# ==================================================================
+# Check if a student has an active borrow transaction for that book
+# ==================================================================
+
+def has_active_borrow_transaction(
+    student_id: str,
+    book_id: str,
+):
+    db = get_db()
+
+    docs = (
+        db.collection(COLLECTION_BORROW_TRANSACTIONS)
+        .where("student_id", "==", student_id)
+        .where("book_id", "==", book_id)
+        .stream()
+    )
+
+    for doc in docs:
+        transaction = doc.to_dict()
+
+        if transaction["status"] in [
+            "Borrowed",
+            "Return Pending",
+        ]:
+            return True
+
+    return False
