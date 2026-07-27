@@ -34,6 +34,44 @@ ACTIVE_RESERVATION_STATUSES = {
 }
 
 
+# SCRUM-1190: User-facing messages must remain clear and must not expose
+# technical exception details, credentials, collection names, or stack traces.
+DATABASE_ERROR_MESSAGES = {
+    "catalogue": (
+        "We could not load the catalogue right now. "
+        "Please try again later."
+    ),
+    "available_books": (
+        "We could not load the available books right now. "
+        "Please try again later."
+    ),
+    "book_details": (
+        "We could not load the book details right now. "
+        "Please try again later."
+    ),
+    "reservation": (
+        "We could not complete your reservation right now. "
+        "Please try again later."
+    ),
+    "cancellation": (
+        "We could not cancel the reservation right now. "
+        "Please try again later."
+    ),
+    "reservations": (
+        "We could not load your reservations right now. "
+        "Please try again later."
+    ),
+    "borrow_request": (
+        "We could not submit your borrowing request right now. "
+        "Please try again later."
+    ),
+    "borrowed_books": (
+        "We could not load your borrowed books right now. "
+        "Please try again later."
+    ),
+}
+
+
 def _first_session_value(*keys):
     """Return the first non-empty value stored under the supplied keys."""
     for key in keys:
@@ -92,6 +130,12 @@ def student_required(view_function):
     return protected_view
 
 
+def _flash_database_error(operation, log_message):
+    """Log technical details privately and show a safe message to the user."""
+    current_app.logger.exception(log_message)
+    flash(DATABASE_ERROR_MESSAGES[operation], "danger")
+
+
 def _normalise_status(value):
     """Normalise a stored workflow status for reliable comparisons."""
     return " ".join(str(value or "").strip().lower().replace("_", " ").split())
@@ -121,6 +165,34 @@ def _student_has_active_reservation(student_id, book_id):
         in normalised_active_statuses
         for reservation in reservations
     )
+
+
+def _load_owned_reservation(reservation_id, student_id):
+    """Return one reservation only when it belongs to the current student.
+
+    Returning ``None`` for both a missing reservation and a reservation owned
+    by another student avoids revealing whether another student's record
+    exists. The caller may safely display the same not-found message.
+    """
+    reservation_ref = (
+        db.collection(RESERVATIONS_COLLECTION)
+        .document(reservation_id)
+    )
+    reservation_doc = reservation_ref.get()
+
+    if not reservation_doc.exists:
+        return None
+
+    reservation = reservation_doc.to_dict() or {}
+    stored_student_id = str(
+        reservation.get("student_id", "")
+    ).strip()
+
+    if stored_student_id != str(student_id or "").strip():
+        return None
+
+    reservation["reservation_id"] = reservation_doc.id
+    return reservation_ref, reservation
 
 
 def _safe_int(value, default=0):
@@ -281,8 +353,11 @@ def view_catalogue():
             key=lambda book: str(book.get("title", "")).lower()
         )
 
-    except Exception as error:
-        flash(f"Error loading catalogue: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "catalogue",
+            "Failed to load the student book catalogue.",
+        )
 
     return render_template(
         "catalogue_reservation/view_catalogue.html",
@@ -325,8 +400,11 @@ def view_available_books():
             key=lambda book: str(book.get("title", "")).lower()
         )
 
-    except Exception as error:
-        flash(f"Error loading available books: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "available_books",
+            "Failed to load the available-book catalogue.",
+        )
 
     return render_template(
         "catalogue_reservation/view_catalogue.html",
@@ -410,8 +488,11 @@ def _render_selected_book_details(book_id):
             is_available=is_available
         )
 
-    except Exception as error:
-        flash(f"Error loading book details: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "book_details",
+            "Failed to load selected book details.",
+        )
         return redirect(
             url_for("catalogue_reservation.view_catalogue")
         )
@@ -535,56 +616,55 @@ def reserve_book(book_id):
             url_for("catalogue_reservation.view_my_reservations")
         )
 
-    except Exception as error:
-        flash(f"Error reserving book: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "reservation",
+            "Failed to create or validate a book reservation.",
+        )
         return redirect(url_for("catalogue_reservation.view_catalogue"))
 
 
-# SCRUM-690: Cancel reservation
+# SCRUM-690 and SCRUM-1191: Cancel an owned reservation securely
 @catalogue_bp.route(
     "/cancel-reservation/<reservation_id>",
     methods=["GET", "POST"]
 )
 @student_required
 def cancel_reservation(reservation_id):
-    """Allow the current student to cancel one active reservation.
+    """Allow the authenticated student to cancel only their active record.
 
-    GET displays a simple confirmation page. POST validates the reservation
-    again before updating its status in Firestore.
+    The student identity comes from the shared login session. Both missing
+    reservations and reservations owned by another student use the same safe
+    message so that one student cannot discover another student's records.
+    POST requests re-read and validate the record before updating Firestore.
     """
     student_id = _authenticated_student_id()
 
     try:
-        reservation_ref = (
-            db.collection(RESERVATIONS_COLLECTION)
-            .document(reservation_id)
+        owned_reservation = _load_owned_reservation(
+            reservation_id,
+            student_id,
         )
-        reservation_doc = reservation_ref.get()
 
-        if not reservation_doc.exists:
-            flash("Reservation not found.", "danger")
+        if owned_reservation is None:
+            flash(
+                "Reservation not found. You do not have permission "
+                "to cancel this reservation.",
+                "danger",
+            )
             return redirect(
                 url_for("catalogue_reservation.view_my_reservations")
             )
 
-        reservation = reservation_doc.to_dict() or {}
-        reservation["reservation_id"] = reservation_doc.id
-
-        # A student may only cancel their own reservation.
-        if reservation.get("student_id") != student_id:
-            flash("Reservation not found.", "danger")
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
-
-        current_status = str(
-            reservation.get("status", "")
-        ).strip().lower()
+        reservation_ref, reservation = owned_reservation
+        current_status = _normalise_status(
+            reservation.get("status")
+        )
 
         if current_status != "active":
             flash(
                 "Only an active reservation can be cancelled.",
-                "info"
+                "info",
             )
             return redirect(
                 url_for("catalogue_reservation.view_my_reservations")
@@ -593,23 +673,31 @@ def cancel_reservation(reservation_id):
         if request.method == "GET":
             return render_template(
                 "catalogue_reservation/cancel_reservation.html",
-                reservation=reservation
+                reservation=reservation,
             )
 
-        cancellation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # SCRUM-1191: The POST request performs the ownership and status
+        # validation above immediately before this update.
+        cancellation_date = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         reservation_ref.update({
             "status": "Cancelled",
-            "cancellation_date": cancellation_date
+            "cancellation_date": cancellation_date,
+            "cancelled_by_student_id": student_id,
         })
 
         flash(
             f"Reservation for '{reservation.get('book_title', 'the book')}' "
             "was cancelled successfully.",
-            "success"
+            "success",
         )
 
-    except Exception as error:
-        flash(f"Error cancelling reservation: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "cancellation",
+            "Failed to validate or cancel a reservation.",
+        )
 
     return redirect(
         url_for("catalogue_reservation.view_my_reservations")
@@ -643,8 +731,11 @@ def view_my_reservations():
             )
         )
 
-    except Exception as error:
-        flash(f"Error loading reservations: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "reservations",
+            "Failed to load the current student's reservations.",
+        )
 
     return render_template(
         "catalogue_reservation/my_reservations.html",
@@ -776,8 +867,11 @@ def request_borrow_book(book_id):
             )
         )
 
-    except Exception as error:
-        flash(f"Error submitting borrow request: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "borrow_request",
+            "Failed to validate or submit a borrowing request.",
+        )
         return redirect(
             url_for("catalogue_reservation.view_catalogue")
         )
@@ -813,8 +907,11 @@ def view_currently_borrowed_books():
             )
         )
 
-    except Exception as error:
-        flash(f"Error loading borrowed books: {error}", "danger")
+    except Exception:
+        _flash_database_error(
+            "borrowed_books",
+            "Failed to load the current student's borrowed books.",
+        )
 
     return render_template(
         "catalogue_reservation/currently_borrowed_books.html",
