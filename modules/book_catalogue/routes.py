@@ -256,23 +256,128 @@ def _calculate_copy_summary(copies):
 
     return summary
 
+# ============================================================
+# SCRUM-1184: VALIDATE AVAILABLE-COPY COUNT
+# ============================================================
+
+def _validate_inventory_counts(
+    total_copies,
+    available_copies,
+):
+    """
+    Validate the parent book's inventory totals.
+
+    Rules:
+    - Total copies cannot be negative.
+    - Available copies cannot be negative.
+    - Available copies cannot exceed total copies.
+    """
+
+    if isinstance(total_copies, bool):
+        return "Total copies must be a valid whole number."
+
+    if isinstance(available_copies, bool):
+        return (
+            "Available copies must be a valid "
+            "whole number."
+        )
+
+    try:
+        total_copies = int(total_copies)
+        available_copies = int(
+            available_copies
+        )
+
+    except (TypeError, ValueError):
+        return (
+            "Book inventory counts must be valid "
+            "whole numbers."
+        )
+
+    if total_copies < 0:
+        return "Total copies cannot be negative."
+
+    if available_copies < 0:
+        return "Available copies cannot be negative."
+
+    if available_copies > total_copies:
+        return (
+            "Available copies cannot be greater "
+            "than total copies."
+        )
+
+    return None
+
+
+# ============================================================
+# SCRUM-1183 AND SCRUM-1184:
+# RECALCULATE AND VALIDATE INVENTORY
+# ============================================================
 
 def _sync_book_inventory_from_copies(book_id):
-    """Synchronise aggregate borrowing availability from copy records."""
+    """
+    Recalculate the parent book inventory using its
+    physical-copy records.
+
+    The result is validated before it is stored.
+    """
+
     copies = _get_book_copies(book_id)
-    copy_summary = _calculate_copy_summary(copies)
-    inventory_status = (
-        "Available" if copy_summary["available"] > 0 else "Unavailable"
+
+    copy_summary = _calculate_copy_summary(
+        copies
     )
 
-    db.collection(COLLECTION_BOOKS).document(book_id).update(
-        {
-            "total_copies": copy_summary["total"],
-            "available_copies": copy_summary["available"],
-            "status": inventory_status,
-            "updated_at": _current_timestamp(),
-        }
+    total_copies = int(
+        copy_summary.get(
+            "total",
+            0,
+        )
     )
+
+    available_copies = int(
+        copy_summary.get(
+            "available",
+            0,
+        )
+    )
+
+    validation_error = (
+        _validate_inventory_counts(
+            total_copies,
+            available_copies,
+        )
+    )
+
+    if validation_error:
+        raise ValueError(validation_error)
+
+    inventory_status = "Unavailable"
+
+    if available_copies > 0:
+        inventory_status = "Available"
+
+    inventory_updates = {
+        "total_copies": total_copies,
+        "available_copies": (
+            available_copies
+        ),
+        "status": inventory_status,
+        "updated_at": (
+            datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+        ),
+    }
+
+    (
+        db.collection(
+            COLLECTION_BOOKS
+        )
+        .document(book_id)
+        .update(inventory_updates)
+    )
+
     return copy_summary
 
 
@@ -706,7 +811,8 @@ def activate_book(book_id):
 
 
 # ============================================================
-# SCRUM-695: UPDATE INDIVIDUAL PHYSICAL COPY STATUS
+# SCRUM-695 AND SCRUM-1185:
+# UPDATE COPY STATUS AND BOOK AVAILABILITY
 # ============================================================
 
 @book_bp.route(
@@ -773,7 +879,8 @@ def update_copy_status(book_id, copy_id):
 
 
 # ============================================================
-# SCRUM-688: RESTORE REPAIRED PHYSICAL COPY
+# SCRUM-688 AND SCRUM-1185:
+# RESTORE COPY AND UPDATE BOOK AVAILABILITY
 # ============================================================
 
 @book_bp.route(
