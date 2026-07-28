@@ -16,7 +16,9 @@ def _book(**changes):
     return book
 
 
-def test_positive_copy_count_allows_borrow_despite_stale_status(app_factory):
+def test_unavailable_status_rejects_borrow_even_with_positive_copy_count(
+    app_factory,
+):
     app = app_factory(
         books=[_book(status="Unavailable", available_copies=1)]
     )
@@ -31,10 +33,8 @@ def test_positive_copy_count_allows_borrow_despite_stale_status(app_factory):
     ]
 
     assert response.status_code == 200
-    assert len(requests) == 1
-    assert requests[0]["status"] == "Pending"
-    assert requests[0]["availability_checked_at"]
-    assert requests[0]["book_updated_at"] == "2026-07-24 12:00:00"
+    assert "unavailable" in response.get_data(as_text=True).lower()
+    assert requests == []
 
 
 def test_zero_copy_count_rejects_borrow_despite_stale_available_status(

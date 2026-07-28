@@ -82,6 +82,7 @@ COLLECTION_ID_FIELDS = {
     "books": "book_id",
     "reservations": "reservation_id",
     "borrow_requests": "request_id",
+    "borrow_transactions": "transaction_id",
 }
 
 
@@ -109,6 +110,10 @@ class FakeDocumentReference:
     @property
     def _id_field(self):
         return COLLECTION_ID_FIELDS[self._collection_name]
+
+    @property
+    def id(self):
+        return self._document_id
 
     def get(self):
         records = self._database.collections[
@@ -140,6 +145,17 @@ class FakeDocumentReference:
         for record in records:
             if record.get(self._id_field) == self._document_id:
                 record.update(changes)
+                return
+
+        raise ValueError(
+            f"Document not found: {self._document_id}"
+        )
+
+    def delete(self):
+        records = self._database.collections[self._collection_name]
+        for index, record in enumerate(records):
+            if record.get(self._id_field) == self._document_id:
+                records.pop(index)
                 return
 
         raise ValueError(
@@ -255,6 +271,7 @@ class FakeCollection:
             "books": "B",
             "reservations": "R",
             "borrow_requests": "BR",
+            "borrow_transactions": "BT",
         }[self._collection_name]
 
         document_id = (
@@ -281,6 +298,7 @@ class FakeFirestore:
         books=None,
         reservations=None,
         borrow_requests=None,
+        borrow_transactions=None,
     ):
         self.collections = {
             "books": [
@@ -296,6 +314,11 @@ class FakeFirestore:
                 borrow_request.copy()
                 for borrow_request
                 in (borrow_requests or [])
+            ],
+            "borrow_transactions": [
+                transaction.copy()
+                for transaction
+                in (borrow_transactions or [])
             ],
         }
 
@@ -321,6 +344,7 @@ def app_factory(monkeypatch):
         books=None,
         reservations=None,
         borrow_requests=None,
+        borrow_transactions=None,
         authenticated=True,
         session_user_id="S001",
         session_role="student",
@@ -329,6 +353,7 @@ def app_factory(monkeypatch):
             books=books,
             reservations=reservations,
             borrow_requests=borrow_requests,
+            borrow_transactions=borrow_transactions,
         )
 
         monkeypatch.setattr(
