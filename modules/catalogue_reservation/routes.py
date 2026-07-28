@@ -222,9 +222,10 @@ def _student_existing_borrowing_activity(student_id, book_id):
 
 
 def _flash_existing_borrowing_activity(activity):
+    # Display stable messages for existing borrowing activity.
     if activity == "pending_request":
         flash(
-            "You already have a pending borrowing request for this book.",
+            "You already submitted a pending borrow request for this book.",
             "info",
         )
     elif activity == "active_transaction":
@@ -599,7 +600,7 @@ def _load_selected_book(book_id):
 
 
 def _render_selected_book_details(book_id):
-    """Render the shared book-details interface for one selected book."""
+    # Render the shared book-details interface for one selected book.
     try:
         selected_book = _load_selected_book(book_id)
 
@@ -609,12 +610,13 @@ def _render_selected_book_details(book_id):
                 url_for("catalogue_reservation.view_catalogue")
             )
 
-        book, is_available = selected_book
+        book, _has_available_copy = selected_book
+        is_borrowable = _book_is_borrowable(book)
 
         return render_template(
             "catalogue_reservation/book_details.html",
             book=book,
-            is_available=is_available
+            is_available=is_borrowable,
         )
 
     except Exception:
