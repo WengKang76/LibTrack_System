@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+from datetime import timedelta
 from pathlib import Path
 from types import ModuleType
 from unittest.mock import MagicMock
@@ -39,6 +41,7 @@ setattr(config, "firebase_config", fake_firebase_config)
 
 
 # Import blueprints only after the fake Firebase module is installed.
+from modules.authentication.routes import authentication_bp
 from modules.book_catalogue.routes import book_bp
 from modules.catalogue_reservation import routes as catalogue_routes
 from modules.penalty_transaction.routes import penalty_bp
@@ -51,27 +54,48 @@ from modules.user_management.routes import user_management_bp
 
 @pytest.fixture
 def app():
-    test_app = Flask(
+    application = Flask(
         "test_app",
         template_folder=str(PROJECT_ROOT / "templates"),
         static_folder=str(PROJECT_ROOT / "static"),
     )
 
-    test_app.config.update(
+    application.config.update(
         TESTING=True,
         SECRET_KEY="test-secret-key",
+        PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_REFRESH_EACH_REQUEST=True,
     )
 
-    test_app.register_blueprint(penalty_bp)
-    test_app.register_blueprint(book_bp)
-    test_app.register_blueprint(user_management_bp)
+    application.register_blueprint(authentication_bp)
+    application.register_blueprint(penalty_bp)
+    application.register_blueprint(book_bp)
+    application.register_blueprint(user_management_bp)
 
-    return test_app
+    return application
 
 
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def login_as_librarian(client):
+    """Authenticate the shared client as a librarian."""
+
+    with client.session_transaction() as user_session:
+        user_session.clear()
+        user_session["user_id"] = "TEST-LIBRARIAN"
+        user_session["full_name"] = "Test Librarian"
+        user_session["email"] = "librarian@test.com"
+        user_session["role"] = "librarian"
+        user_session["last_activity"] = time.time()
+        user_session.permanent = True
+
+    return client
 
 
 # ============================================================
@@ -373,9 +397,15 @@ def app_factory(monkeypatch):
         )
 
         test_app.config.update(
-            TESTING=True,
-            SECRET_KEY="automated-test-secret-key",
-        )
+    TESTING=True,
+    SECRET_KEY="test-secret-key",
+    PERMANENT_SESSION_LIFETIME=timedelta(
+        minutes=30
+    ),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_REFRESH_EACH_REQUEST=True,
+)
 
         test_app.extensions["fake_firestore"] = fake_db
 

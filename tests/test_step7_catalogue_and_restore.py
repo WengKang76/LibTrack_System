@@ -1,8 +1,12 @@
+﻿import pytest
 from copy import deepcopy
 from datetime import datetime
-
+import time
 import modules.book_catalogue.routes as book_routes
 
+pytestmark = pytest.mark.usefixtures(
+    "login_as_librarian"
+)
 
 class FakeSnapshot:
     def __init__(self, document_id, data):
@@ -317,32 +321,111 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
     app.register_blueprint(
         student_routes.student_catalogue_bp
     )
+
     fake_database = FakeDatabase()
-    monkeypatch.setattr(book_routes, "db", fake_database)
-    monkeypatch.setattr(student_routes, "db", fake_database)
+
+    monkeypatch.setattr(
+        book_routes,
+        "db",
+        fake_database,
+    )
+
+    monkeypatch.setattr(
+        student_routes,
+        "db",
+        fake_database,
+    )
+
     client = app.test_client()
 
-    before = client.get("/student/catalogue/")
+    # This test creates a new client, so it must create
+    # its own librarian session.
+    with client.session_transaction() as user_session:
+        user_session.clear()
+
+        user_session["user_id"] = "TEST-LIBRARIAN"
+        user_session["full_name"] = "Test Librarian"
+        user_session["email"] = "librarian@test.com"
+        user_session["role"] = "librarian"
+        user_session["last_activity"] = time.time()
+        user_session.permanent = True
+
+    before = client.get(
+        "/student/catalogue/"
+    )
+
+    assert before.status_code == 200
     assert b"Old Programming Guide" in before.data
 
     deactivate_response = client.post(
         "/books/catalogue/deactivate/BOOK001",
-        data={"reason": "Outdated Content"},
+        data={
+            "reason": "Outdated Content",
+        },
+        follow_redirects=False,
     )
+
     assert deactivate_response.status_code == 302
 
-    hidden = client.get("/student/catalogue/")
+    assert not deactivate_response.headers[
+        "Location"
+    ].endswith("/auth/login")
+
+    assert (
+        fake_database.books["BOOK001"][
+            "catalogue_status"
+        ]
+        == "Inactive"
+    )
+
+    assert (
+        fake_database.books["BOOK001"][
+            "is_visible_to_students"
+        ]
+        is False
+    )
+
+    hidden = client.get(
+        "/student/catalogue/"
+    )
+
+    assert hidden.status_code == 200
     assert b"Old Programming Guide" not in hidden.data
 
     direct_details = client.get(
         "/student/catalogue/details/BOOK001"
     )
+
     assert direct_details.status_code == 404
 
     activate_response = client.post(
-        "/books/catalogue/activate/BOOK001"
+        "/books/catalogue/activate/BOOK001",
+        follow_redirects=False,
     )
+
     assert activate_response.status_code == 302
 
-    visible_again = client.get("/student/catalogue/")
+    assert not activate_response.headers[
+        "Location"
+    ].endswith("/auth/login")
+
+    assert (
+        fake_database.books["BOOK001"][
+            "catalogue_status"
+        ]
+        == "Active"
+    )
+
+    assert (
+        fake_database.books["BOOK001"][
+            "is_visible_to_students"
+        ]
+        is True
+    )
+
+    visible_again = client.get(
+        "/student/catalogue/"
+    )
+
+    assert visible_again.status_code == 200
     assert b"Old Programming Guide" in visible_again.data

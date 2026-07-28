@@ -222,12 +222,14 @@ def _student_existing_borrowing_activity(student_id, book_id):
 
 
 def _flash_existing_borrowing_activity(activity):
-    # Display stable messages for existing borrowing activity.
+    """Display clear messages for existing borrowing activity."""
     if activity == "pending_request":
         flash(
-            "You already submitted a pending borrow request for this book.",
+            "You already submitted a pending borrow request for this book. "
+            "You already have a pending borrowing request in progress.",
             "info",
         )
+
     elif activity == "active_transaction":
         flash(
             "You are already borrowing this book. "

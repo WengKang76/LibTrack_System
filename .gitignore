@@ -1,11 +1,25 @@
+# Firebase credential
+
+# Python cache
 __pycache__/
 *.py[cod]
 .pytest_cache/
 
-.env
+# Virtual environment
 .venv/
 venv/
-.vscode/
 
+# VS Code
+.vscode/
+__pycache__/
+*.py[cod]
+.venv/
+LibTrack_user_management_test_fix.zip
+.env
+
+# Firebase private credential
+.vscode/
+__pycache__/
+*.py[cod]
+.pytest_cache/
 config/serviceAccountKey.json
-**/serviceAccountKey.json
