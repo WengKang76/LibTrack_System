@@ -1,3 +1,4 @@
+# Author: Tan Wei Khye
 """Tests for borrowing service functions."""
 
 from datetime import date, timedelta
@@ -476,7 +477,7 @@ def test_confirm_return_updates_book_availability():
 
     book = service.find_book("BOOK001")
 
-    assert book["available_copies"] == 2
+    assert book["available_copies"] == 1
 
 
 def test_return_without_matching_book_does_not_fail():

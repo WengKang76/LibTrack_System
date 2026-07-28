@@ -279,7 +279,7 @@
 
             <!-- Close -->
 
-            {% if transaction.status == "Returned" %}
+            {% if transaction.status in ["Returned", "Exception Completed"] %}
 
             <form
                 method="POST"

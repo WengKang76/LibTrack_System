@@ -97,6 +97,13 @@ def approve_borrow_request(request_id: str):
 
     transaction_id = add_borrow_transaction(transaction)
 
+    update_book(
+        request["book_id"],
+        {
+            "available_copies": book["available_copies"] - 1,
+        },
+    )
+
     return transaction_id
 
 
@@ -342,7 +349,10 @@ def close_borrow_transaction(transaction_id: str) -> bool:
     if transaction is None:
         return False
 
-    if transaction["status"] != "Returned":
+    if transaction["status"] not in [
+        "Returned",
+        "Exception Completed",  # Ong Wen Kang. If after any penalty is paid and your status is differ from mine. Can change this status. Also the borrowing/librarian.html as well.
+    ]:  # Either way, so transaction could close.
         return False
 
     update_borrow_transaction(transaction_id, {"status": "Closed"})
