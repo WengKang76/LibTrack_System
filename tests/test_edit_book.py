@@ -6,7 +6,6 @@ from flask import Flask
 
 import modules.book_catalogue.routes as book_routes
 
-
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 
@@ -149,7 +148,15 @@ def book_client():
 
     app.register_blueprint(book_routes.book_bp)
 
-    return app.test_client()
+    client = app.test_client()
+
+    with client.session_transaction() as user_session:
+        user_session["user_id"] = "TEST-LIBRARIAN"
+        user_session["full_name"] = "Test Librarian"
+        user_session["email"] = "librarian@test.com"
+        user_session["role"] = "librarian"
+
+    return client
 
 
 def valid_edit_data():
