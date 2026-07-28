@@ -256,6 +256,47 @@ def _calculate_copy_summary(copies):
 
     return summary
 
+    # ============================================================
+# SCRUM-1182: PREVENT UNSAFE DELETION
+# ============================================================
+
+ACTIVE_TRANSACTION_STATUSES = {
+    "borrowed",
+    "reserved",
+}
+
+
+def _copy_has_active_transaction(copy_record):
+    """
+    Return True when a physical copy is involved in
+    an active borrowing or reservation transaction.
+    """
+
+    status = str(
+        copy_record.get(
+            "status",
+            "",
+        )
+    ).strip().lower()
+
+    return status in ACTIVE_TRANSACTION_STATUSES
+
+
+def _find_unsafe_copy(copies):
+    """
+    Return the first borrowed or reserved copy.
+
+    Return None when every copy is safe to delete.
+    """
+
+    for copy_record in copies:
+        if _copy_has_active_transaction(
+            copy_record
+        ):
+            return copy_record
+
+    return None
+
 # ============================================================
 # SCRUM-1184: VALIDATE AVAILABLE-COPY COUNT
 # ============================================================
@@ -1086,23 +1127,183 @@ def add_book_copies(book_id):
 
 
 # ============================================================
-# SCRUM-704: DELETE COMPLETE BOOK RECORD
+# SCRUM-704 AND SCRUM-1182:
+# DELETE BOOK ONLY WHEN NO ACTIVE TRANSACTION EXISTS
 # ============================================================
 
-@book_bp.route("/delete/<book_id>", methods=["GET", "POST"])
+@book_bp.route(
+    "/delete/<book_id>",
+    methods=["GET", "POST"],
+)
 @librarian_required
 def delete_book(book_id):
     book = get_book_by_id(book_id)
+
     if book is None:
         return "Book record not found.", 404
 
-    if request.method == "GET":
-        return render_template("delete_book.html", book=book)
+    copies = _get_book_copies(book_id)
 
-    book_reference = db.collection(COLLECTION_BOOKS).document(book_id)
-    for copy_document in book_reference.collection("copies").stream():
+    unsafe_copy = _find_unsafe_copy(
+        copies
+    )
+
+    if request.method == "GET":
+        return render_template(
+            "delete_book.html",
+            book=book,
+            copies=copies,
+            unsafe_copy=unsafe_copy,
+        )
+
+    if unsafe_copy is not None:
+        copy_id = unsafe_copy.get(
+            "copy_id",
+            unsafe_copy.get(
+                "document_id",
+                "Unknown copy",
+            ),
+        )
+
+        copy_status = str(
+            unsafe_copy.get(
+                "status",
+                "",
+            )
+        ).strip().title()
+
+        return (
+            render_template(
+                "delete_book.html",
+                book=book,
+                copies=copies,
+                unsafe_copy=unsafe_copy,
+                error=(
+                    f"This book cannot be deleted because "
+                    f"{copy_id} is currently {copy_status}. "
+                    "Complete or cancel the active transaction "
+                    "before deleting the book."
+                ),
+            ),
+            400,
+        )
+
+    book_reference = (
+        db.collection(
+            COLLECTION_BOOKS
+        )
+        .document(book_id)
+    )
+
+    for copy_document in (
+        book_reference
+        .collection("copies")
+        .stream()
+    ):
         copy_document.reference.delete()
+
     book_reference.delete()
 
-    flash("Book record deleted successfully.", "success")
-    return redirect(url_for("book_catalogue.manage_books"))
+    flash(
+        "Book record deleted successfully.",
+        "success",
+    )
+
+    return redirect(
+        url_for(
+            "book_catalogue.manage_books"
+        )
+    )
+
+# ============================================================
+# SCRUM-1182:
+# DELETE PHYSICAL COPY ONLY WHEN SAFE
+# ============================================================
+
+@book_bp.route(
+    "/copies/delete/<book_id>/<copy_id>",
+    methods=["POST"],
+)
+@librarian_required
+def delete_book_copy(
+    book_id,
+    copy_id,
+):
+    book = get_book_by_id(book_id)
+
+    if book is None:
+        return "Book record not found.", 404
+
+    copy_record = _get_book_copy_by_id(
+        book_id,
+        copy_id,
+    )
+
+    if copy_record is None:
+        return (
+            "Physical book copy not found.",
+            404,
+        )
+
+    if _copy_has_active_transaction(
+        copy_record
+    ):
+        copies = _get_book_copies(
+            book_id
+        )
+
+        copy_status = str(
+            copy_record.get(
+                "status",
+                "",
+            )
+        ).strip().title()
+
+        return (
+            render_template(
+                "librarian_book_details.html",
+                book=book,
+                copies=copies,
+                copy_summary=(
+                    _calculate_copy_summary(
+                        copies
+                    )
+                ),
+                error=(
+                    f"{copy_id} cannot be deleted because "
+                    f"it is currently {copy_status}. "
+                    "Complete or cancel the active transaction "
+                    "before deleting this copy."
+                ),
+            ),
+            400,
+        )
+
+    (
+        db.collection(
+            COLLECTION_BOOKS
+        )
+        .document(book_id)
+        .collection("copies")
+        .document(copy_id)
+        .delete()
+    )
+
+    _sync_book_inventory_from_copies(
+        book_id
+    )
+
+    flash(
+        (
+            f"{copy_id} was deleted successfully. "
+            "The book inventory was recalculated."
+        ),
+        "success",
+    )
+
+    return redirect(
+        url_for(
+            "book_catalogue.librarian_book_details",
+            book_id=book_id,
+        )
+    )
