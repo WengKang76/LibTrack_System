@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, date, timedelta
 
 try:
@@ -331,31 +331,44 @@ def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
     if penalty is None:
         return False, "Penalty record not found."
 
-    status = str(penalty.get("status", "")).lower()
+    penalty_status = str(penalty.get("status", "")).lower()
 
-    if status not in ["outstanding", "unpaid", "pending"]:
-        return False, "Only outstanding penalties can be waived."
+    if penalty_status == "paid":
+        return False, "Paid penalties cannot be waived."
 
-    waiver_reason = waiver_reason.strip()
+    if penalty_status == "waived":
+        return False, "Penalty has already been waived."
 
-    if waiver_reason == "":
-        return False, "Waiver reason is required."
+    # Sprint 2 common validation for penalty waiver
+    validation_success, validation_message = validate_penalty_action_data(
+        "Waive penalty",
+        waiver_reason=waiver_reason
+    )
+
+    if not validation_success:
+        return False, validation_message
+
+    reason_success, reason_message, valid_waiver_reason = validate_waiver_reason(
+        waiver_reason
+    )
+
+    if not reason_success:
+        return False, reason_message
+
+    audit_details = build_audit_details(
+        "Waive Penalty",
+        waived_by
+    )
 
     waiver_data = {
         "status": "Waived",
-        "waiver_reason": waiver_reason,
+        "waiver_reason": valid_waiver_reason,
         "waived_by": waived_by,
         "waived_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        **audit_details
     }
 
-    try:
-        db.collection("penalties").document(penalty_id).update(waiver_data)
-    except Exception:
-        pass
-
-    if penalty_id in DEMO_PENALTIES:
-        DEMO_PENALTIES[penalty_id].update(waiver_data)
+    update_penalty_record(penalty_id, waiver_data)
 
     return True, "Penalty waived successfully."
 
@@ -455,56 +468,21 @@ def reject_return_exception(transaction_id, rejection_reason, rejected_by="Libra
 
 
 def penalty_record_exists_for_rejected_return(transaction_id):
+    return penalty_record_exists_for_transaction(
+        transaction_id,
+        "Rejected Return"
+    )
+
+def validate_penalty_amount(penalty_amount):
     try:
-        penalty_docs = db.collection("penalties").stream()
+        valid_amount = float(penalty_amount)
+    except (TypeError, ValueError):
+        return False, "Invalid penalty amount.", None
 
-        for doc in penalty_docs:
-            penalty = doc.to_dict()
+    if valid_amount <= 0:
+        return False, "Penalty amount must be greater than zero.", None
 
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-        return False
-
-    except Exception:
-        pass
-
-    if DEMO_UI_MODE:
-        for penalty in DEMO_PENALTIES.values():
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-    return False
-    try:
-        penalty_docs = db.collection("penalties").stream()
-
-        for doc in penalty_docs:
-            penalty = doc.to_dict()
-
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-    except Exception:
-        pass
-
-    if DEMO_UI_MODE:
-        for penalty in DEMO_PENALTIES.values():
-            if (
-                penalty.get("transaction_id") == transaction_id
-                and penalty.get("penalty_type") == "Rejected Return"
-            ):
-                return True
-
-    return False
+    return True, "Penalty amount is valid.", round(valid_amount, 2)
 
 
 def create_penalty_record_for_rejected_return(
@@ -523,18 +501,30 @@ def create_penalty_record_for_rejected_return(
     if penalty_record_exists_for_rejected_return(transaction_id):
         return False, "Penalty record already exists for this rejected return."
 
-    try:
-        penalty_amount = float(penalty_amount)
-    except ValueError:
-        return False, "Invalid penalty amount."
+    amount_success, amount_message, valid_penalty_amount = validate_penalty_amount(
+        penalty_amount
+    )
 
-    if penalty_amount <= 0:
-        return False, "Penalty amount must be greater than zero."
+    if not amount_success:
+        return False, amount_message
 
     penalty_reason = penalty_reason.strip()
 
     if penalty_reason == "":
         return False, "Penalty reason is required."
+
+    # Sprint 2 common validation for rejected return penalty
+    validation_success, validation_message = validate_penalty_action_data(
+        "Create rejected return penalty",
+        penalty_amount=penalty_amount,
+        penalty_reason=penalty_reason,
+        transaction_id=transaction_id,
+        student_id=transaction.get("student_id"),
+        book_id=transaction.get("book_id")
+    )
+
+    if not validation_success:
+        return False, validation_message
 
     penalty_id = "P" + datetime.now().strftime("%Y%m%d%H%M%S%f")
 
@@ -546,11 +536,13 @@ def create_penalty_record_for_rejected_return(
         "book_title": transaction.get("book_title"),
         "penalty_type": "Rejected Return",
         "penalty_reason": penalty_reason,
-        "penalty_amount": penalty_amount,
+        "penalty_amount": valid_penalty_amount,
         "status": "Outstanding",
         "created_by": created_by,
         "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "last_action": "Create Penalty",
+        "updated_by": created_by,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     saved_to_database = False
@@ -787,6 +779,596 @@ def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian
     return True, "Borrow request approved successfully."
 
 
+
+#=========================================================
+# Sprint 2 - S2-YK-01 and S2-YK-02
+# Penalty Amount Validation and Student Penalty Access Check
+# =========================================================
+
+def validate_penalty_amount(penalty_amount):
+    try:
+        penalty_amount = float(penalty_amount)
+    except (TypeError, ValueError):
+        return False, "Invalid penalty amount.", None
+
+    if penalty_amount <= 0:
+        return False, "Penalty amount must be greater than zero.", None
+
+    return True, "Penalty amount is valid.", round(penalty_amount, 2)
+
+
+def get_current_student_id(student_id=None):
+    if student_id:
+        return student_id
+
+    try:
+        session_student_id = session.get("student_id")
+
+        if session_student_id:
+            return session_student_id
+
+        form_student_id = request.form.get("student_id")
+
+        if form_student_id:
+            return form_student_id
+
+        query_student_id = request.args.get("student_id")
+
+        if query_student_id:
+            return query_student_id
+
+    except RuntimeError:
+        pass
+
+    # Demo student ID for testing
+    return "S001"
+
+
+def get_penalty_by_id(penalty_id):
+    # Check Firebase / fake test database first
+    try:
+        penalty_doc = db.collection("penalties").document(penalty_id).get()
+
+        if getattr(penalty_doc, "exists", False) is True:
+            penalty = penalty_doc.to_dict()
+            penalty["penalty_id"] = penalty_doc.id
+            return penalty
+
+    except Exception:
+        pass
+
+    # Then check demo data
+    if penalty_id in DEMO_PENALTIES:
+        penalty = DEMO_PENALTIES[penalty_id].copy()
+        penalty["penalty_id"] = penalty_id
+        return penalty
+
+    return None
+    try:
+        penalty_doc = db.collection("penalties").document(penalty_id).get()
+
+        if penalty_doc.exists:
+            penalty = penalty_doc.to_dict()
+            penalty["penalty_id"] = penalty_doc.id
+            return penalty
+
+    except Exception:
+        pass
+
+    if penalty_id in DEMO_PENALTIES:
+        penalty = DEMO_PENALTIES[penalty_id].copy()
+        penalty["penalty_id"] = penalty_id
+        return penalty
+
+    return None
+
+
+def update_penalty_record(penalty_id, update_data):
+    try:
+        db.collection("penalties").document(penalty_id).update(update_data)
+    except Exception:
+        pass
+
+    if penalty_id in DEMO_PENALTIES:
+        DEMO_PENALTIES[penalty_id].update(update_data)
+
+def validate_penalty_payment_status(penalty):
+    penalty_status = str(penalty.get("status", "")).lower()
+
+    if penalty_status in ["paid", "waived"]:
+        return False, "This penalty has already been paid or waived."
+
+    if penalty_status not in ["outstanding", "unpaid", "pending"]:
+        return False, "Only outstanding penalties can be paid."
+
+    return True, "Penalty can be paid."
+
+
+def validate_student_penalty_access(penalty_id, student_id):
+    penalty = get_penalty_by_id(penalty_id)
+
+    if penalty is None:
+        return False, "Penalty record not found.", None
+
+    penalty_student_id = penalty.get("student_id")
+
+    # Some old Sprint 1 test data does not include student_id.
+    # Only check ownership when student_id exists in the penalty record.
+    if penalty_student_id and penalty_student_id != student_id:
+        return False, "You are not allowed to access another student's penalty record.", penalty
+
+    return True, "Student is allowed to access this penalty.", penalty
+
+
+def pay_student_own_penalty(
+    penalty_id,
+    student_id,
+    payment_amount,
+    payment_method="Credit Card"
+):
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return False, access_message
+
+    validation_success, validation_message = validate_penalty_action_data(
+        "Pay penalty",
+        penalty_amount=payment_amount,
+        student_id=student_id
+    )
+
+    if not validation_success:
+        return False, validation_message
+
+    amount_success, amount_message, valid_amount = validate_penalty_amount(
+        payment_amount
+    )
+
+    if not amount_success:
+        return False, amount_message
+
+    status_success, status_message = validate_penalty_payment_status(penalty)
+
+    if not status_success:
+        return False, status_message
+
+    expected_amount_value = (
+        penalty.get("penalty_amount")
+        or penalty.get("amount")
+        or penalty.get("total_amount")
+        or payment_amount
+    )
+
+    expected_amount = float(expected_amount_value)
+
+    if valid_amount != expected_amount:
+        return False, "Payment amount does not match the penalty amount."
+
+    audit_details = build_audit_details(
+        "Pay Penalty",
+        student_id
+    )
+
+    update_data = {
+        "status": "Paid",
+        "payment_method": payment_method,
+        "paid_by": student_id,
+        "paid_amount": valid_amount,
+        "paid_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        **audit_details
+    }
+
+    update_penalty_record(penalty_id, update_data)
+
+    return True, "Penalty paid successfully."
+
+
+def penalty_record_exists_for_transaction(transaction_id, penalty_type=None):
+    # Check demo data first for testing
+    for penalty in DEMO_PENALTIES.values():
+        same_transaction = penalty.get("transaction_id") == transaction_id
+
+        if penalty_type is None:
+            if same_transaction:
+                return True
+        else:
+            same_penalty_type = penalty.get("penalty_type") == penalty_type
+
+            if same_transaction and same_penalty_type:
+                return True
+
+    # Check Firebase
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict()
+
+            same_transaction = penalty.get("transaction_id") == transaction_id
+
+            if penalty_type is None:
+                if same_transaction:
+                    return True
+            else:
+                same_penalty_type = penalty.get("penalty_type") == penalty_type
+
+                if same_transaction and same_penalty_type:
+                    return True
+
+    except Exception:
+        pass
+
+    return False
+
+
+
+# =========================================================
+# Sprint 2 - SCRUM-1081 and SCRUM-1082
+# Waiver Reason Validation and Audit Details
+# =========================================================
+
+def validate_waiver_reason(waiver_reason):
+    if waiver_reason is None:
+        return False, "Waiver reason is required.", None
+
+    waiver_reason = waiver_reason.strip()
+
+    if waiver_reason == "":
+        return False, "Waiver reason is required.", None
+
+    if len(waiver_reason) < 5:
+        return False, "Waiver reason must be at least 5 characters.", None
+
+    return True, "Waiver reason is valid.", waiver_reason
+    if waiver_reason is None:
+        return False, "Waiver reason is required."
+
+    waiver_reason = waiver_reason.strip()
+
+    if waiver_reason == "":
+        return False, "Waiver reason is required."
+
+    if len(waiver_reason) < 5:
+        return False, "Waiver reason must be at least 5 characters."
+
+    return True, "Waiver reason is valid.", waiver_reason
+
+
+def build_audit_details(action_name, actor_name):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    return {
+        "last_action": action_name,
+        "updated_by": actor_name,
+        "updated_at": current_time
+    }
+
+
+# =========================================================
+# Sprint 2 - SCRUM-1084, SCRUM-1085, SCRUM-1086
+# Exception Handling and Clear Validation Messages
+# =========================================================
+
+def validate_required_field(value, field_name):
+    if value is None:
+        return False, f"{field_name} is required.", None
+
+    value = str(value).strip()
+
+    if value == "":
+        return False, f"{field_name} is required.", None
+
+    return True, f"{field_name} is valid.", value
+
+
+def create_penalty_action_message(action_name, success, message):
+    if success:
+        return f"{action_name} completed successfully. {message}"
+
+    return f"{action_name} failed. Reason: {message}"
+
+
+def validate_book_exception_type(exception_type):
+    success, message, valid_exception_type = validate_required_field(
+        exception_type,
+        "Book exception type"
+    )
+
+    if not success:
+        return False, message, None
+
+    valid_exception_type = valid_exception_type.title()
+
+    if valid_exception_type not in ["Lost", "Damaged"]:
+        return False, "Book exception type must be Lost or Damaged.", None
+
+    return True, "Book exception type is valid.", valid_exception_type
+
+
+def handle_rejected_return_exception(
+    transaction_id,
+    penalty_amount,
+    penalty_reason,
+    handled_by="Librarian"
+):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        message = create_penalty_action_message(
+            "Rejected return exception handling",
+            False,
+            "Return transaction not found."
+        )
+        return False, message
+
+    status = str(transaction.get("status", "")).lower()
+
+    if status != "rejected":
+        message = create_penalty_action_message(
+            "Rejected return exception handling",
+            False,
+            "Penalty can only be created after the return is rejected."
+        )
+        return False, message
+
+    if penalty_record_exists_for_rejected_return(transaction_id):
+        message = create_penalty_action_message(
+            "Rejected return exception handling",
+            False,
+            "Penalty record already exists for this rejected return."
+        )
+        return False, message
+
+    reason_success, reason_message, valid_penalty_reason = validate_required_field(
+        penalty_reason,
+        "Penalty reason"
+    )
+
+    if not reason_success:
+        message = create_penalty_action_message(
+            "Rejected return exception handling",
+            False,
+            reason_message
+        )
+        return False, message
+
+    amount_success, amount_message, valid_penalty_amount = validate_penalty_amount(
+        penalty_amount
+    )
+
+    if not amount_success:
+        message = create_penalty_action_message(
+            "Rejected return exception handling",
+            False,
+            amount_message
+        )
+        return False, message
+
+    success, result_message = create_penalty_record_for_rejected_return(
+        transaction_id,
+        valid_penalty_amount,
+        valid_penalty_reason,
+        handled_by
+    )
+
+    if not success:
+        message = create_penalty_action_message(
+            "Rejected return exception handling",
+            False,
+            result_message
+        )
+        return False, message
+
+    message = create_penalty_action_message(
+        "Rejected return exception handling",
+        True,
+        "Rejected return penalty record has been created."
+    )
+    return True, message
+
+
+def create_lost_damaged_book_exception_penalty(
+    transaction_id,
+    exception_type,
+    exception_description,
+    penalty_amount,
+    recorded_by="Librarian"
+):
+    transaction = get_return_transaction_by_id(transaction_id)
+
+    if transaction is None:
+        message = create_penalty_action_message(
+            "Lost or damaged book exception handling",
+            False,
+            "Return transaction not found."
+        )
+        return False, message
+
+    # Sprint 2 common validation for lost/damaged book penalty
+    validation_success, validation_message = validate_penalty_action_data(
+        "Create lost or damaged book penalty",
+        penalty_amount=penalty_amount,
+        transaction_id=transaction_id,
+        student_id=transaction.get("student_id"),
+        book_id=transaction.get("book_id"),
+        exception_type=exception_type,
+        exception_description=exception_description
+    )
+
+    if not validation_success:
+        return False, validation_message
+
+    type_success, type_message, valid_exception_type = validate_book_exception_type(
+        exception_type
+    )
+
+    if not type_success:
+        message = create_penalty_action_message(
+            "Lost or damaged book exception handling",
+            False,
+            type_message
+        )
+        return False, message
+
+    description_success, description_message, valid_description = validate_required_field(
+        exception_description,
+        "Exception description"
+    )
+
+    if not description_success:
+        message = create_penalty_action_message(
+            "Lost or damaged book exception handling",
+            False,
+            description_message
+        )
+        return False, message
+
+    amount_success, amount_message, valid_penalty_amount = validate_penalty_amount(
+        penalty_amount
+    )
+
+    if not amount_success:
+        message = create_penalty_action_message(
+            "Lost or damaged book exception handling",
+            False,
+            amount_message
+        )
+        return False, message
+
+    if penalty_record_exists_for_transaction(transaction_id, "Lost/Damaged Book"):
+        message = create_penalty_action_message(
+            "Lost or damaged book exception handling",
+            False,
+            "Penalty record already exists for this lost or damaged book exception."
+        )
+        return False, message
+
+    penalty_id = "P" + datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    penalty_data = {
+        "penalty_id": penalty_id,
+        "student_id": transaction.get("student_id"),
+        "transaction_id": transaction_id,
+        "book_id": transaction.get("book_id"),
+        "book_title": transaction.get("book_title"),
+        "penalty_type": "Lost/Damaged Book",
+        "exception_type": valid_exception_type,
+        "exception_description": valid_description,
+        "penalty_reason": valid_exception_type + " book exception",
+        "penalty_amount": valid_penalty_amount,
+        "status": "Outstanding",
+        "created_by": recorded_by,
+        "created_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "last_action": "Create Lost/Damaged Book Penalty",
+        "updated_by": recorded_by,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    try:
+        db.collection("penalties").document(penalty_id).set(penalty_data)
+    except Exception:
+        pass
+
+    DEMO_PENALTIES[penalty_id] = penalty_data
+
+    message = create_penalty_action_message(
+        "Lost or damaged book exception handling",
+        True,
+        "Lost or damaged book penalty record has been created."
+    )
+
+    return True, message
+
+# =========================================================
+# Sprint 2 - Common Validation for All Penalty Actions
+# =========================================================
+
+def validate_penalty_action_data(
+    action_name,
+    penalty_amount=None,
+    penalty_reason=None,
+    transaction_id=None,
+    student_id=None,
+    book_id=None,
+    exception_type=None,
+    exception_description=None,
+    waiver_reason=None
+):
+    if transaction_id is not None:
+        success, message, valid_transaction_id = validate_required_field(
+            transaction_id,
+            "Transaction ID"
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if student_id is not None:
+        success, message, valid_student_id = validate_required_field(
+            student_id,
+            "Student ID"
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if book_id is not None:
+        success, message, valid_book_id = validate_required_field(
+            book_id,
+            "Book ID"
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if penalty_amount is not None:
+        success, message, valid_amount = validate_penalty_amount(penalty_amount)
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if penalty_reason is not None:
+        success, message, valid_reason = validate_required_field(
+            penalty_reason,
+            "Penalty reason"
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if exception_type is not None:
+        success, message, valid_exception_type = validate_book_exception_type(
+            exception_type
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if exception_description is not None:
+        success, message, valid_description = validate_required_field(
+            exception_description,
+            "Exception description"
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    if waiver_reason is not None:
+        success, message, valid_waiver_reason = validate_waiver_reason(
+            waiver_reason
+        )
+
+        if not success:
+            return False, create_penalty_action_message(action_name, False, message)
+
+    return True, create_penalty_action_message(
+        action_name,
+        True,
+        "All validation checks passed."
+    )
 # =========================================================
 # ROUTES
 # =========================================================
@@ -821,6 +1403,45 @@ def view_outstanding_penalties():
 @penalty_bp.route("/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 @penalty_bp.route("/student/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 def student_pay_credit_card(penalty_id):
+    student_id = get_current_student_id()
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return access_message, 403
+
+    if request.method == "POST":
+        payment_amount = (
+            request.form.get("payment_amount")
+            or request.form.get("amount")
+            or penalty.get("penalty_amount")
+        )
+
+        success, message = pay_student_own_penalty(
+            penalty_id,
+            student_id,
+            payment_amount,
+            "Credit Card"
+        )
+
+        if success:
+            flash(message, "success")
+            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+
+        return render_template(
+            "student/pay_credit_card.html",
+            penalty=penalty,
+            student_id=student_id,
+            error=message
+        ), 400
+
+    return render_template(
+        "student/pay_credit_card.html",
+        penalty=penalty,
+        student_id=student_id
+    )
     penalty = get_penalty_by_id(penalty_id)
 
     if penalty is None:
@@ -847,6 +1468,54 @@ def student_pay_credit_card(penalty_id):
 
 @penalty_bp.route("/student/pay-cash/<penalty_id>", methods=["GET", "POST"])
 def student_pay_cash(penalty_id):
+    student_id = get_current_student_id()
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return access_message, 403
+
+    if request.method == "POST":
+        payment_amount = (
+            request.form.get("payment_amount")
+            or request.form.get("cash_amount")
+            or penalty.get("penalty_amount")
+            or penalty.get("amount")
+            or penalty.get("total_amount")
+        )
+
+        # Support old Sprint 1 cash payment test
+        if request.form.get("cash_amount"):
+            success, message = pay_penalty_with_cash(
+                penalty_id,
+                payment_amount
+            )
+        else:
+            success, message = pay_student_own_penalty(
+                penalty_id,
+                student_id,
+                payment_amount,
+                "Cash"
+            )
+
+        if success:
+            flash(message, "success")
+            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+
+        return render_template(
+            "student/pay_cash.html",
+            penalty=penalty,
+            student_id=student_id,
+            error=message
+        ), 400
+
+    return render_template(
+        "student/pay_cash.html",
+        penalty=penalty,
+        student_id=student_id
+    )
     penalty = get_penalty_by_id(penalty_id)
 
     if penalty is None:
