@@ -123,15 +123,17 @@ def test_zero_available_copies_prevents_borrowing(app_factory):
 
 
 def test_duplicate_pending_borrow_request_is_prevented(app_factory):
-    existing = [{
-        "request_id": "BR001",
-        "student_id": "S001",
-        "book_id": "B001",
-        "book_title": "Clean Code",
-        "request_date": "2026-07-13 10:00:00",
-        "borrowing_period": "14 days",
-        "status": "Pending",
-    }]
+    existing = [
+        {
+            "request_id": "BR001",
+            "student_id": "S001",
+            "book_id": "B001",
+            "book_title": "Clean Code",
+            "request_date": "2026-07-13 10:00:00",
+            "borrowing_period": "14 days",
+            "status": "Pending",
+        }
+    ]
     app = app_factory(
         books=[available_book()],
         borrow_requests=existing,
@@ -151,14 +153,16 @@ def test_duplicate_pending_borrow_request_is_prevented(app_factory):
 
 
 def test_rejected_request_does_not_block_new_request(app_factory):
-    existing = [{
-        "request_id": "BR001",
-        "student_id": "S001",
-        "book_id": "B001",
-        "book_title": "Clean Code",
-        "request_date": "2026-07-10 10:00:00",
-        "status": "Rejected",
-    }]
+    existing = [
+        {
+            "request_id": "BR001",
+            "student_id": "S001",
+            "book_id": "B001",
+            "book_title": "Clean Code",
+            "request_date": "2026-07-10 10:00:00",
+            "status": "Rejected",
+        }
+    ]
     app = app_factory(
         books=[available_book()],
         borrow_requests=existing,
@@ -177,14 +181,16 @@ def test_rejected_request_does_not_block_new_request(app_factory):
 
 
 def test_cancelled_request_does_not_block_new_request(app_factory):
-    existing = [{
-        "request_id": "BR001",
-        "student_id": "S001",
-        "book_id": "B001",
-        "book_title": "Clean Code",
-        "request_date": "2026-07-10 10:00:00",
-        "status": "Cancelled",
-    }]
+    existing = [
+        {
+            "request_id": "BR001",
+            "student_id": "S001",
+            "book_id": "B001",
+            "book_title": "Clean Code",
+            "request_date": "2026-07-10 10:00:00",
+            "status": "Cancelled",
+        }
+    ]
     app = app_factory(
         books=[available_book()],
         borrow_requests=existing,
@@ -205,14 +211,16 @@ def test_cancelled_request_does_not_block_new_request(app_factory):
 def test_other_students_pending_request_does_not_block_current_student(
     app_factory,
 ):
-    existing = [{
-        "request_id": "BR001",
-        "student_id": "S999",
-        "book_id": "B001",
-        "book_title": "Clean Code",
-        "request_date": "2026-07-13 10:00:00",
-        "status": "Pending",
-    }]
+    existing = [
+        {
+            "request_id": "BR001",
+            "student_id": "S999",
+            "book_id": "B001",
+            "book_title": "Clean Code",
+            "request_date": "2026-07-13 10:00:00",
+            "status": "Pending",
+        }
+    ]
     app = app_factory(
         books=[available_book()],
         borrow_requests=existing,

@@ -41,7 +41,7 @@ class FakeDB:
                 "book_title": "Python Programming",
                 "overdue_days": 5,
                 "penalty_amount": 5.00,
-                "status": "Outstanding"
+                "status": "Outstanding",
             },
             "P002": {
                 "student_id": "S002",
@@ -49,7 +49,7 @@ class FakeDB:
                 "book_title": "Database System",
                 "overdue_days": 3,
                 "penalty_amount": 3.00,
-                "status": "Paid"
+                "status": "Paid",
             },
             "P003": {
                 "student_id": "S003",
@@ -57,8 +57,8 @@ class FakeDB:
                 "book_title": "Software Engineering",
                 "overdue_days": 2,
                 "penalty_amount": 2.00,
-                "status": "Waived"
-            }
+                "status": "Waived",
+            },
         }
 
     def collection(self, collection_name):
@@ -74,8 +74,7 @@ def test_scrum_703_pay_outstanding_penalty_with_credit_card(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.pay_penalty_with_credit_card(
-        "P001",
-        "4111111111111111"
+        "P001", "4111111111111111"
     )
 
     assert success is True
@@ -90,8 +89,7 @@ def test_scrum_703_reject_already_paid_penalty(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.pay_penalty_with_credit_card(
-        "P002",
-        "4111111111111111"
+        "P002", "4111111111111111"
     )
 
     assert success is False
@@ -104,8 +102,7 @@ def test_scrum_703_reject_waived_penalty(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.pay_penalty_with_credit_card(
-        "P003",
-        "4111111111111111"
+        "P003", "4111111111111111"
     )
 
     assert success is False
@@ -117,10 +114,7 @@ def test_scrum_703_reject_invalid_credit_card(monkeypatch):
 
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    success, message = penalty_routes.pay_penalty_with_credit_card(
-        "P001",
-        "123"
-    )
+    success, message = penalty_routes.pay_penalty_with_credit_card("P001", "123")
 
     assert success is False
     assert fake_db.penalties["P001"]["status"] == "Outstanding"
@@ -141,12 +135,15 @@ def test_scrum_703_credit_card_payment_route_updates_status(client, monkeypatch)
 
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    response = client.post("/penalty/student/pay-credit-card/P001", data={
-        "card_number": "4111111111111111",
-        "card_holder": "Test User",
-        "expiry_date": "12/29",
-        "cvv": "123"
-    })
+    response = client.post(
+        "/penalty/student/pay-credit-card/P001",
+        data={
+            "card_number": "4111111111111111",
+            "card_holder": "Test User",
+            "expiry_date": "12/29",
+            "cvv": "123",
+        },
+    )
 
     assert response.status_code == 302
     assert fake_db.penalties["P001"]["status"] == "Paid"

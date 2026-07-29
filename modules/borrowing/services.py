@@ -9,6 +9,8 @@ from modules.borrowing.repository import (
     update_book,
     update_borrow_transaction,
     update_request_status,
+    has_outstanding_penalty,
+    has_active_borrow_transaction,
 )
 
 from datetime import date, timedelta
@@ -58,6 +60,23 @@ def approve_borrow_request(request_id: str):
     if request["status"] != "Pending":
         return False
 
+    if has_outstanding_penalty(request["student_id"]):
+        return False
+
+    book = find_book(request["book_id"])
+
+    if book is None:
+        return False
+
+    if book["available_copies"] <= 0:
+        return False
+
+    if has_active_borrow_transaction(
+        request["student_id"],
+        request["book_id"],
+    ):
+        return False
+
     update_request_status(request_id, "Approved")
 
     borrow_date = date.today()
@@ -78,7 +97,44 @@ def approve_borrow_request(request_id: str):
 
     transaction_id = add_borrow_transaction(transaction)
 
+    update_book(
+        request["book_id"],
+        {
+            "available_copies": book["available_copies"] - 1,
+        },
+    )
+
     return transaction_id
+
+
+def get_borrow_approval_error(request_id: str):
+
+    request = find_request(request_id)
+
+    if request is None:
+        return "Borrow request not found."
+
+    if request["status"] != "Pending":
+        return "This borrow request has already been processed."
+
+    if has_outstanding_penalty(request["student_id"]):
+        return "Student has outstanding unpaid penalties."
+
+    book = find_book(request["book_id"])
+
+    if book is None:
+        return "Book record not found."
+
+    if book["available_copies"] <= 0:
+        return "Book is currently unavailable."
+
+    if has_active_borrow_transaction(
+        request["student_id"],
+        request["book_id"],
+    ):
+        return "Student already has an active borrowing transaction " "for this book."
+
+    return None
 
 
 def request_book_return(transaction_id: str) -> bool:
@@ -293,7 +349,10 @@ def close_borrow_transaction(transaction_id: str) -> bool:
     if transaction is None:
         return False
 
-    if transaction["status"] != "Returned":
+    if transaction["status"] not in [
+        "Returned",
+        "Exception Completed",  # Ong Wen Kang. If after any penalty is paid and your status is differ from mine. Can change this status. Also the borrowing/librarian.html as well.
+    ]:  # Either way, so transaction could close.
         return False
 
     update_borrow_transaction(transaction_id, {"status": "Closed"})

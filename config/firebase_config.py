@@ -3,7 +3,6 @@ import os
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-
 _current_dir = os.path.dirname(os.path.abspath(__file__))
 _key_path = os.path.join(_current_dir, "serviceAccountKey.json")
 

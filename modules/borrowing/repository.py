@@ -7,6 +7,7 @@ from config.firebase_config import (
     COLLECTION_BORROW_TRANSACTIONS,
     COLLECTION_USERS,
     COLLECTION_RESERVATIONS,
+    COLLECTION_PENALTIES,
 )
 
 
@@ -219,3 +220,51 @@ def has_active_reservation(book_id: str):
     )
 
     return any(True for _ in docs)
+
+
+# ==========================
+# Penalties
+# ==========================
+
+
+def has_outstanding_penalty(student_id: str) -> bool:
+    db = get_db()
+
+    docs = (
+        db.collection(COLLECTION_PENALTIES)
+        .where("student_id", "==", student_id)
+        .where("status", "==", "Outstanding")
+        .stream()
+    )
+
+    return any(True for _ in docs)
+
+
+# ==================================================================
+# Check if a student has an active borrow transaction for that book
+# ==================================================================
+
+
+def has_active_borrow_transaction(
+    student_id: str,
+    book_id: str,
+):
+    db = get_db()
+
+    docs = (
+        db.collection(COLLECTION_BORROW_TRANSACTIONS)
+        .where("student_id", "==", student_id)
+        .where("book_id", "==", book_id)
+        .stream()
+    )
+
+    for doc in docs:
+        transaction = doc.to_dict()
+
+        if transaction["status"] in [
+            "Borrowed",
+            "Return Pending",
+        ]:
+            return True
+
+    return False

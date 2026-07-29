@@ -1,3 +1,4 @@
+# Author: Tan Wei Khye
 """Tests for borrowing service functions."""
 
 from datetime import date, timedelta
@@ -42,7 +43,7 @@ def fake_repository(monkeypatch):
     book = {
         "id": "BOOK001",
         "title": "Database System Concepts",
-        "available_copies": 0,
+        "available_copies": 1,
     }
 
     def fake_find_request(request_id):
