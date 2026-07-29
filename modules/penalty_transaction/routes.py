@@ -153,7 +153,7 @@ def calculate_penalty_amount(due_date):
         return {"overdue_days": 0, "penalty_amount": 0.00}
 
     overdue_days = (today - due_date).days
-    penalty_amount = overdue_days * PENALTY_RATE_PER_DAY
+    penalty_amount = round(overdue_days * PENALTY_RATE_PER_DAY, 2)
 
     return {"overdue_days": overdue_days, "penalty_amount": penalty_amount}
 
@@ -425,6 +425,15 @@ def get_return_transaction_by_id(transaction_id):
 
         if transaction:
             return transaction.copy()
+
+        # Demo penalties use the borrowing transaction IDs (for example,
+        # P001 links to T001), so these must be valid exception targets too.
+        transaction = DEMO_BORROW_TRANSACTIONS.get(transaction_id)
+
+        if transaction:
+            transaction = transaction.copy()
+            transaction["transaction_id"] = transaction_id
+            return transaction
 
     return None
 
@@ -832,7 +841,10 @@ def get_current_student_id(student_id=None):
         return student_id
 
     try:
-        session_student_id = session.get("student_id")
+        session_student_id = (
+            session.get("student_id")
+            or session.get("user_id")
+        )
 
         if session_student_id:
             return session_student_id
@@ -1404,6 +1416,11 @@ def validate_penalty_action_data(
 # =========================================================
 
 
+@penalty_bp.route("/librarian")
+def librarian_penalty_dashboard():
+    return render_template("librarian/dashboard.html")
+
+
 @penalty_bp.route("/overdue")
 @penalty_bp.route("/librarian/overdue")
 def identify_overdue_books():
@@ -1427,6 +1444,24 @@ def view_outstanding_penalties():
         "librarian/outstanding_penalties.html",
         outstanding_penalties=outstanding_penalties,
         student_id=student_id,
+    )
+
+
+@penalty_bp.route("/student")
+@penalty_bp.route("/student/<student_id>")
+def student_penalty_records(student_id=None):
+    resolved_student_id = student_id or session.get("student_id") or session.get("user_id")
+
+    if not resolved_student_id:
+        flash("Please log in as a student to view penalty records.", "warning")
+        return redirect(url_for("authentication.login"))
+
+    penalties = get_outstanding_penalties(resolved_student_id)
+
+    return render_template(
+        "student/penalty_records.html",
+        student_id=resolved_student_id,
+        penalties=penalties,
     )
 
 
@@ -1458,7 +1493,7 @@ def student_pay_credit_card(penalty_id):
 
         if success:
             flash(message, "success")
-            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+            return redirect(url_for("penalty_transaction.student_penalty_records"))
 
         return render_template(
             "student/pay_credit_card.html",
@@ -1532,7 +1567,7 @@ def student_pay_cash(penalty_id):
 
         if success:
             flash(message, "success")
-            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+            return redirect(url_for("penalty_transaction.student_penalty_records"))
 
         return render_template(
             "student/pay_cash.html",
@@ -1585,6 +1620,16 @@ def view_payment_records():
     )
 
 
+@penalty_bp.route("/librarian/waive", methods=["GET"])
+def librarian_choose_penalty_to_waive():
+    outstanding_penalties = get_outstanding_penalties()
+
+    return render_template(
+        "librarian/select_penalty_to_waive.html",
+        outstanding_penalties=outstanding_penalties,
+    )
+
+
 @penalty_bp.route("/librarian/waive/<penalty_id>", methods=["GET", "POST"])
 def librarian_waive_penalty(penalty_id):
     penalty = get_penalty_by_id(penalty_id)
@@ -1600,7 +1645,7 @@ def librarian_waive_penalty(penalty_id):
 
         if success:
             flash(message, "success")
-            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
+            return redirect(url_for("penalty_transaction.librarian_choose_penalty_to_waive"))
 
         return (
             render_template(
@@ -1660,9 +1705,46 @@ def librarian_reject_return_exception(transaction_id):
     )
 
 
+@penalty_bp.route("/librarian/book-exception", methods=["GET"])
+def librarian_choose_book_exception():
+    transactions = []
+
+    try:
+        transaction_docs = db.collection(COLLECTION_BORROW_TRANSACTIONS).stream()
+
+        for doc in transaction_docs:
+            transaction = doc.to_dict()
+            transaction["transaction_id"] = doc.id
+            transactions.append(transaction)
+    except Exception:
+        pass
+
+    if not transactions:
+        for transaction_id, transaction in DEMO_BORROW_TRANSACTIONS.items():
+            demo_transaction = transaction.copy()
+            demo_transaction["transaction_id"] = transaction_id
+            transactions.append(demo_transaction)
+
+    return render_template(
+        "librarian/select_book_exception.html",
+        transactions=transactions,
+    )
+
+
 @penalty_bp.route("/librarian/book-exception/<transaction_id>", methods=["GET", "POST"])
 def librarian_record_book_exception(transaction_id):
     transaction = get_return_transaction_by_id(transaction_id)
+
+    # The waive page links from a penalty record.  Older penalty records and
+    # Firestore-generated penalty IDs cannot be used directly as borrowing
+    # transaction document IDs, so resolve the linked transaction first.
+    if transaction is None:
+        penalty = get_penalty_by_id(transaction_id)
+        linked_transaction_id = penalty.get("transaction_id") if penalty else None
+
+        if linked_transaction_id:
+            transaction_id = linked_transaction_id
+            transaction = get_return_transaction_by_id(transaction_id)
 
     if transaction is None:
         return "Transaction record not found", 404
@@ -1678,7 +1760,7 @@ def librarian_record_book_exception(transaction_id):
 
         if success:
             flash(message, "success")
-            return redirect(url_for("penalty_transaction.identify_overdue_books"))
+            return redirect(url_for("penalty_transaction.librarian_choose_book_exception"))
 
         return (
             render_template(

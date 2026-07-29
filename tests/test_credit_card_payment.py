@@ -146,5 +146,6 @@ def test_scrum_703_credit_card_payment_route_updates_status(client, monkeypatch)
     )
 
     assert response.status_code == 302
+    assert response.headers["Location"].endswith("/penalty/student")
     assert fake_db.penalties["P001"]["status"] == "Paid"
     assert fake_db.penalties["P001"]["payment_method"] == "Credit Card"

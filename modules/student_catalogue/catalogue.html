@@ -1,10 +1,18 @@
-{% extends "student_base.html" %}
+{% extends "index.html" %}
 
 {% block title %}
 Book Catalogue | LibTrack
 {% endblock %}
 
 {% block content %}
+
+<link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/student_catalogue.css'
+        ) }}"
+    >
 
 <section class="catalogue-hero">
 

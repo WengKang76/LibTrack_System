@@ -173,7 +173,7 @@ def approve_borrow_request(request_id: str):
         )
 
         borrow_date = date.today()
-        due_date = borrow_date + timedelta(days=14)
+        due_date = borrow_date + timedelta(days=0)
 
         transaction = {
             "request_id": request_id,

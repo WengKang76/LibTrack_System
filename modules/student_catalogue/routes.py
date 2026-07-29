@@ -10,13 +10,74 @@ student_catalogue_bp = Blueprint(
 )
 
 
-def _is_visible_in_student_catalogue(book):
-    visible = book.get("is_visible_to_students")
-    if isinstance(visible, bool):
-        return visible
+def _normalise_text(value):
+    return str(value or "").strip().lower()
 
-    catalogue_status = str(book.get("catalogue_status", "Active")).lower()
-    return catalogue_status not in {"inactive", "unavailable"}
+
+def _is_visible_in_student_catalogue(book):
+    """
+    Student catalogue should only show books that are allowed to be viewed
+    and are available/active.
+
+    This prevents books marked as Unavailable from still appearing
+    in the student book catalogue.
+    """
+
+    # 1. Hard block unavailable/inactive/deleted status first
+    status_fields = [
+        book.get("status"),
+        book.get("book_status"),
+        book.get("availability"),
+        book.get("availability_status"),
+        book.get("catalogue_status"),
+    ]
+
+    unavailable_values = {
+        "unavailable",
+        "not available",
+        "inactive",
+        "deleted",
+        "removed",
+        "archived",
+        "hidden",
+    }
+
+    for status in status_fields:
+        if _normalise_text(status) in unavailable_values:
+            return False
+
+    # 2. Check boolean visibility setting
+    visible = book.get("is_visible_to_students")
+
+    if isinstance(visible, bool) and visible is False:
+        return False
+
+    # 3. Check boolean availability setting
+    is_available = book.get("is_available")
+
+    if isinstance(is_available, bool) and is_available is False:
+        return False
+
+    available = book.get("available")
+
+    if isinstance(available, bool) and available is False:
+        return False
+
+    # 4. Check available copy count
+    available_copies = (
+        book.get("available_copies")
+        if book.get("available_copies") is not None
+        else book.get("available_count")
+    )
+
+    if available_copies is not None:
+        try:
+            if int(available_copies) <= 0:
+                return False
+        except (TypeError, ValueError):
+            pass
+
+    return True
 
 
 def get_student_book_by_id(book_id):
@@ -26,6 +87,7 @@ def get_student_book_by_id(book_id):
         return None
 
     book = book_document.to_dict() or {}
+
     if not _is_visible_in_student_catalogue(book):
         return None
 
@@ -45,17 +107,15 @@ def view_catalogue():
             books.append(book)
 
     books.sort(key=lambda book: str(book.get("title", "")).lower())
+
     return render_template("catalogue.html", books=books)
 
 
-@student_catalogue_bp.route(
-    "/details/<book_id>",
-    methods=["GET"],
-)
+@student_catalogue_bp.route("/details/<book_id>", methods=["GET"])
 def view_book_details(book_id):
     book = get_student_book_by_id(book_id)
 
     if book is None:
-        return "Book record not found.", 404
+        return "Book record not found or unavailable to students.", 404
 
     return render_template("book_details.html", book=book)

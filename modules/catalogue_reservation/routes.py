@@ -20,7 +20,7 @@ BOOKS_COLLECTION = "books"
 RESERVATIONS_COLLECTION = "reservations"
 BORROW_REQUESTS_COLLECTION = "borrow_requests"
 BORROW_TRANSACTIONS_COLLECTION = "borrow_transactions"
-BORROWING_PERIOD_DAYS = 14
+BORROWING_PERIOD_DAYS = 0
 CURRENT_BORROWING_STATUSES = {"approved", "borrowed", "issued", "active"}
 PENDING_BORROW_REQUEST_STATUSES = {
     "pending",
@@ -866,7 +866,7 @@ def _build_borrow_request_data(
         "book_id": book["book_id"],
         "book_title": book.get("title", "Untitled Book"),
         "request_date": request_date,
-        "borrowing_period": f"{BORROWING_PERIOD_DAYS} days",
+        "borrowing_period": "Dummy period",
         "borrowing_period_days": BORROWING_PERIOD_DAYS,
         "status": "Pending",
         "availability_checked_at": request_date,
