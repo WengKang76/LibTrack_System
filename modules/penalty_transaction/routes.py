@@ -365,11 +365,7 @@ def waive_penalty(penalty_id, waiver_reason, waived_by="Librarian"):
         "waiver_reason": valid_waiver_reason,
         "waived_by": waived_by,
         "waived_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-<<<<<<< HEAD
         **audit_details
-=======
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
->>>>>>> origin/TestMain2
     }
 
     update_penalty_record(penalty_id, waiver_data)
@@ -783,9 +779,8 @@ def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian
     return True, "Borrow request approved successfully."
 
 
-<<<<<<< HEAD
 
-    # =========================================================
+#=========================================================
 # Sprint 2 - S2-YK-01 and S2-YK-02
 # Penalty Amount Validation and Student Penalty Access Check
 # =========================================================
@@ -1364,9 +1359,6 @@ def validate_penalty_action_data(
         True,
         "All validation checks passed."
     )
-
-=======
->>>>>>> origin/TestMain2
 # =========================================================
 # ROUTES
 # =========================================================
