@@ -18,15 +18,43 @@ Dashboard | LibTrack
             transactions from one central platform.
         </p>
 
-        <div class="dashboard-actions">
-            <a href="/catalogue/" class="primary-button">
-                Browse Book Catalogue
-            </a>
+      <div class="dashboard-actions">
 
-            <a href="/borrowing/" class="secondary-button">
-                Borrowing &amp; Returning
-            </a>
-        </div>
+    {% if not session.get("user_id") %}
+
+        <a
+            href="/auth/login"
+            class="primary-button"
+        >
+            Login
+        </a>
+
+        <a
+            href="/auth/register"
+            class="secondary-button"
+        >
+            Register Student Account
+        </a>
+
+    {% else %}
+
+        <a
+            href="/catalogue/"
+            class="primary-button"
+        >
+            Browse Book Catalogue
+        </a>
+
+        <a
+            href="/borrowing/"
+            class="secondary-button"
+        >
+            Borrowing &amp; Returning
+        </a>
+
+    {% endif %}
+
+</div>
     </div>
 </section>
 
@@ -48,11 +76,11 @@ Dashboard | LibTrack
                 individual physical copies.
             </p>
 
-            <a href="/books/add">
-                Manage Book Catalogue
-            </a>
+           <a href="/books/">
+    Manage Book Catalogue
+</a>
         </article>
-
+<div class="dashboard-card-grid">
         <article class="dashboard-card">
             <div class="dashboard-card-icon">🔎</div>
 

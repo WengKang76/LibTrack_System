@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block extra_css %}
 <link
@@ -89,17 +89,16 @@
                 </span>
             </div>
 
+            {% set account_status = user.get(
+                'account_status',
+                'Inactive'
+            ) | trim | lower
+            %}
+
             <div class="user-information-item">
                 <span class="user-information-label">
                     Account Status
                 </span>
-
-                {% set account_status =
-                    user.get(
-                        'account_status',
-                        'Inactive'
-                    ) | lower
-                %}
 
                 <span
                     class="account-status status-{{
@@ -137,15 +136,10 @@
 
         </div>
 
-        {% set user_role =
-            user.get('role', '') | lower
-        %}
-
-        {% set account_status =
-            user.get(
-                'account_status',
-                ''
-            ) | lower
+        {% set user_role = user.get(
+            'role',
+            ''
+        ) | trim | lower
         %}
 
         <div class="user-account-actions">
@@ -155,40 +149,61 @@
                 and account_status == 'active'
             ) %}
 
-            <form
-                method="POST"
-                action="{{ url_for(
-                    'user_management.deactivate_student',
-                    user_id=user.document_id
-                ) }}"
-            >
-                <button
-                    type="submit"
-                    class="button button-danger"
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'user_management.deactivate_student',
+                        user_id=user.document_id
+                    ) }}"
                 >
-                    Deactivate Student Account
-                </button>
-            </form>
+                    <button
+                        type="submit"
+                        class="button button-danger"
+                        onclick="
+                            return confirm(
+                                'Are you sure you want to deactivate this student account?'
+                            );
+                        "
+                    >
+                        Deactivate Student Account
+                    </button>
+                </form>
 
             {% elif (
                 user_role == 'student'
                 and account_status == 'inactive'
             ) %}
 
-            <div class="inactive-account-message">
+                <div class="inactive-account-message">
+                    This Student account is currently inactive.
+                </div>
 
-                This Student account is currently inactive.
-
-            </div>
+                <form
+                    method="POST"
+                    action="{{ url_for(
+                        'user_management.reactivate_student',
+                        user_id=user.document_id
+                    ) }}"
+                >
+                    <button
+                        type="submit"
+                        class="button button-success"
+                        onclick="
+                            return confirm(
+                                'Are you sure you want to reactivate this student account?'
+                            );
+                        "
+                    >
+                        Reactivate Student Account
+                    </button>
+                </form>
 
             {% else %}
 
-            <div class="protected-account-message">
-
-                Librarian accounts cannot be deactivated
-                through this function.
-
-            </div>
+                <div class="protected-account-message">
+                    Librarian accounts cannot be activated or
+                    deactivated through this function.
+                </div>
 
             {% endif %}
 

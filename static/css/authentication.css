@@ -1,0 +1,138 @@
+.authentication-page {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.authentication-card {
+    width: 100%;
+    max-width: 620px;
+    background-color: white;
+    padding: 32px;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.authentication-header {
+    margin-bottom: 25px;
+}
+
+.authentication-header h1 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.authentication-header p {
+    color: #6b7280;
+    line-height: 1.6;
+}
+
+.authentication-form {
+    display: grid;
+    gap: 18px;
+}
+
+.form-group {
+    display: grid;
+    gap: 7px;
+}
+
+.form-group label {
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.form-group input:focus {
+    border-color: #2563eb;
+    outline: 2px solid rgba(37, 99, 235, 0.15);
+}
+
+.field-error {
+    margin: 0;
+    color: #b91c1c;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.password-requirements {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.show-password-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    cursor: pointer;
+}
+
+.show-password-control input {
+    width: 16px;
+    height: 16px;
+}
+
+.authentication-button {
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    font-size: 15px;
+}
+
+.authentication-error {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    color: #991b1b;
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.authentication-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.authentication-links a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.authentication-links a:hover {
+    text-decoration: underline;
+}
+
+.authentication-success {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    color: #166534;
+    background-color: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.development-reset-link {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.development-reset-link a {
+    margin-left: 5px;
+}

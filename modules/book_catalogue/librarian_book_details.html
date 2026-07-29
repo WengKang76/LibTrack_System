@@ -12,6 +12,12 @@
 
 {% block content %}
 
+{% if error %}
+    <div class="error-message">
+        {{ error }}
+    </div>
+{% endif %}
+
 <div class="librarian-details-page">
 
     <div class="details-header">
@@ -384,39 +390,75 @@
 
                             <div class="copy-action-buttons">
 
-                                <a
-                                    href="{{ url_for(
-                                        'book_catalogue.update_copy_status',
-                                        book_id=book.book_id,
-                                        copy_id=copy_document_id
-                                    ) }}"
-                                    class="button button-small button-status"
-                                >
-                                    Update Status
-                                </a>
+    <a
+        href="{{ url_for(
+            'book_catalogue.update_copy_status',
+            book_id=book.book_id,
+            copy_id=copy_document_id
+        ) }}"
+        class="button button-small button-status"
+    >
+        Update Status
+    </a>
 
-                                {% if current_copy_status == 'damaged' %}
+    {% if current_copy_status == 'damaged' %}
 
-                                <form
-                                    method="POST"
-                                    action="{{ url_for(
-                                        'book_catalogue.restore_damaged_copy',
-                                        book_id=book.book_id,
-                                        copy_id=copy_document_id
-                                    ) }}"
-                                    class="inline-action-form"
-                                >
-                                    <button
-                                        type="submit"
-                                        class="button button-small button-restore"
-                                    >
-                                        Restore Damaged Copy
-                                    </button>
-                                </form>
+        <form
+            method="POST"
+            action="{{ url_for(
+                'book_catalogue.restore_damaged_copy',
+                book_id=book.book_id,
+                copy_id=copy_document_id
+            ) }}"
+            class="inline-action-form"
+        >
+            <button
+                type="submit"
+                class="button button-small button-restore"
+            >
+                Restore Damaged Copy
+            </button>
+        </form>
 
-                                {% endif %}
+    {% endif %}
 
-                            </div>
+    {% if current_copy_status not in [
+        'borrowed',
+        'reserved'
+    ] %}
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'book_catalogue.delete_book_copy',
+                book_id=book.book_id,
+                copy_id=copy_document_id
+            ) }}"
+            class="inline-action-form"
+            onsubmit="
+                return confirm(
+                    'Are you sure you want to permanently delete this physical copy?'
+                );
+            "
+        >
+            <button
+                type="submit"
+                class="button button-small button-danger"
+            >
+                Delete Copy
+            </button>
+        </form>
+
+    {% else %}
+
+        <span class="transaction-warning">
+            Cannot delete while
+            {{ current_copy_status }}
+        </span>
+
+    {% endif %}
+
+</div>
                         </td>
 
                     </tr>

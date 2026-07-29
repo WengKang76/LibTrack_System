@@ -16,7 +16,7 @@ def test_only_available_books_are_displayed(app_factory):
             "author": "Robert C. Martin",
             "category": "Programming",
             "status": "Available",
-            "available_copies": 2
+            "available_copies": 2,
         },
         {
             "book_id": "B002",
@@ -24,8 +24,8 @@ def test_only_available_books_are_displayed(app_factory):
             "author": "Test Author",
             "category": "Testing",
             "status": "Unavailable",
-            "available_copies": 0
-        }
+            "available_copies": 0,
+        },
     ]
 
     app = app_factory(books)
@@ -45,7 +45,7 @@ def test_available_books_require_positive_copy_count(app_factory):
             "book_id": "B001",
             "title": "Zero Copy Book",
             "status": "Available",
-            "available_copies": 0
+            "available_copies": 0,
         }
     ]
 
@@ -66,14 +66,14 @@ def test_available_books_are_sorted_alphabetically(app_factory):
             "book_id": "B001",
             "title": "Python Programming",
             "status": "Available",
-            "available_copies": 1
+            "available_copies": 1,
         },
         {
             "book_id": "B002",
             "title": "Agile Development",
             "status": "Available",
-            "available_copies": 1
-        }
+            "available_copies": 1,
+        },
     ]
 
     app = app_factory(books)
@@ -94,7 +94,7 @@ def test_available_books_search_filters_results(app_factory):
             "author": "Robert C. Martin",
             "category": "Programming",
             "status": "Available",
-            "available_copies": 2
+            "available_copies": 2,
         },
         {
             "book_id": "B002",
@@ -102,8 +102,8 @@ def test_available_books_search_filters_results(app_factory):
             "author": "Thomas Connolly",
             "category": "Database",
             "status": "Available",
-            "available_copies": 1
-        }
+            "available_copies": 1,
+        },
     ]
 
     app = app_factory(books)
