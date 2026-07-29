@@ -14,11 +14,7 @@ from datetime import date, datetime, timedelta
 
 from config.firebase_config import db
 
-catalogue_bp = Blueprint(
-    "catalogue_reservation",
-    __name__,
-    url_prefix="/catalogue"
-)
+catalogue_bp = Blueprint("catalogue_reservation", __name__, url_prefix="/catalogue")
 
 BOOKS_COLLECTION = "books"
 RESERVATIONS_COLLECTION = "reservations"
@@ -318,9 +314,7 @@ def _parse_date(value):
         # Support ISO dates, ISO datetimes and the format already used by
         # this module when writing Firestore records.
         try:
-            return datetime.fromisoformat(
-                cleaned_value.replace("Z", "+00:00")
-            ).date()
+            return datetime.fromisoformat(cleaned_value.replace("Z", "+00:00")).date()
         except ValueError:
             pass
 
@@ -402,9 +396,7 @@ def _normalise_current_borrowing(document):
     borrowing["remaining_period_state"] = (
         "overdue"
         if remaining_days is not None and remaining_days < 0
-        else "due-today"
-        if remaining_days == 0
-        else "active"
+        else "due-today" if remaining_days == 0 else "active"
     )
 
     return borrowing
@@ -417,13 +409,10 @@ def _matches_search(book, search_keyword):
     searchable_fields = (
         book.get("title", ""),
         book.get("author", ""),
-        book.get("category", "")
+        book.get("category", ""),
     )
 
-    return any(
-        search_keyword in str(field).lower()
-        for field in searchable_fields
-    )
+    return any(search_keyword in str(field).lower() for field in searchable_fields)
 
 
 # SCRUM-44: Setup module + View book catalogue
@@ -439,9 +428,7 @@ def view_catalogue():
         for doc in docs:
             book = doc.to_dict() or {}
             book["book_id"] = doc.id
-            book["available_copies"] = _safe_int(
-                book.get("available_copies", 0)
-            )
+            book["available_copies"] = _safe_int(book.get("available_copies", 0))
 
             # SCRUM-1192: Inactive, deactivated, and unlisted books must not
             # appear in any student catalogue view.
@@ -451,9 +438,7 @@ def view_catalogue():
             if _matches_search(book, search_keyword):
                 books.append(book)
 
-        books.sort(
-            key=lambda book: str(book.get("title", "")).lower()
-        )
+        books.sort(key=lambda book: str(book.get("title", "")).lower())
 
     except Exception:
         _flash_database_error(
@@ -467,10 +452,9 @@ def view_catalogue():
         search_keyword=search_keyword,
         page_title="Book Catalogue",
         page_description=(
-            "Browse, borrow, or reserve books "
-            "from the LibTrack library catalogue."
+            "Browse, borrow, or reserve books " "from the LibTrack library catalogue."
         ),
-        available_only=False
+        available_only=False,
     )
 
 
@@ -497,14 +481,15 @@ def view_available_books():
             if not _book_is_visible_to_students(book):
                 continue
 
-            is_available = _book_has_available_copy(book)
+            # The Available Books page represents books that can be borrowed,
+            # so both the stored status and copy quantity must allow borrowing.
+            is_available = _book_is_borrowable(book)
+
 
             if is_available and _matches_search(book, search_keyword):
                 books.append(book)
 
-        books.sort(
-            key=lambda book: str(book.get("title", "")).lower()
-        )
+        books.sort(key=lambda book: str(book.get("title", "")).lower())
 
     except Exception:
         _flash_database_error(
@@ -521,7 +506,7 @@ def view_available_books():
             "View books that currently have at least one copy "
             "available for borrowing."
         ),
-        available_only=True
+        available_only=True,
     )
 
 
@@ -598,6 +583,7 @@ def _load_selected_book(book_id):
         else "status"
     )
 
+
     return book, is_available
 
 
@@ -608,9 +594,7 @@ def _render_selected_book_details(book_id):
 
         if selected_book is None:
             flash("Book not found.", "danger")
-            return redirect(
-                url_for("catalogue_reservation.view_catalogue")
-            )
+            return redirect(url_for("catalogue_reservation.view_catalogue"))
 
         book, _has_available_copy = selected_book
         is_borrowable = _book_is_borrowable(book)
@@ -629,6 +613,7 @@ def _render_selected_book_details(book_id):
         return redirect(
             url_for("catalogue_reservation.view_catalogue")
         )
+
 
 
 @catalogue_bp.route("/details/<book_id>")
@@ -666,30 +651,23 @@ def reserve_book(book_id):
 
         book, is_available = selected_book
 
+
         if is_available:
             flash(
                 "This book is currently available. "
                 "Please submit a borrowing request instead.",
-                "info"
+                "info",
             )
             return redirect(
-                url_for(
-                    "catalogue_reservation.view_book_availability",
-                    book_id=book_id
-                )
+                url_for("catalogue_reservation.view_book_availability", book_id=book_id)
             )
 
         if _student_has_active_reservation(student_id, book_id):
             flash("You already have an active reservation for this book.", "info")
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         if request.method == "GET":
-            return render_template(
-                "catalogue_reservation/reserve_book.html",
-                book=book
-            )
+            return render_template("catalogue_reservation/reserve_book.html", book=book)
 
         # SCRUM-1187: Read the Book Catalogue record again immediately before
         # creating the reservation. This catches availability changes that
@@ -737,17 +715,15 @@ def reserve_book(book_id):
             "status": "Active",
             "availability_checked_at": availability_checked_at,
             "book_updated_at": book.get("updated_at"),
+
         }
 
         db.collection(RESERVATIONS_COLLECTION).add(reservation_data)
 
         flash(
-            f"'{reservation_data['book_title']}' was reserved successfully.",
-            "success"
+            f"'{reservation_data['book_title']}' was reserved successfully.", "success"
         )
-        return redirect(
-            url_for("catalogue_reservation.view_my_reservations")
-        )
+        return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
     except Exception:
         _flash_database_error(
@@ -763,6 +739,7 @@ def reserve_book(book_id):
     methods=["GET", "POST"]
 )
 @student_required
+
 def cancel_reservation(reservation_id):
     """Allow the authenticated student to cancel only their active record.
 
@@ -777,6 +754,7 @@ def cancel_reservation(reservation_id):
         owned_reservation = _load_owned_reservation(
             reservation_id,
             student_id,
+
         )
 
         if owned_reservation is None:
@@ -820,6 +798,7 @@ def cancel_reservation(reservation_id):
             "cancelled_by_student_id": student_id,
         })
 
+
         flash(
             f"Reservation for '{reservation.get('book_title', 'the book')}' "
             "was cancelled successfully.",
@@ -832,9 +811,7 @@ def cancel_reservation(reservation_id):
             "Failed to validate or cancel a reservation.",
         )
 
-    return redirect(
-        url_for("catalogue_reservation.view_my_reservations")
-    )
+    return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
 
 # View student's own reservations
@@ -860,7 +837,7 @@ def view_my_reservations():
         reservations.sort(
             key=lambda reservation: (
                 str(reservation.get("status", "")).lower() != "active",
-                str(reservation.get("reservation_date", ""))
+                str(reservation.get("reservation_date", "")),
             )
         )
 
@@ -871,8 +848,7 @@ def view_my_reservations():
         )
 
     return render_template(
-        "catalogue_reservation/my_reservations.html",
-        reservations=reservations
+        "catalogue_reservation/my_reservations.html", reservations=reservations
     )
 
 
@@ -945,9 +921,7 @@ def request_borrow_book(book_id):
 
         if validation_error == "missing":
             flash("Book not found.", "danger")
-            return redirect(
-                url_for("catalogue_reservation.view_catalogue")
-            )
+            return redirect(url_for("catalogue_reservation.view_catalogue"))
 
         if validation_error == "unavailable":
             flash(
@@ -959,6 +933,7 @@ def request_borrow_book(book_id):
                     "catalogue_reservation.view_book_details",
                     book_id=book_id,
                 )
+
             )
 
         # SCRUM-1193: Check both pending requests and active transactions.
@@ -973,6 +948,7 @@ def request_borrow_book(book_id):
                     "catalogue_reservation.view_book_details",
                     book_id=book_id,
                 )
+
             )
 
         if request.method == "GET":
@@ -1030,6 +1006,7 @@ def request_borrow_book(book_id):
             borrow_request_data
         )
 
+
         flash(
             f"Borrow request for '{borrow_request_data['book_title']}' "
             "was submitted successfully.",
@@ -1050,6 +1027,7 @@ def request_borrow_book(book_id):
         return redirect(
             url_for("catalogue_reservation.view_catalogue")
         )
+
 
 
 @catalogue_bp.route(
@@ -1260,4 +1238,3 @@ def view_currently_borrowed_books():
         "catalogue_reservation/currently_borrowed_books.html",
         borrowed_books=borrowed_books,
     )
-

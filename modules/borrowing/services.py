@@ -12,6 +12,8 @@ from modules.borrowing.repository import (
     update_borrow_transaction,
     update_request_status,
     update_reservation,
+    has_outstanding_penalty,
+    has_active_borrow_transaction,
 )
 
 from datetime import date, datetime, timedelta
@@ -75,11 +77,11 @@ def _book_can_be_issued(book):
 
 
 def approve_borrow_request(request_id: str):
-    """Approve a pending request and synchronise all related records.
+    """Approve a pending request and synchronise related records.
 
-    SCRUM-1195 keeps the borrow request, transaction, aggregate book
-    availability, and an optional originating reservation consistent. A
-    best-effort rollback restores earlier values when a later write fails.
+    The approval checks penalties, availability, duplicate active borrowing,
+    and an optional linked reservation. If a later database operation fails,
+    earlier updates are restored where possible.
     """
     borrow_request = find_request(request_id)
 
@@ -89,8 +91,21 @@ def approve_borrow_request(request_id: str):
     if _normalise_status(borrow_request.get("status")) != "pending":
         return False
 
-    book = find_book(borrow_request["book_id"])
+    student_id = borrow_request.get("student_id")
+    book_id = borrow_request.get("book_id")
+
+    if not student_id or not book_id:
+        return False
+
+    if has_outstanding_penalty(student_id):
+        return False
+
+    book = find_book(book_id)
+
     if not _book_can_be_issued(book):
+        return False
+
+    if has_active_borrow_transaction(student_id, book_id):
         return False
 
     reservation_id = borrow_request.get("reservation_id")
@@ -100,13 +115,19 @@ def approve_borrow_request(request_id: str):
         else None
     )
 
-    original_request_status = borrow_request.get("status", "Pending")
+    original_request_status = borrow_request.get(
+        "status",
+        "Pending",
+    )
+
     original_book_values = {
         "available_copies": book.get("available_copies", 0),
         "status": book.get("status"),
         "updated_at": book.get("updated_at"),
     }
+
     original_reservation_values = None
+
     if reservation is not None:
         original_reservation_values = {
             "status": reservation.get("status"),
@@ -119,14 +140,22 @@ def approve_borrow_request(request_id: str):
             "fulfilled_at": reservation.get("fulfilled_at"),
         }
 
-    available_copies = int(book.get("available_copies", 0))
+    try:
+        available_copies = int(
+            book.get("available_copies", 0)
+        )
+    except (TypeError, ValueError):
+        return False
+
     remaining_copies = available_copies - 1
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_time = datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
     transaction_id = None
 
     try:
         update_book(
-            borrow_request["book_id"],
+            book_id,
             {
                 "available_copies": remaining_copies,
                 "status": (
@@ -137,14 +166,19 @@ def approve_borrow_request(request_id: str):
                 "updated_at": current_time,
             },
         )
-        update_request_status(request_id, "Approved")
+
+        update_request_status(
+            request_id,
+            "Approved",
+        )
 
         borrow_date = date.today()
         due_date = borrow_date + timedelta(days=14)
+
         transaction = {
             "request_id": request_id,
-            "book_id": borrow_request["book_id"],
-            "student_id": borrow_request["student_id"],
+            "book_id": book_id,
+            "student_id": student_id,
             "borrow_date": borrow_date.isoformat(),
             "due_date": due_date.isoformat(),
             "return_date": None,
@@ -157,18 +191,24 @@ def approve_borrow_request(request_id: str):
         if reservation_id:
             transaction["reservation_id"] = reservation_id
 
-        transaction_id = add_borrow_transaction(transaction)
+        transaction_id = add_borrow_transaction(
+            transaction
+        )
 
         if reservation_id:
             if reservation is None:
-                raise ValueError("Linked reservation was not found.")
+                raise ValueError(
+                    "Linked reservation was not found."
+                )
 
             update_reservation(
                 reservation_id,
                 {
                     "status": "Fulfilled",
                     "borrowing_request_id": request_id,
-                    "borrowing_transaction_id": transaction_id,
+                    "borrowing_transaction_id": (
+                        transaction_id
+                    ),
                     "fulfilled_at": current_time,
                 },
             )
@@ -178,21 +218,32 @@ def approve_borrow_request(request_id: str):
     except Exception:
         if transaction_id:
             try:
-                delete_borrow_transaction(transaction_id)
+                delete_borrow_transaction(
+                    transaction_id
+                )
             except Exception:
                 pass
 
         try:
-            update_request_status(request_id, original_request_status)
+            update_request_status(
+                request_id,
+                original_request_status,
+            )
         except Exception:
             pass
 
         try:
-            update_book(borrow_request["book_id"], original_book_values)
+            update_book(
+                book_id,
+                original_book_values,
+            )
         except Exception:
             pass
 
-        if reservation_id and original_reservation_values is not None:
+        if (
+            reservation_id
+            and original_reservation_values is not None
+        ):
             try:
                 update_reservation(
                     reservation_id,
@@ -202,6 +253,35 @@ def approve_borrow_request(request_id: str):
                 pass
 
         return False
+
+def get_borrow_approval_error(request_id: str):
+
+    request = find_request(request_id)
+
+    if request is None:
+        return "Borrow request not found."
+
+    if request["status"] != "Pending":
+        return "This borrow request has already been processed."
+
+    if has_outstanding_penalty(request["student_id"]):
+        return "Student has outstanding unpaid penalties."
+
+    book = find_book(request["book_id"])
+
+    if book is None:
+        return "Book record not found."
+
+    if book["available_copies"] <= 0:
+        return "Book is currently unavailable."
+
+    if has_active_borrow_transaction(
+        request["student_id"],
+        request["book_id"],
+    ):
+        return "Student already has an active borrowing transaction " "for this book."
+
+    return None
 
 
 def request_book_return(transaction_id: str) -> bool:
@@ -432,7 +512,10 @@ def close_borrow_transaction(transaction_id: str) -> bool:
     if transaction is None:
         return False
 
-    if transaction["status"] != "Returned":
+    if transaction["status"] not in [
+        "Returned",
+        "Exception Completed",  # Ong Wen Kang. If after any penalty is paid and your status is differ from mine. Can change this status. Also the borrowing/librarian.html as well.
+    ]:  # Either way, so transaction could close.
         return False
 
     update_borrow_transaction(transaction_id, {"status": "Closed"})

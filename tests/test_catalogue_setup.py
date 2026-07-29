@@ -22,7 +22,7 @@ def test_catalogue_displays_available_and_unavailable_books(app_factory):
             "author": "Robert C. Martin",
             "category": "Programming",
             "status": "Available",
-            "available_copies": 2
+            "available_copies": 2,
         },
         {
             "book_id": "B002",
@@ -30,8 +30,8 @@ def test_catalogue_displays_available_and_unavailable_books(app_factory):
             "author": "Thomas Connolly",
             "category": "Database",
             "status": "Unavailable",
-            "available_copies": 0
-        }
+            "available_copies": 0,
+        },
     ]
 
     app = app_factory(books)
@@ -53,7 +53,7 @@ def test_catalogue_search_filters_books(app_factory):
             "author": "Robert C. Martin",
             "category": "Programming",
             "status": "Available",
-            "available_copies": 2
+            "available_copies": 2,
         },
         {
             "book_id": "B002",
@@ -61,8 +61,8 @@ def test_catalogue_search_filters_books(app_factory):
             "author": "Thomas Connolly",
             "category": "Database",
             "status": "Available",
-            "available_copies": 1
-        }
+            "available_copies": 1,
+        },
     ]
 
     app = app_factory(books)

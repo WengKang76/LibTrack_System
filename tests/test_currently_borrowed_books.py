@@ -136,11 +136,7 @@ def test_due_today_message_is_displayed(app_factory, monkeypatch):
         "_today",
         lambda: date(2026, 7, 15),
     )
-    app = app_factory(
-        borrow_requests=[
-            _approved_request(due_date="2026-07-15")
-        ]
-    )
+    app = app_factory(borrow_requests=[_approved_request(due_date="2026-07-15")])
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -157,11 +153,7 @@ def test_overdue_borrowing_period_is_displayed(app_factory, monkeypatch):
         "_today",
         lambda: date(2026, 7, 18),
     )
-    app = app_factory(
-        borrow_requests=[
-            _approved_request(due_date="2026-07-15")
-        ]
-    )
+    app = app_factory(borrow_requests=[_approved_request(due_date="2026-07-15")])
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
