@@ -192,6 +192,47 @@ def test_scrum_707_book_exception_page_loads(client, monkeypatch):
     assert response.status_code == 200
 
 
+def test_book_exception_page_resolves_transaction_from_penalty_id(client, monkeypatch):
+    transaction = {
+        "transaction_id": "TX001",
+        "student_id": "S001",
+        "book_id": "B001",
+        "book_title": "Python Programming",
+        "status": "Borrowed",
+    }
+
+    monkeypatch.setattr(
+        penalty_routes,
+        "get_return_transaction_by_id",
+        lambda record_id: transaction.copy() if record_id == "TX001" else None,
+    )
+    monkeypatch.setattr(
+        penalty_routes,
+        "get_penalty_by_id",
+        lambda penalty_id: {"transaction_id": "TX001"}
+        if penalty_id == "3eqp5U9OBbtCvVGiTL1x"
+        else None,
+    )
+
+    response = client.get(
+        "/penalty/librarian/book-exception/3eqp5U9OBbtCvVGiTL1x"
+    )
+
+    assert response.status_code == 200
+    assert b"TX001" in response.data
+    assert b"B001" in response.data
+
+
+def test_demo_penalty_opens_its_demo_borrow_transaction(client, monkeypatch):
+    monkeypatch.setattr(penalty_routes, "db", None)
+
+    response = client.get("/penalty/librarian/book-exception/P001")
+
+    assert response.status_code == 200
+    assert b"T001" in response.data
+    assert b"B001" in response.data
+
+
 def test_scrum_707_book_exception_route_records_exception(client, monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)

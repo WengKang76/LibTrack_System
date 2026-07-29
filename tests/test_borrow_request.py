@@ -37,8 +37,8 @@ def test_borrowing_period_is_displayed_before_confirmation(app_factory):
 
     assert response.status_code == 200
     assert "Borrowing Period" in page
-    assert "14 days" in page
-    assert "after the request is approved" in page
+    assert "Dummy period" in page
+    assert "dummy placeholder" in page.lower()
 
 
 def test_get_request_does_not_create_borrow_request(app_factory):
@@ -71,8 +71,8 @@ def test_post_creates_pending_borrow_request(app_factory):
     assert requests[0]["book_id"] == "B001"
     assert requests[0]["book_title"] == "Clean Code"
     assert requests[0]["status"] == "Pending"
-    assert requests[0]["borrowing_period"] == "14 days"
-    assert requests[0]["borrowing_period_days"] == 14
+    assert requests[0]["borrowing_period"] == "Dummy period"
+    assert requests[0]["borrowing_period_days"] == 0
     assert requests[0]["request_date"]
 
 

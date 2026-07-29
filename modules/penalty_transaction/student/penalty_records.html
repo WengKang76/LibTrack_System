@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="penalty-header">
+    <h1>Penalty Record</h1>
+    <p>Review your outstanding penalty and choose how you would like to pay.</p>
+</div>
+
+{% if penalties %}
+    {% for penalty in penalties %}
+    <div class="penalty-card">
+        <h3>{{ penalty.book_title or 'Penalty Record' }}</h3>
+        <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
+        <p><strong>Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
+        <p><strong>Status:</strong> {{ penalty.status }}</p>
+        <div class="penalty-actions">
+            <a class="button" href="/penalty/student/pay-credit-card/{{ penalty.penalty_id }}">Pay with Credit Card</a>
+            <a class="button" href="/penalty/student/pay-cash/{{ penalty.penalty_id }}">Pay with Cash</a>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="penalty-alert penalty-warning">No outstanding penalty records found.</div>
+{% endif %}
+{% endblock %}

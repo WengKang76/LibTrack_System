@@ -678,6 +678,13 @@ def login():
             "",
         )
 
+        session["student_id"] = (
+            user.get("student_id")
+            or user.get("user_id")
+            or user.get("document_id")
+            or ""
+        )
+
         session["role"] = user_role
 
         flash(
@@ -687,6 +694,9 @@ def login():
             ),
             "success",
         )
+
+        if user_role == "librarian":
+            return redirect("/librarian")
 
         return redirect("/")
     
@@ -709,11 +719,7 @@ def logout():
         "success",
     )
 
-    return redirect(
-        url_for(
-            "authentication.login"
-        )
-    )
+    return redirect("/")
 
 @authentication_bp.route(
     "/forgot-password",

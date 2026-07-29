@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>Lost or Damaged Book Exceptions</h2>
+    <p>Select a borrowing transaction to record a lost or damaged book exception.</p>
+</div>
+
+<div class="penalty-card">
+    <h3>Available Transactions</h3>
+    {% if transactions %}
+    <div class="penalty-list">
+        {% for transaction in transactions %}
+        <div class="penalty-item">
+            <div class="penalty-item-header">
+                <strong>{{ transaction.transaction_id }}</strong>
+                <span class="penalty-badge">{{ transaction.status }}</span>
+            </div>
+            <p><strong>Student:</strong> {{ transaction.student_id }}</p>
+            <p><strong>Book:</strong> {{ transaction.book_title or transaction.book_id }}</p>
+            <p><strong>Due Date:</strong> {{ transaction.due_date }}</p>
+            <a href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=transaction.transaction_id) }}" class="button">Record Exception</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No transactions are available right now.</p>
+    {% endif %}
+</div>
+{% endblock %}

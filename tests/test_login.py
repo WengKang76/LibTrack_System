@@ -145,12 +145,27 @@ def test_active_librarian_can_log_in(
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith(
-    "/"
-)
+        "/librarian"
+    )
 
     with client.session_transaction() as session:
         assert session["user_id"] == "USR003"
         assert session["role"] == "librarian"
+
+
+def test_librarian_dashboard_uses_dashboard_layout(client):
+    with client.session_transaction() as user_session:
+        user_session["user_id"] = "LIB001"
+        user_session["full_name"] = "Test Librarian"
+        user_session["role"] = "librarian"
+        user_session["last_activity"] = time.time()
+
+    response = client.get("/librarian")
+
+    assert response.status_code == 200
+    assert b"Librarian Dashboard" in response.data
+    assert b"dashboard-card-grid" in response.data
+    assert b"dashboard-hero" in response.data
 
 
 def test_incorrect_password_is_rejected(
@@ -261,9 +276,7 @@ def test_logout_clears_authenticated_session(
     response = client.post("/auth/logout")
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith(
-        "/auth/login"
-    )
+    assert response.headers["Location"].endswith("/")
 
     with client.session_transaction() as session:
         assert "user_id" not in session
