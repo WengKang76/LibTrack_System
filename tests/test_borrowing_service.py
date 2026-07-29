@@ -44,6 +44,7 @@ def fake_repository(monkeypatch):
         "id": "BOOK001",
         "title": "Database System Concepts",
         "available_copies": 1,
+        "status": "Available",
     }
 
     def fake_find_request(request_id):

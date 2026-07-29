@@ -8,7 +8,7 @@ from types import ModuleType
 from unittest.mock import MagicMock
 
 import pytest
-from flask import Flask
+from flask import Flask, session
 
 # Prevent automated tests from connecting to real Firebase.
 os.environ["TESTING"] = "1"
@@ -104,6 +104,7 @@ COLLECTION_ID_FIELDS = {
     "books": "book_id",
     "reservations": "reservation_id",
     "borrow_requests": "request_id",
+    "borrow_transactions": "transaction_id",
 }
 
 
@@ -131,6 +132,10 @@ class FakeDocumentReference:
     @property
     def _id_field(self):
         return COLLECTION_ID_FIELDS[self._collection_name]
+
+    @property
+    def id(self):
+        return self._document_id
 
     def get(self):
         records = self._database.collections[self._collection_name]
@@ -161,6 +166,17 @@ class FakeDocumentReference:
                 return
 
         raise ValueError(f"Document not found: {self._document_id}")
+
+    def delete(self):
+        records = self._database.collections[self._collection_name]
+        for index, record in enumerate(records):
+            if record.get(self._id_field) == self._document_id:
+                records.pop(index)
+                return
+
+        raise ValueError(
+            f"Document not found: {self._document_id}"
+        )
 
 
 class FakeQuery:
@@ -259,6 +275,7 @@ class FakeCollection:
             "books": "B",
             "reservations": "R",
             "borrow_requests": "BR",
+            "borrow_transactions": "BT",
         }[self._collection_name]
 
         document_id = f"{prefix}{len(self.records) + 1:03d}"
@@ -283,6 +300,7 @@ class FakeFirestore:
         books=None,
         reservations=None,
         borrow_requests=None,
+        borrow_transactions=None,
     ):
         self.collections = {
             "books": [book.copy() for book in (books or [])],
@@ -291,6 +309,11 @@ class FakeFirestore:
             ],
             "borrow_requests": [
                 borrow_request.copy() for borrow_request in (borrow_requests or [])
+            ],
+            "borrow_transactions": [
+                transaction.copy()
+                for transaction
+                in (borrow_transactions or [])
             ],
         }
 
@@ -315,11 +338,16 @@ def app_factory(monkeypatch):
         books=None,
         reservations=None,
         borrow_requests=None,
+        borrow_transactions=None,
+        authenticated=True,
+        session_user_id="S001",
+        session_role="student",
     ):
         fake_db = FakeFirestore(
             books=books,
             reservations=reservations,
             borrow_requests=borrow_requests,
+            borrow_transactions=borrow_transactions,
         )
 
         monkeypatch.setattr(
@@ -335,15 +363,15 @@ def app_factory(monkeypatch):
         )
 
         test_app.config.update(
-    TESTING=True,
-    SECRET_KEY="test-secret-key",
-    PERMANENT_SESSION_LIFETIME=timedelta(
-        minutes=30
-    ),
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_REFRESH_EACH_REQUEST=True,
-)
+            TESTING=True,
+            SECRET_KEY="test-secret-key",
+            PERMANENT_SESSION_LIFETIME=timedelta(
+                minutes=30
+            ),
+            SESSION_COOKIE_HTTPONLY=True,
+            SESSION_COOKIE_SAMESITE="Lax",
+            SESSION_REFRESH_EACH_REQUEST=True,
+        )
 
         test_app.extensions["fake_firestore"] = fake_db
 
@@ -351,8 +379,17 @@ def app_factory(monkeypatch):
         def home():
             return "LibTrack Test Home"
 
-        test_app.register_blueprint(catalogue_routes.catalogue_bp)
+        if authenticated:
 
+            @test_app.before_request
+            def seed_authenticated_student():
+                """Provide an authenticated student session for protected routes."""
+                session.setdefault("user_id", session_user_id)
+                session.setdefault("role", session_role)
+
+        test_app.register_blueprint(
+            catalogue_routes.catalogue_bp
+        )
         return test_app
 
     return create_app

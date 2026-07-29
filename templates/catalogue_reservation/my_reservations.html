@@ -13,7 +13,7 @@
         <div>
             <p class="reservation-eyebrow">Catalogue Browsing &amp; Reservation</p>
             <h1>🔖 My Reservations</h1>
-            <p>View and cancel your active book reservations.</p>
+            <p>View, cancel, or continue your book reservations.</p>
         </div>
     </header>
 
@@ -45,6 +45,9 @@
 
                 <tbody>
                     {% for reservation in reservations %}
+                        {% set reservation_status = (
+                            reservation.status|default('')|lower|replace('_', ' ')
+                        ) %}
                         <tr>
                             <td>{{ reservation.reservation_id }}</td>
                             <td>{{ reservation.book_id }}</td>
@@ -52,13 +55,24 @@
                             <td>{{ reservation.reservation_date }}</td>
                             <td>{{ reservation.status }}</td>
                             <td>
-                                {% if reservation.status == "Active" %}
+                                {% if reservation_status == "active" %}
                                     <a href="{{ url_for(
                                         'catalogue_reservation.cancel_reservation',
                                         reservation_id=reservation.reservation_id
                                     ) }}"
                                        class="reservation-button reservation-button-danger reservation-button-small">
                                         Cancel Reservation
+                                    </a>
+                                {% elif reservation_status in [
+                                    "approved",
+                                    "ready for collection"
+                                ] %}
+                                    <a href="{{ url_for(
+                                        'catalogue_reservation.continue_approved_reservation',
+                                        reservation_id=reservation.reservation_id
+                                    ) }}"
+                                       class="reservation-button reservation-button-small">
+                                        Continue to Borrow
                                     </a>
                                 {% else %}
                                     <span aria-label="No action available">—</span>

@@ -117,6 +117,13 @@ def add_borrow_transaction(transaction):
     return ref[1].id
 
 
+def delete_borrow_transaction(transaction_id: str):
+    db = get_db()
+    db.collection(COLLECTION_BORROW_TRANSACTIONS).document(
+        transaction_id
+    ).delete()
+
+
 def get_borrow_transactions():
 
     db = get_db()
@@ -222,6 +229,35 @@ def has_active_reservation(book_id: str):
     return any(True for _ in docs)
 
 
+def find_reservation(reservation_id: str):
+    db = get_db()
+    doc = (
+        db.collection(COLLECTION_RESERVATIONS)
+        .document(reservation_id)
+        .get()
+    )
+
+    if not doc.exists:
+        return None
+
+    reservation = doc.to_dict() or {}
+    reservation["id"] = doc.id
+
+    return reservation
+
+
+def update_reservation(
+    reservation_id: str,
+    updates: dict,
+):
+    db = get_db()
+    (
+        db.collection(COLLECTION_RESERVATIONS)
+        .document(reservation_id)
+        .update(updates)
+    )
+
+
 # ==========================
 # Penalties
 # ==========================
@@ -240,15 +276,15 @@ def has_outstanding_penalty(student_id: str) -> bool:
     return any(True for _ in docs)
 
 
-# ==================================================================
-# Check if a student has an active borrow transaction for that book
-# ==================================================================
+# ==========================
+# Active Borrow Transactions
+# ==========================
 
 
 def has_active_borrow_transaction(
     student_id: str,
     book_id: str,
-):
+) -> bool:
     db = get_db()
 
     docs = (
@@ -258,13 +294,15 @@ def has_active_borrow_transaction(
         .stream()
     )
 
-    for doc in docs:
-        transaction = doc.to_dict()
+    active_statuses = {
+        "Borrowed",
+        "Return Pending",
+    }
 
-        if transaction["status"] in [
-            "Borrowed",
-            "Return Pending",
-        ]:
+    for doc in docs:
+        transaction = doc.to_dict() or {}
+
+        if transaction.get("status") in active_statuses:
             return True
 
     return False
