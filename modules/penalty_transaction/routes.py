@@ -720,11 +720,39 @@ def get_unpaid_penalties_by_student(student_id):
     return unpaid_penalties
 
 
+# =========================================================
+# Sprint 2 - SCRUM-1083
+# Penalty and Borrowing Module Integration
+# =========================================================
+
+def check_student_borrowing_eligibility(student_id):
+    if student_id is None or str(student_id).strip() == "":
+        return False, "Student ID is required for borrowing approval.", []
+
+    student_id = str(student_id).strip()
+
+    unpaid_penalties = get_unpaid_penalties_by_student(student_id)
+
+    if len(unpaid_penalties) > 0:
+        return (
+            False,
+            "Borrowing approval blocked because the student has unpaid penalties.",
+            unpaid_penalties
+        )
+
+    return (
+        True,
+        "Student has no unpaid penalties and can proceed with borrowing approval.",
+        []
+    )
+
+
 def get_borrow_request_by_id(request_id):
+    # Check Firebase / fake test database first
     try:
         request_doc = db.collection("borrow_requests").document(request_id).get()
 
-        if request_doc.exists:
+        if getattr(request_doc, "exists", False) is True:
             borrow_request = request_doc.to_dict()
             borrow_request["request_id"] = request_doc.id
             return borrow_request
@@ -732,11 +760,11 @@ def get_borrow_request_by_id(request_id):
     except Exception:
         pass
 
-    if DEMO_UI_MODE:
-        borrow_request = DEMO_BORROW_REQUESTS.get(request_id)
-
-        if borrow_request:
-            return borrow_request.copy()
+    # Then check demo data
+    if request_id in DEMO_BORROW_REQUESTS:
+        borrow_request = DEMO_BORROW_REQUESTS[request_id].copy()
+        borrow_request["request_id"] = request_id
+        return borrow_request
 
     return None
 
@@ -747,25 +775,27 @@ def approve_borrow_request_with_penalty_check(request_id, approved_by="Librarian
     if borrow_request is None:
         return False, "Borrow request not found."
 
-    request_status = str(borrow_request.get("status", "")).lower()
+    request_status = str(borrow_request.get("status", "")).strip().lower()
 
-    if request_status != "pending":
+    if request_status not in ["pending", "pending approval"]:
         return False, "Only pending borrow requests can be approved."
 
     student_id = borrow_request.get("student_id")
-    unpaid_penalties = get_unpaid_penalties_by_student(student_id)
 
-    if len(unpaid_penalties) > 0:
-        return (
-            False,
-            "Borrowing approval blocked because the student has unpaid penalties.",
-        )
+    eligibility_success, eligibility_message, unpaid_penalties = (
+        check_student_borrowing_eligibility(student_id)
+    )
+
+    if not eligibility_success:
+        return False, eligibility_message
 
     approval_data = {
         "status": "Approved",
         "approved_by": approved_by,
         "approved_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "last_action": "Approve Borrow Request",
+        "updated_by": approved_by,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
     try:
