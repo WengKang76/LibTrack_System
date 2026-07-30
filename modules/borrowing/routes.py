@@ -1,5 +1,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
+from modules.authentication.decorators import librarian_required
+
 from modules.borrowing.services import (
     approve_borrow_request,
     get_borrow_approval_error,
@@ -25,6 +27,7 @@ borrowing_bp = Blueprint(
 
 
 @borrowing_bp.route("/")
+@librarian_required
 def borrowing_home():
     requests = get_all_pending_requests()
     transactions = get_all_borrow_transactions()
@@ -37,6 +40,7 @@ def borrowing_home():
 
 
 @borrowing_bp.route("/approve/<request_id>", methods=["POST"])
+@librarian_required
 def approve_request(request_id: str):
 
     error = get_borrow_approval_error(request_id)
@@ -53,6 +57,7 @@ def approve_request(request_id: str):
 
 
 @borrowing_bp.post("/return/<transaction_id>")
+@librarian_required
 def return_book(transaction_id: str):
     request_book_return(transaction_id)
     return redirect(url_for("borrowing.student_books"))
@@ -61,6 +66,7 @@ def return_book(transaction_id: str):
 # Student Page Routes with test user "USR001" Alice,
 # replace "USR001" with session["user_id"] after implementing login system
 @borrowing_bp.route("/student")
+@librarian_required
 def student_books():
 
     books = get_student_borrowed_books("USR001")
@@ -72,6 +78,7 @@ def student_books():
 
 
 @borrowing_bp.post("/confirm-return/<transaction_id>")
+@librarian_required
 def confirm_return(transaction_id: str):
     confirm_book_return(transaction_id)
 
@@ -79,6 +86,7 @@ def confirm_return(transaction_id: str):
 
 
 @borrowing_bp.post("/renew-book/<transaction_id>")
+@librarian_required
 def renew_book(transaction_id: str):
 
     result = request_book_renewal(transaction_id)
@@ -98,6 +106,7 @@ def renew_book(transaction_id: str):
 
 
 @borrowing_bp.post("/approve-renewal/<transaction_id>")
+@librarian_required
 def approve_renewal(transaction_id: str):
 
     result = approve_renewal_request(transaction_id)
@@ -111,6 +120,7 @@ def approve_renewal(transaction_id: str):
 
 
 @borrowing_bp.post("/clear-renewal-alert")
+@librarian_required
 def clear_alert():
 
     student_id = "USR001"  # replace with logged-in user later
@@ -121,6 +131,7 @@ def clear_alert():
 
 
 @borrowing_bp.post("/reject-renewal/<transaction_id>")
+@librarian_required
 def reject_renewal(transaction_id: str):
 
     result = reject_renewal_request(transaction_id)
@@ -140,6 +151,7 @@ def reject_renewal(transaction_id: str):
 
 
 @borrowing_bp.post("/cancel-renewal/<transaction_id>")
+@librarian_required
 def cancel_renewal(transaction_id: str):
 
     result = cancel_renewal_request(transaction_id)
@@ -159,6 +171,7 @@ def cancel_renewal(transaction_id: str):
 
 
 @borrowing_bp.post("/manual-extend/<transaction_id>")
+@librarian_required
 def manual_extend(transaction_id: str):
 
     new_due_date = request.form["new_due_date"]
@@ -183,6 +196,7 @@ def manual_extend(transaction_id: str):
 
 
 @borrowing_bp.post("/close-transaction/<transaction_id>")
+@librarian_required
 def close_transaction(transaction_id: str):
 
     result = close_borrow_transaction(transaction_id)

@@ -237,12 +237,19 @@ def pay_penalty_with_credit_card(penalty_id, card_number):
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
+    updated_database = False
+
     try:
-        db.collection("penalties").document(penalty_id).update(payment_data)
+        penalty_ref = db.collection("penalties").document(penalty_id)
+        penalty_doc = penalty_ref.get()
+
+        if getattr(penalty_doc, "exists", False) is True:
+            penalty_ref.update(payment_data)
+            updated_database = True
     except Exception:
         pass
 
-    if penalty_id in DEMO_PENALTIES:
+    if not updated_database and penalty_id in DEMO_PENALTIES:
         DEMO_PENALTIES[penalty_id].update(payment_data)
 
     return True, "Penalty paid successfully using credit card."
@@ -281,12 +288,19 @@ def pay_penalty_with_cash(penalty_id, cash_amount):
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
+    updated_database = False
+
     try:
-        db.collection("penalties").document(penalty_id).update(payment_data)
+        penalty_ref = db.collection("penalties").document(penalty_id)
+        penalty_doc = penalty_ref.get()
+
+        if getattr(penalty_doc, "exists", False) is True:
+            penalty_ref.update(payment_data)
+            updated_database = True
     except Exception:
         pass
 
-    if penalty_id in DEMO_PENALTIES:
+    if not updated_database and penalty_id in DEMO_PENALTIES:
         DEMO_PENALTIES[penalty_id].update(payment_data)
 
     return True, "Cash penalty payment completed successfully."
@@ -906,12 +920,19 @@ def get_penalty_by_id(penalty_id):
 
 
 def update_penalty_record(penalty_id, update_data):
+    updated_database = False
+
     try:
-        db.collection("penalties").document(penalty_id).update(update_data)
+        penalty_ref = db.collection("penalties").document(penalty_id)
+        penalty_doc = penalty_ref.get()
+
+        if getattr(penalty_doc, "exists", False) is True:
+            penalty_ref.update(update_data)
+            updated_database = True
     except Exception:
         pass
 
-    if penalty_id in DEMO_PENALTIES:
+    if not updated_database and penalty_id in DEMO_PENALTIES:
         DEMO_PENALTIES[penalty_id].update(update_data)
 
 def validate_penalty_payment_status(penalty):

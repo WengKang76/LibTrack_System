@@ -452,6 +452,7 @@ def manage_books():
     "/add",
     methods=["GET", "POST"],
 )
+@librarian_required
 def add_book():
     form_data = {
         "title": "",
@@ -793,10 +794,7 @@ def deactivate_book(book_id):
             }
         )
         flash(
-            (
-                f"{book.get('title', 'The book')} was deactivated "
-                "and hidden from the student catalogue."
-            ),
+            "The book was deactivated and hidden from the student catalogue.",
             "success",
         )
         return redirect(

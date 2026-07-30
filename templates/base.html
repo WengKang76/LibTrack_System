@@ -46,14 +46,16 @@
                         <button type="submit" class="sidebar-logout-button">Logout</button>
                     </form>
 
-                    <a href="/books/">Book Catalogue Management</a>
-                    <a href="/users/">User Management</a>
-                    <a href="/catalogue/">Catalogue Reservation</a>
-                    <a href="/borrowing/">Borrowing &amp; Returning</a>
                     {% if session.get('role', '') | lower == 'librarian' %}
-                        <a href="{{ url_for('penalty_transaction.librarian_penalty_dashboard') }}">Penalty &amp; Transactions</a>
+                        <a href="/books/">Book Catalogue Management</a>
+                        <a href="/users/">User Management</a>
+                        <a href="/borrowing/">Borrowing &amp; Returning</a>
+                        <a href="/penalty/librarian">Penalty &amp; Transactions</a>
                     {% else %}
-                        <a href="{{ url_for('penalty_transaction.student_penalty_records') }}">Penalty &amp; Transactions</a>
+                        <a href="/catalogue/">Browse &amp; Reserve Books</a>
+                        <a href="/catalogue/my-reservations">My Reservations</a>
+                        <a href="/catalogue/my-borrowed-books">My Borrowed Books</a>
+                        <a href="/penalty/student">Penalty &amp; Transactions</a>
                     {% endif %}
                 {% else %}
                     <a href="/auth/login">Login</a>

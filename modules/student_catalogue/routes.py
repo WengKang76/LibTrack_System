@@ -116,6 +116,6 @@ def view_book_details(book_id):
     book = get_student_book_by_id(book_id)
 
     if book is None:
-        return "Book record not found or unavailable to students.", 404
+        return "Book record not found.", 404
 
     return render_template("book_details.html", book=book)
