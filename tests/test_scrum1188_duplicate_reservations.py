@@ -46,9 +46,7 @@ def test_all_active_reservation_statuses_block_duplicate(
     stored = app.extensions["fake_firestore"].collections["reservations"]
 
     assert response.status_code == 200
-    assert "already have an active reservation" in response.get_data(
-        as_text=True
-    )
+    assert "already have an active reservation" in response.get_data(as_text=True)
     assert len(stored) == 1
 
 
@@ -115,7 +113,5 @@ def test_duplicate_is_checked_again_immediately_before_insert(
     stored = app.extensions["fake_firestore"].collections["reservations"]
 
     assert response.status_code == 200
-    assert "already have an active reservation" in response.get_data(
-        as_text=True
-    )
+    assert "already have an active reservation" in response.get_data(as_text=True)
     assert stored == []

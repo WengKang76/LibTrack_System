@@ -2,10 +2,8 @@
 
 from modules.catalogue_reservation import routes as catalogue_routes
 
-
 TECHNICAL_ERROR = (
-    "Firestore permission denied: serviceAccountKey.json "
-    "contains project_secret_123"
+    "Firestore permission denied: serviceAccountKey.json " "contains project_secret_123"
 )
 
 
@@ -66,8 +64,7 @@ def test_catalogue_database_error_is_clear_and_hides_technical_details(
 
     assert response.status_code == 200
     assert (
-        "We could not load the catalogue right now. "
-        "Please try again later."
+        "We could not load the catalogue right now. " "Please try again later."
     ) in page
     assert TECHNICAL_ERROR not in page
     assert "serviceAccountKey.json" not in page
@@ -90,8 +87,7 @@ def test_reservation_database_error_is_clear_and_hides_details(
 
     assert response.status_code == 200
     assert (
-        "We could not complete your reservation right now. "
-        "Please try again later."
+        "We could not complete your reservation right now. " "Please try again later."
     ) in page
     assert TECHNICAL_ERROR not in page
 
@@ -112,8 +108,7 @@ def test_cancellation_database_error_is_clear_and_hides_details(
 
     assert response.status_code == 200
     assert (
-        "We could not cancel the reservation right now. "
-        "Please try again later."
+        "We could not cancel the reservation right now. " "Please try again later."
     ) in page
     assert TECHNICAL_ERROR not in page
     stored = app.extensions["fake_firestore"].collections["reservations"][0]
@@ -142,9 +137,7 @@ def test_borrow_request_database_error_is_clear_and_hides_details(
         "Please try again later."
     ) in page
     assert TECHNICAL_ERROR not in page
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
     assert requests == []
 
 
@@ -177,6 +170,4 @@ def test_duplicate_reservation_message_explains_the_problem(app_factory):
     page = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert (
-        "You already have an active reservation for this book."
-    ) in page
+    assert ("You already have an active reservation for this book.") in page

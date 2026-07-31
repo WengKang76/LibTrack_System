@@ -4,9 +4,8 @@ from datetime import datetime
 import time
 import modules.book_catalogue.routes as book_routes
 
-pytestmark = pytest.mark.usefixtures(
-    "login_as_librarian"
-)
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
+
 
 class FakeSnapshot:
     def __init__(self, document_id, data):
@@ -281,9 +280,7 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
 ):
     import modules.student_catalogue.routes as student_routes
 
-    app.register_blueprint(
-        student_routes.student_catalogue_bp
-    )
+    app.register_blueprint(student_routes.student_catalogue_bp)
 
     fake_database = FakeDatabase()
 
@@ -313,9 +310,7 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
         user_session["last_activity"] = time.time()
         user_session.permanent = True
 
-    before = client.get(
-        "/student/catalogue/"
-    )
+    before = client.get("/student/catalogue/")
 
     assert before.status_code == 200
     assert b"Old Programming Guide" in before.data
@@ -330,34 +325,18 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
 
     assert deactivate_response.status_code == 302
 
-    assert not deactivate_response.headers[
-        "Location"
-    ].endswith("/auth/login")
+    assert not deactivate_response.headers["Location"].endswith("/auth/login")
 
-    assert (
-        fake_database.books["BOOK001"][
-            "catalogue_status"
-        ]
-        == "Inactive"
-    )
+    assert fake_database.books["BOOK001"]["catalogue_status"] == "Inactive"
 
-    assert (
-        fake_database.books["BOOK001"][
-            "is_visible_to_students"
-        ]
-        is False
-    )
+    assert fake_database.books["BOOK001"]["is_visible_to_students"] is False
 
-    hidden = client.get(
-        "/student/catalogue/"
-    )
+    hidden = client.get("/student/catalogue/")
 
     assert hidden.status_code == 200
     assert b"Old Programming Guide" not in hidden.data
 
-    direct_details = client.get(
-        "/student/catalogue/details/BOOK001"
-    )
+    direct_details = client.get("/student/catalogue/details/BOOK001")
 
     assert direct_details.status_code == 404
 
@@ -368,27 +347,13 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
 
     assert activate_response.status_code == 302
 
-    assert not activate_response.headers[
-        "Location"
-    ].endswith("/auth/login")
+    assert not activate_response.headers["Location"].endswith("/auth/login")
 
-    assert (
-        fake_database.books["BOOK001"][
-            "catalogue_status"
-        ]
-        == "Active"
-    )
+    assert fake_database.books["BOOK001"]["catalogue_status"] == "Active"
 
-    assert (
-        fake_database.books["BOOK001"][
-            "is_visible_to_students"
-        ]
-        is True
-    )
+    assert fake_database.books["BOOK001"]["is_visible_to_students"] is True
 
-    visible_again = client.get(
-        "/student/catalogue/"
-    )
+    visible_again = client.get("/student/catalogue/")
 
     assert visible_again.status_code == 200
     assert b"Old Programming Guide" in visible_again.data

@@ -19,18 +19,14 @@ def _book(**changes):
 def test_unavailable_status_rejects_borrow_even_with_positive_copy_count(
     app_factory,
 ):
-    app = app_factory(
-        books=[_book(status="Unavailable", available_copies=1)]
-    )
+    app = app_factory(books=[_book(status="Unavailable", available_copies=1)])
     client = app.test_client()
 
     response = client.post(
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "unavailable" in response.get_data(as_text=True).lower()
@@ -40,18 +36,14 @@ def test_unavailable_status_rejects_borrow_even_with_positive_copy_count(
 def test_zero_copy_count_rejects_borrow_despite_stale_available_status(
     app_factory,
 ):
-    app = app_factory(
-        books=[_book(status="Available", available_copies=0)]
-    )
+    app = app_factory(books=[_book(status="Available", available_copies=0)])
     client = app.test_client()
 
     response = client.post(
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "unavailable" in response.get_data(as_text=True).lower()
@@ -81,9 +73,7 @@ def test_borrow_request_reloads_availability_immediately_before_insert(
         follow_redirects=True,
     )
     page = response.get_data(as_text=True)
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "no longer available" in page
@@ -109,9 +99,7 @@ def test_missing_book_during_final_borrow_check_creates_no_request(
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "Book not found" in response.get_data(as_text=True)

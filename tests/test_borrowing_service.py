@@ -236,9 +236,7 @@ def test_due_date_follows_library_policy():
 
     borrow_date = date.fromisoformat(transaction["borrow_date"])
 
-    expected_due_date = (
-        borrow_date + timedelta(days=14)
-    ).isoformat()
+    expected_due_date = (borrow_date + timedelta(days=14)).isoformat()
 
     assert transaction["due_date"] == expected_due_date
 

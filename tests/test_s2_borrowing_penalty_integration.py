@@ -17,7 +17,7 @@ def reset_demo_data():
         "book_id": "B001",
         "book_title": "Python Programming",
         "penalty_amount": 10.00,
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     penalty_routes.DEMO_PENALTIES["S2B002"] = {
@@ -27,7 +27,7 @@ def reset_demo_data():
         "book_id": "B002",
         "book_title": "Database System",
         "penalty_amount": 15.00,
-        "status": "Paid"
+        "status": "Paid",
     }
 
     penalty_routes.DEMO_PENALTIES["S2B003"] = {
@@ -37,7 +37,7 @@ def reset_demo_data():
         "book_id": "B003",
         "book_title": "Software Engineering",
         "penalty_amount": 20.00,
-        "status": "Waived"
+        "status": "Waived",
     }
 
     penalty_routes.DEMO_BORROW_REQUESTS["BR1083_BLOCK"] = {
@@ -46,7 +46,7 @@ def reset_demo_data():
         "book_id": "B010",
         "book_title": "Computer Security",
         "request_date": "2026-07-29",
-        "status": "Pending"
+        "status": "Pending",
     }
 
     penalty_routes.DEMO_BORROW_REQUESTS["BR1083_ALLOW"] = {
@@ -55,7 +55,7 @@ def reset_demo_data():
         "book_id": "B011",
         "book_title": "Artificial Intelligence",
         "request_date": "2026-07-29",
-        "status": "Pending"
+        "status": "Pending",
     }
 
     penalty_routes.DEMO_BORROW_REQUESTS["BR1083_NOT_PENDING"] = {
@@ -64,7 +64,7 @@ def reset_demo_data():
         "book_id": "B012",
         "book_title": "Web Development",
         "request_date": "2026-07-29",
-        "status": "Approved"
+        "status": "Approved",
     }
 
     yield
@@ -82,7 +82,10 @@ def test_check_student_borrowing_eligibility_blocks_unpaid_penalty():
     )
 
     assert success is False
-    assert message == "Borrowing approval blocked because the student has unpaid penalties."
+    assert (
+        message
+        == "Borrowing approval blocked because the student has unpaid penalties."
+    )
     assert len(unpaid_penalties) >= 1
 
 
@@ -92,7 +95,10 @@ def test_check_student_borrowing_eligibility_allows_paid_penalty_only():
     )
 
     assert success is True
-    assert message == "Student has no unpaid penalties and can proceed with borrowing approval."
+    assert (
+        message
+        == "Student has no unpaid penalties and can proceed with borrowing approval."
+    )
     assert unpaid_penalties == []
 
 
@@ -117,32 +123,38 @@ def test_check_student_borrowing_eligibility_rejects_missing_student_id():
 
 def test_borrow_approval_blocked_when_student_has_unpaid_penalty():
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR1083_BLOCK",
-        "Librarian"
+        "BR1083_BLOCK", "Librarian"
     )
 
     assert success is False
-    assert message == "Borrowing approval blocked because the student has unpaid penalties."
+    assert (
+        message
+        == "Borrowing approval blocked because the student has unpaid penalties."
+    )
     assert penalty_routes.DEMO_BORROW_REQUESTS["BR1083_BLOCK"]["status"] == "Pending"
 
 
 def test_borrow_approval_success_when_student_has_no_unpaid_penalty():
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR1083_ALLOW",
-        "Librarian"
+        "BR1083_ALLOW", "Librarian"
     )
 
     assert success is True
     assert message == "Borrow request approved successfully."
     assert penalty_routes.DEMO_BORROW_REQUESTS["BR1083_ALLOW"]["status"] == "Approved"
-    assert penalty_routes.DEMO_BORROW_REQUESTS["BR1083_ALLOW"]["approved_by"] == "Librarian"
-    assert penalty_routes.DEMO_BORROW_REQUESTS["BR1083_ALLOW"]["last_action"] == "Approve Borrow Request"
+    assert (
+        penalty_routes.DEMO_BORROW_REQUESTS["BR1083_ALLOW"]["approved_by"]
+        == "Librarian"
+    )
+    assert (
+        penalty_routes.DEMO_BORROW_REQUESTS["BR1083_ALLOW"]["last_action"]
+        == "Approve Borrow Request"
+    )
 
 
 def test_borrow_approval_rejects_non_pending_request():
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR1083_NOT_PENDING",
-        "Librarian"
+        "BR1083_NOT_PENDING", "Librarian"
     )
 
     assert success is False

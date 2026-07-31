@@ -15,36 +15,36 @@ def reset_demo_data(monkeypatch):
             "student_id": "S001",
             "book_id": "B001",
             "book_title": "Python Programming",
-            "status": "Rejected"
+            "status": "Rejected",
         },
         "RT1084_PENDING": {
             "transaction_id": "RT1084_PENDING",
             "student_id": "S001",
             "book_id": "B002",
             "book_title": "Database System",
-            "status": "Pending"
+            "status": "Pending",
         },
         "RT1084_DUP": {
             "transaction_id": "RT1084_DUP",
             "student_id": "S001",
             "book_id": "B004",
             "book_title": "Computer Security",
-            "status": "Rejected"
+            "status": "Rejected",
         },
         "RT1085": {
             "transaction_id": "RT1085",
             "student_id": "S002",
             "book_id": "B003",
             "book_title": "Software Engineering",
-            "status": "Returned"
+            "status": "Returned",
         },
         "RT1085_DUP": {
             "transaction_id": "RT1085_DUP",
             "student_id": "S002",
             "book_id": "B005",
             "book_title": "Artificial Intelligence",
-            "status": "Returned"
-        }
+            "status": "Returned",
+        },
     }
 
     def fake_get_return_transaction_by_id(transaction_id):
@@ -58,7 +58,7 @@ def reset_demo_data(monkeypatch):
     monkeypatch.setattr(
         penalty_routes,
         "get_return_transaction_by_id",
-        fake_get_return_transaction_by_id
+        fake_get_return_transaction_by_id,
     )
 
     penalty_routes.DEMO_PENALTIES["DUP1084"] = {
@@ -69,7 +69,7 @@ def reset_demo_data(monkeypatch):
         "book_title": "Computer Security",
         "penalty_type": "Rejected Return",
         "penalty_amount": 10.00,
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     penalty_routes.DEMO_PENALTIES["DUP1085"] = {
@@ -80,7 +80,7 @@ def reset_demo_data(monkeypatch):
         "book_title": "Artificial Intelligence",
         "penalty_type": "Lost/Damaged Book",
         "penalty_amount": 50.00,
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     yield
@@ -91,30 +91,28 @@ def reset_demo_data(monkeypatch):
 
 def test_clear_action_message_for_failed_action():
     message = penalty_routes.create_penalty_action_message(
-        "Penalty payment",
-        False,
-        "Penalty amount must be greater than zero."
+        "Penalty payment", False, "Penalty amount must be greater than zero."
     )
 
-    assert message == "Penalty payment failed. Reason: Penalty amount must be greater than zero."
+    assert (
+        message
+        == "Penalty payment failed. Reason: Penalty amount must be greater than zero."
+    )
 
 
 def test_clear_action_message_for_successful_action():
     message = penalty_routes.create_penalty_action_message(
-        "Penalty waiver",
-        True,
-        "Penalty waived successfully."
+        "Penalty waiver", True, "Penalty waived successfully."
     )
 
-    assert message == "Penalty waiver completed successfully. Penalty waived successfully."
+    assert (
+        message == "Penalty waiver completed successfully. Penalty waived successfully."
+    )
 
 
 def test_rejected_return_exception_creates_penalty_record():
     success, message = penalty_routes.handle_rejected_return_exception(
-        "RT1084",
-        25.00,
-        "Book condition was not acceptable",
-        "Librarian"
+        "RT1084", 25.00, "Book condition was not acceptable", "Librarian"
     )
 
     assert success is True
@@ -123,10 +121,7 @@ def test_rejected_return_exception_creates_penalty_record():
 
 def test_rejected_return_exception_blocks_pending_return():
     success, message = penalty_routes.handle_rejected_return_exception(
-        "RT1084_PENDING",
-        25.00,
-        "Book condition was not acceptable",
-        "Librarian"
+        "RT1084_PENDING", 25.00, "Book condition was not acceptable", "Librarian"
     )
 
     assert success is False
@@ -136,10 +131,7 @@ def test_rejected_return_exception_blocks_pending_return():
 
 def test_rejected_return_exception_blocks_duplicate_penalty():
     success, message = penalty_routes.handle_rejected_return_exception(
-        "RT1084_DUP",
-        25.00,
-        "Duplicate rejected return penalty",
-        "Librarian"
+        "RT1084_DUP", 25.00, "Duplicate rejected return penalty", "Librarian"
     )
 
     assert success is False
@@ -148,18 +140,15 @@ def test_rejected_return_exception_blocks_duplicate_penalty():
 
 def test_lost_book_exception_creates_penalty_record():
     success, message = penalty_routes.create_lost_damaged_book_exception_penalty(
-        "RT1085",
-        "Lost",
-        "Student reported that the book was lost",
-        80.00,
-        "Librarian"
+        "RT1085", "Lost", "Student reported that the book was lost", 80.00, "Librarian"
     )
 
     assert success is True
     assert "completed successfully" in message
 
     created_records = [
-        penalty for penalty in penalty_routes.DEMO_PENALTIES.values()
+        penalty
+        for penalty in penalty_routes.DEMO_PENALTIES.values()
         if penalty.get("transaction_id") == "RT1085"
         and penalty.get("penalty_type") == "Lost/Damaged Book"
     ]
@@ -170,11 +159,7 @@ def test_lost_book_exception_creates_penalty_record():
 
 def test_damaged_book_exception_creates_penalty_record():
     success, message = penalty_routes.create_lost_damaged_book_exception_penalty(
-        "RT1085",
-        "Damaged",
-        "Book cover and pages were damaged",
-        40.00,
-        "Librarian"
+        "RT1085", "Damaged", "Book cover and pages were damaged", 40.00, "Librarian"
     )
 
     assert success is True
@@ -183,11 +168,7 @@ def test_damaged_book_exception_creates_penalty_record():
 
 def test_lost_damaged_exception_rejects_invalid_exception_type():
     success, message = penalty_routes.create_lost_damaged_book_exception_penalty(
-        "RT1085",
-        "Missing",
-        "Invalid exception type",
-        40.00,
-        "Librarian"
+        "RT1085", "Missing", "Invalid exception type", 40.00, "Librarian"
     )
 
     assert success is False
@@ -200,7 +181,7 @@ def test_lost_damaged_exception_rejects_duplicate_penalty():
         "student_id": "S002",
         "book_id": "B005",
         "book_title": "Artificial Intelligence",
-        "status": "Returned"
+        "status": "Returned",
     }
 
     success, message = penalty_routes.create_lost_damaged_book_exception_penalty(
@@ -208,8 +189,11 @@ def test_lost_damaged_exception_rejects_duplicate_penalty():
         "Lost",
         "Duplicate lost book exception",
         80.00,
-        "Librarian"
+        "Librarian",
     )
 
     assert success is False
-    assert "Penalty record already exists for this lost or damaged book exception." in message
+    assert (
+        "Penalty record already exists for this lost or damaged book exception."
+        in message
+    )

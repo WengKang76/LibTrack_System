@@ -209,14 +209,14 @@ def test_book_exception_page_resolves_transaction_from_penalty_id(client, monkey
     monkeypatch.setattr(
         penalty_routes,
         "get_penalty_by_id",
-        lambda penalty_id: {"transaction_id": "TX001"}
-        if penalty_id == "3eqp5U9OBbtCvVGiTL1x"
-        else None,
+        lambda penalty_id: (
+            {"transaction_id": "TX001"}
+            if penalty_id == "3eqp5U9OBbtCvVGiTL1x"
+            else None
+        ),
     )
 
-    response = client.get(
-        "/penalty/librarian/book-exception/3eqp5U9OBbtCvVGiTL1x"
-    )
+    response = client.get("/penalty/librarian/book-exception/3eqp5U9OBbtCvVGiTL1x")
 
     assert response.status_code == 200
     assert b"TX001" in response.data

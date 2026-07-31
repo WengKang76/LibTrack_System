@@ -52,36 +52,29 @@ ACTIVE_RESERVATION_STATUSES = {
 # technical exception details, credentials, collection names, or stack traces.
 DATABASE_ERROR_MESSAGES = {
     "catalogue": (
-        "We could not load the catalogue right now. "
-        "Please try again later."
+        "We could not load the catalogue right now. " "Please try again later."
     ),
     "available_books": (
-        "We could not load the available books right now. "
-        "Please try again later."
+        "We could not load the available books right now. " "Please try again later."
     ),
     "book_details": (
-        "We could not load the book details right now. "
-        "Please try again later."
+        "We could not load the book details right now. " "Please try again later."
     ),
     "reservation": (
-        "We could not complete your reservation right now. "
-        "Please try again later."
+        "We could not complete your reservation right now. " "Please try again later."
     ),
     "cancellation": (
-        "We could not cancel the reservation right now. "
-        "Please try again later."
+        "We could not cancel the reservation right now. " "Please try again later."
     ),
     "reservations": (
-        "We could not load your reservations right now. "
-        "Please try again later."
+        "We could not load your reservations right now. " "Please try again later."
     ),
     "borrow_request": (
         "We could not submit your borrowing request right now. "
         "Please try again later."
     ),
     "borrowed_books": (
-        "We could not load your borrowed books right now. "
-        "Please try again later."
+        "We could not load your borrowed books right now. " "Please try again later."
     ),
 }
 
@@ -120,6 +113,7 @@ def _authenticated_student_id():
 
 def student_required(view_function):
     """Restrict a catalogue or reservation route to logged-in students."""
+
     @wraps(view_function)
     def protected_view(*args, **kwargs):
         student_id, role = _get_authenticated_student()
@@ -181,9 +175,7 @@ def _book_is_visible_to_students(book):
         if isinstance(value, bool) and not value:
             return False
 
-    catalogue_status = _normalise_status(
-        book.get("catalogue_status", "active")
-    )
+    catalogue_status = _normalise_status(book.get("catalogue_status", "active"))
     return catalogue_status not in {
         "inactive",
         "deactivated",
@@ -258,8 +250,7 @@ def _student_has_active_reservation(student_id, book_id):
     )
 
     normalised_active_statuses = {
-        _normalise_status(status)
-        for status in ACTIVE_RESERVATION_STATUSES
+        _normalise_status(status) for status in ACTIVE_RESERVATION_STATUSES
     }
 
     return any(
@@ -276,19 +267,14 @@ def _load_owned_reservation(reservation_id, student_id):
     by another student avoids revealing whether another student's record
     exists. The caller may safely display the same not-found message.
     """
-    reservation_ref = (
-        db.collection(RESERVATIONS_COLLECTION)
-        .document(reservation_id)
-    )
+    reservation_ref = db.collection(RESERVATIONS_COLLECTION).document(reservation_id)
     reservation_doc = reservation_ref.get()
 
     if not reservation_doc.exists:
         return None
 
     reservation = reservation_doc.to_dict() or {}
-    stored_student_id = str(
-        reservation.get("student_id", "")
-    ).strip()
+    stored_student_id = str(reservation.get("student_id", "")).strip()
 
     if stored_student_id != str(student_id or "").strip():
         return None
@@ -374,16 +360,13 @@ def _normalise_current_borrowing(document):
     due_date = _parse_date(borrowing.get("due_date"))
 
     borrowing_period_days = _safe_int(
-    borrowing.get("borrowing_period_days"),
-    0,
-)
-
+        borrowing.get("borrowing_period_days"),
+        0,
+    )
 
     if borrowing_period_days <= 0:
         if borrow_date and due_date:
-            borrowing_period_days = (
-                due_date - borrow_date
-            ).days
+            borrowing_period_days = (due_date - borrow_date).days
         else:
             borrowing_period_days = 14
     # SCRUM-677 integration: records created by SCRUM-16 already include
@@ -400,18 +383,11 @@ def _normalise_current_borrowing(document):
     # Load book title if transaction only stores book_id
     if not borrowing.get("book_title") and borrowing.get("book_id"):
 
-        book_doc = (
-            db.collection(BOOKS_COLLECTION)
-            .document(borrowing["book_id"])
-            .get()
-        )
+        book_doc = db.collection(BOOKS_COLLECTION).document(borrowing["book_id"]).get()
 
         if book_doc.exists:
             book_data = book_doc.to_dict() or {}
-            borrowing["book_title"] = book_data.get(
-                "title",
-                "Untitled Book"
-            )
+            borrowing["book_title"] = book_data.get("title", "Untitled Book")
         else:
             borrowing["book_title"] = "Untitled Book"
 
@@ -503,9 +479,7 @@ def view_available_books():
             book = doc.to_dict() or {}
             book["book_id"] = doc.id
 
-            available_copies = _safe_int(
-                book.get("available_copies", 0)
-            )
+            available_copies = _safe_int(book.get("available_copies", 0))
 
             book["available_copies"] = available_copies
 
@@ -515,7 +489,6 @@ def view_available_books():
             # The Available Books page represents books that can be borrowed,
             # so both the stored status and copy quantity must allow borrowing.
             is_available = _book_is_borrowable(book)
-
 
             if is_available and _matches_search(book, search_keyword):
                 books.append(book)
@@ -595,25 +568,14 @@ def _load_selected_book(book_id):
     book["book_id"] = book_doc.id
 
     has_copy_count = book.get("available_copies") is not None
-    available_copies = _safe_int(
-        book.get("available_copies", 0)
-    )
-    total_copies = _safe_int(
-        book.get("total_copies", 0)
-    )
+    available_copies = _safe_int(book.get("available_copies", 0))
+    total_copies = _safe_int(book.get("total_copies", 0))
     is_available = _book_has_available_copy(book)
 
     book["available_copies"] = available_copies
     book["total_copies"] = total_copies
-    book["current_status"] = (
-        "Available" if is_available else "Unavailable"
-    )
-    book["availability_source"] = (
-        "available_copies"
-        if has_copy_count
-        else "status"
-    )
-
+    book["current_status"] = "Available" if is_available else "Unavailable"
+    book["availability_source"] = "available_copies" if has_copy_count else "status"
 
     return book, is_available
 
@@ -641,10 +603,7 @@ def _render_selected_book_details(book_id):
             "book_details",
             "Failed to load selected book details.",
         )
-        return redirect(
-            url_for("catalogue_reservation.view_catalogue")
-        )
-
+        return redirect(url_for("catalogue_reservation.view_catalogue"))
 
 
 @catalogue_bp.route("/details/<book_id>")
@@ -681,7 +640,6 @@ def reserve_book(book_id):
             return redirect(url_for("catalogue_reservation.view_catalogue"))
 
         book, is_available = selected_book
-
 
         if is_available:
             flash(
@@ -731,13 +689,9 @@ def reserve_book(book_id):
                 "You already have an active reservation for this book.",
                 "info",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
-        availability_checked_at = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        availability_checked_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         reservation_data = {
             "student_id": student_id,
             "book_id": book_id,
@@ -746,7 +700,6 @@ def reserve_book(book_id):
             "status": "Active",
             "availability_checked_at": availability_checked_at,
             "book_updated_at": book.get("updated_at"),
-
         }
 
         db.collection(RESERVATIONS_COLLECTION).add(reservation_data)
@@ -765,12 +718,8 @@ def reserve_book(book_id):
 
 
 # SCRUM-690 and SCRUM-1191: Cancel an owned reservation securely
-@catalogue_bp.route(
-    "/cancel-reservation/<reservation_id>",
-    methods=["GET", "POST"]
-)
+@catalogue_bp.route("/cancel-reservation/<reservation_id>", methods=["GET", "POST"])
 @student_required
-
 def cancel_reservation(reservation_id):
     """Allow the authenticated student to cancel only their active record.
 
@@ -785,7 +734,6 @@ def cancel_reservation(reservation_id):
         owned_reservation = _load_owned_reservation(
             reservation_id,
             student_id,
-
         )
 
         if owned_reservation is None:
@@ -794,23 +742,17 @@ def cancel_reservation(reservation_id):
                 "to cancel this reservation.",
                 "danger",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         reservation_ref, reservation = owned_reservation
-        current_status = _normalise_status(
-            reservation.get("status")
-        )
+        current_status = _normalise_status(reservation.get("status"))
 
         if current_status != "active":
             flash(
                 "Only an active reservation can be cancelled.",
                 "info",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         if request.method == "GET":
             return render_template(
@@ -820,15 +762,14 @@ def cancel_reservation(reservation_id):
 
         # SCRUM-1191: The POST request performs the ownership and status
         # validation above immediately before this update.
-        cancellation_date = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
+        cancellation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        reservation_ref.update(
+            {
+                "status": "Cancelled",
+                "cancellation_date": cancellation_date,
+                "cancelled_by_student_id": student_id,
+            }
         )
-        reservation_ref.update({
-            "status": "Cancelled",
-            "cancellation_date": cancellation_date,
-            "cancelled_by_student_id": student_id,
-        })
-
 
         flash(
             f"Reservation for '{reservation.get('book_title', 'the book')}' "
@@ -906,11 +847,13 @@ def _build_borrow_request_data(
     }
 
     if reservation is not None:
-        borrow_request_data.update({
-            "reservation_id": reservation["reservation_id"],
-            "reservation_status_at_request": reservation.get("status"),
-            "request_source": "Approved Reservation",
-        })
+        borrow_request_data.update(
+            {
+                "reservation_id": reservation["reservation_id"],
+                "reservation_status_at_request": reservation.get("status"),
+                "request_source": "Approved Reservation",
+            }
+        )
 
     return borrow_request_data
 
@@ -964,7 +907,6 @@ def request_borrow_book(book_id):
                     "catalogue_reservation.view_book_details",
                     book_id=book_id,
                 )
-
             )
 
         # SCRUM-1193: Check both pending requests and active transactions.
@@ -979,7 +921,6 @@ def request_borrow_book(book_id):
                     "catalogue_reservation.view_book_details",
                     book_id=book_id,
                 )
-
             )
 
         if request.method == "GET":
@@ -996,9 +937,7 @@ def request_borrow_book(book_id):
 
         if validation_error == "missing":
             flash("Book not found.", "danger")
-            return redirect(
-                url_for("catalogue_reservation.view_catalogue")
-            )
+            return redirect(url_for("catalogue_reservation.view_catalogue"))
 
         if validation_error == "unavailable":
             flash(
@@ -1033,10 +972,7 @@ def request_borrow_book(book_id):
             book,
             request_date,
         )
-        db.collection(BORROW_REQUESTS_COLLECTION).add(
-            borrow_request_data
-        )
-
+        db.collection(BORROW_REQUESTS_COLLECTION).add(borrow_request_data)
 
         flash(
             f"Borrow request for '{borrow_request_data['book_title']}' "
@@ -1055,10 +991,7 @@ def request_borrow_book(book_id):
             "borrow_request",
             "Failed to validate or submit a borrowing request.",
         )
-        return redirect(
-            url_for("catalogue_reservation.view_catalogue")
-        )
-
+        return redirect(url_for("catalogue_reservation.view_catalogue"))
 
 
 @catalogue_bp.route(
@@ -1082,9 +1015,7 @@ def continue_approved_reservation(reservation_id):
                 "to continue this reservation.",
                 "danger",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         reservation_ref, reservation, is_approved = approved_reservation
         if not is_approved:
@@ -1092,9 +1023,7 @@ def continue_approved_reservation(reservation_id):
                 "Only an approved reservation can continue to borrowing.",
                 "info",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         book_id = str(reservation.get("book_id", "")).strip()
         book, validation_error = _validate_book_for_borrowing(book_id)
@@ -1104,18 +1033,14 @@ def continue_approved_reservation(reservation_id):
                 "The reserved book is no longer listed in the catalogue.",
                 "danger",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         if validation_error == "unavailable":
             flash(
                 "The reserved book is not currently available for borrowing.",
                 "info",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         activity = _student_existing_borrowing_activity(
             student_id,
@@ -1123,9 +1048,7 @@ def continue_approved_reservation(reservation_id):
         )
         if activity is not None:
             _flash_existing_borrowing_activity(activity)
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         if request.method == "GET":
             return render_template(
@@ -1143,9 +1066,7 @@ def continue_approved_reservation(reservation_id):
         )
         if approved_reservation is None:
             flash("Reservation not found.", "danger")
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         reservation_ref, reservation, is_approved = approved_reservation
         if not is_approved:
@@ -1153,9 +1074,7 @@ def continue_approved_reservation(reservation_id):
                 "The reservation is no longer approved for borrowing.",
                 "info",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         book_id = str(reservation.get("book_id", "")).strip()
         book, validation_error = _validate_book_for_borrowing(book_id)
@@ -1165,9 +1084,7 @@ def continue_approved_reservation(reservation_id):
                 "The borrowing request was not submitted.",
                 "info",
             )
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         activity = _student_existing_borrowing_activity(
             student_id,
@@ -1175,9 +1092,7 @@ def continue_approved_reservation(reservation_id):
         )
         if activity is not None:
             _flash_existing_borrowing_activity(activity)
-            return redirect(
-                url_for("catalogue_reservation.view_my_reservations")
-            )
+            return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
         request_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         borrow_request_data = _build_borrow_request_data(
@@ -1191,23 +1106,27 @@ def continue_approved_reservation(reservation_id):
         )
 
         try:
-            reservation_ref.update({
-                "status": "Borrow Request Submitted",
-                "borrowing_request_id": request_ref._document_id
-                if hasattr(request_ref, "_document_id")
-                else request_ref.id,
-                "borrowing_requested_at": request_date,
-            })
+            reservation_ref.update(
+                {
+                    "status": "Borrow Request Submitted",
+                    "borrowing_request_id": (
+                        request_ref._document_id
+                        if hasattr(request_ref, "_document_id")
+                        else request_ref.id
+                    ),
+                    "borrowing_requested_at": request_date,
+                }
+            )
         except Exception:
             # SCRUM-1195: A failed reservation update must not leave an active
             # orphan request in the Borrowing module.
-            request_ref.update({
-                "status": "Cancelled",
-                "cancellation_reason": (
-                    "Reservation synchronization failed."
-                ),
-                "cancelled_at": request_date,
-            })
+            request_ref.update(
+                {
+                    "status": "Cancelled",
+                    "cancellation_reason": ("Reservation synchronization failed."),
+                    "cancelled_at": request_date,
+                }
+            )
             raise
 
         flash(
@@ -1215,18 +1134,14 @@ def continue_approved_reservation(reservation_id):
             "was created from your approved reservation.",
             "success",
         )
-        return redirect(
-            url_for("catalogue_reservation.view_my_reservations")
-        )
+        return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
     except Exception:
         _flash_database_error(
             "borrow_request",
             "Failed to continue an approved reservation into borrowing.",
         )
-        return redirect(
-            url_for("catalogue_reservation.view_my_reservations")
-        )
+        return redirect(url_for("catalogue_reservation.view_my_reservations"))
 
 
 # SCRUM-675 and SCRUM-677: View currently borrowed books and remaining period

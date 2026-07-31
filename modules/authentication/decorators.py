@@ -23,10 +23,7 @@ def roles_required(*allowed_roles):
     Allow only users with one of the specified roles.
     """
 
-    normalised_roles = {
-        str(role).strip().lower()
-        for role in allowed_roles
-    }
+    normalised_roles = {str(role).strip().lower() for role in allowed_roles}
 
     def decorator(view_function):
         @wraps(view_function)
@@ -34,14 +31,11 @@ def roles_required(*allowed_roles):
             if not session.get("user_id"):
                 return redirect("/auth/login")
 
-            current_role = str(
-                session.get("role", "")
-            ).strip().lower()
+            current_role = str(session.get("role", "")).strip().lower()
 
             if current_role not in normalised_roles:
                 return (
-                    "Access denied. You do not have permission "
-                    "to access this page.",
+                    "Access denied. You do not have permission " "to access this page.",
                     403,
                 )
 
@@ -57,9 +51,7 @@ def librarian_required(view_function):
     Allow only authenticated librarians.
     """
 
-    return roles_required("librarian")(
-        view_function
-    )
+    return roles_required("librarian")(view_function)
 
 
 def student_required(view_function):
@@ -67,9 +59,7 @@ def student_required(view_function):
     Allow only authenticated students.
     """
 
-    return roles_required("student")(
-        view_function
-    )
+    return roles_required("student")(view_function)
 
 
 def student_or_librarian_required(view_function):

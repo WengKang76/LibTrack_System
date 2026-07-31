@@ -17,7 +17,7 @@ def reset_demo_penalties():
         "book_title": "Python Programming",
         "penalty_amount": 10.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     penalty_routes.DEMO_PENALTIES["S2W002"] = {
@@ -28,7 +28,7 @@ def reset_demo_penalties():
         "book_title": "Database System",
         "penalty_amount": 15.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Paid"
+        "status": "Paid",
     }
 
     penalty_routes.DEMO_PENALTIES["S2W003"] = {
@@ -39,7 +39,7 @@ def reset_demo_penalties():
         "book_title": "Software Engineering",
         "penalty_amount": 20.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Waived"
+        "status": "Waived",
     }
 
     yield
@@ -73,22 +73,21 @@ def test_validate_waiver_reason_rejects_short_reason():
 
 def test_waive_outstanding_penalty_successfully():
     success, message = penalty_routes.waive_penalty(
-        "S2W001",
-        "Student provided valid reason",
-        "Librarian"
+        "S2W001", "Student provided valid reason", "Librarian"
     )
 
     assert success is True
     assert message == "Penalty waived successfully."
     assert penalty_routes.DEMO_PENALTIES["S2W001"]["status"] == "Waived"
-    assert penalty_routes.DEMO_PENALTIES["S2W001"]["waiver_reason"] == "Student provided valid reason"
+    assert (
+        penalty_routes.DEMO_PENALTIES["S2W001"]["waiver_reason"]
+        == "Student provided valid reason"
+    )
 
 
 def test_paid_penalty_cannot_be_waived():
     success, message = penalty_routes.waive_penalty(
-        "S2W002",
-        "Valid reason",
-        "Librarian"
+        "S2W002", "Valid reason", "Librarian"
     )
 
     assert success is False
@@ -97,9 +96,7 @@ def test_paid_penalty_cannot_be_waived():
 
 def test_already_waived_penalty_cannot_be_waived_again():
     success, message = penalty_routes.waive_penalty(
-        "S2W003",
-        "Valid reason",
-        "Librarian"
+        "S2W003", "Valid reason", "Librarian"
     )
 
     assert success is False
@@ -108,9 +105,7 @@ def test_already_waived_penalty_cannot_be_waived_again():
 
 def test_audit_details_are_recorded_after_waiver():
     success, message = penalty_routes.waive_penalty(
-        "S2W001",
-        "Student provided valid reason",
-        "Librarian"
+        "S2W001", "Student provided valid reason", "Librarian"
     )
 
     penalty = penalty_routes.DEMO_PENALTIES["S2W001"]

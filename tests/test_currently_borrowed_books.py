@@ -17,6 +17,7 @@ def _approved_request(**overrides):
     record.update(overrides)
     return record
 
+
 def _borrow_transaction(
     transaction_id="BT001",
     request_id=None,
@@ -39,6 +40,7 @@ def _borrow_transaction(
         "due_date": due_date,
         "borrowing_period_days": borrowing_period_days,
     }
+
 
 def test_currently_borrowed_books_route_returns_success(app_factory):
     app = app_factory()
@@ -131,15 +133,15 @@ def test_due_date_is_derived_from_scrum_16_request_data(
         "_today",
         lambda: date(2026, 7, 10),
     )
-    borrow_transactions=[
-    _borrow_transaction(
-        borrow_date="2026-07-01",
-        due_date="2026-07-15",
-        borrowing_period_days=14,
-    )
-]
+    borrow_transactions = [
+        _borrow_transaction(
+            borrow_date="2026-07-01",
+            due_date="2026-07-15",
+            borrowing_period_days=14,
+        )
+    ]
 
-    app = app_factory(borrow_transactions = borrow_transactions)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -205,7 +207,7 @@ def test_overdue_borrowing_period_is_displayed(app_factory, monkeypatch):
 
 
 def test_other_students_borrowed_books_are_not_displayed(app_factory):
-    borrow_transactions= [
+    borrow_transactions = [
         _borrow_transaction(
             request_id="BR001",
             student_id="S001",
@@ -248,7 +250,7 @@ def test_books_are_sorted_by_nearest_due_date(app_factory, monkeypatch):
         ),
     ]
 
-    app = app_factory(borrow_transactions = borrow_transactions)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")

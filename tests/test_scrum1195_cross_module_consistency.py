@@ -37,9 +37,7 @@ def _install_approval_repository(monkeypatch, reservation_failure=False):
     monkeypatch.setattr(
         borrowing_services,
         "update_request_status",
-        lambda _request_id, status: state["request"].update(
-            {"status": status}
-        ),
+        lambda _request_id, status: state["request"].update({"status": status}),
     )
     monkeypatch.setattr(
         borrowing_services,

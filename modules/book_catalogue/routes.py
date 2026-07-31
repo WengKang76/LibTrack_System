@@ -8,7 +8,6 @@ from modules.authentication.decorators import (
     librarian_required,
 )
 
-
 book_bp = Blueprint(
     "book_catalogue",
     __name__,
@@ -20,6 +19,7 @@ book_bp = Blueprint(
 # SCRUM-1180: BOOK INPUT VALIDATION
 # ============================================================
 
+
 def _validate_publication_year(publication_year):
     """
     Validate an optional publication year.
@@ -29,23 +29,13 @@ def _validate_publication_year(publication_year):
         return None
 
     if not publication_year.isdigit():
-        return (
-            "Publication year must be a valid "
-            "four-digit year."
-        )
+        return "Publication year must be a valid " "four-digit year."
 
     current_year = datetime.now().year
     year = int(publication_year)
 
-    if (
-        len(publication_year) != 4
-        or year < 1000
-        or year > current_year
-    ):
-        return (
-            f"Publication year must be between "
-            f"1000 and {current_year}."
-        )
+    if len(publication_year) != 4 or year < 1000 or year > current_year:
+        return f"Publication year must be between " f"1000 and {current_year}."
 
     return None
 
@@ -58,9 +48,7 @@ def _validate_isbn_format(isbn):
     demonstration identifiers such as ISBN-001.
     """
 
-    normalised_isbn = str(
-        isbn or ""
-    ).strip()
+    normalised_isbn = str(isbn or "").strip()
 
     if not normalised_isbn:
         return None, "ISBN is required."
@@ -78,6 +66,7 @@ def _validate_isbn_format(isbn):
 # SCRUM-1181: DUPLICATE PREVENTION
 # ============================================================
 
+
 def _isbn_already_exists(
     isbn,
     exclude_book_id=None,
@@ -90,10 +79,7 @@ def _isbn_already_exists(
     """
 
     matching_books = (
-        db.collection(COLLECTION_BOOKS)
-        .where("isbn", "==", isbn)
-        .limit(10)
-        .stream()
+        db.collection(COLLECTION_BOOKS).where("isbn", "==", isbn).limit(10).stream()
     )
 
     for book_document in matching_books:
@@ -103,13 +89,11 @@ def _isbn_already_exists(
             None,
         )
 
-        if (
-            exclude_book_id is None
-            or document_id != exclude_book_id
-        ):
+        if exclude_book_id is None or document_id != exclude_book_id:
             return True
 
     return False
+
 
 COPY_STATUSES = (
     "Available",
@@ -158,19 +142,13 @@ def _generate_initial_book_copies(
     - a sequential copy number
     """
 
-    copies_collection = (
-        book_reference.collection("copies")
-    )
+    copies_collection = book_reference.collection("copies")
 
     for copy_number in range(
         1,
         quantity + 1,
     ):
-        copy_id = (
-            f"COPY-"
-            f"{book_reference.id.upper()}-"
-            f"{copy_number:03d}"
-        )
+        copy_id = f"COPY-" f"{book_reference.id.upper()}-" f"{copy_number:03d}"
 
         copy_data = {
             "copy_id": copy_id,
@@ -178,14 +156,10 @@ def _generate_initial_book_copies(
             "copy_number": copy_number,
             "status": "Available",
             "condition": "Good",
-            "created_at": datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-        copies_collection.document(
-            copy_id
-        ).set(copy_data)
+        copies_collection.document(copy_id).set(copy_data)
 
 
 def _get_book_copies(book_id):
@@ -248,6 +222,8 @@ def _calculate_copy_summary(copies):
     return summary
 
     # ============================================================
+
+
 # SCRUM-1182: PREVENT UNSAFE DELETION
 # ============================================================
 
@@ -263,12 +239,16 @@ def _copy_has_active_transaction(copy_record):
     an active borrowing or reservation transaction.
     """
 
-    status = str(
-        copy_record.get(
-            "status",
-            "",
+    status = (
+        str(
+            copy_record.get(
+                "status",
+                "",
+            )
         )
-    ).strip().lower()
+        .strip()
+        .lower()
+    )
 
     return status in ACTIVE_TRANSACTION_STATUSES
 
@@ -281,16 +261,16 @@ def _find_unsafe_copy(copies):
     """
 
     for copy_record in copies:
-        if _copy_has_active_transaction(
-            copy_record
-        ):
+        if _copy_has_active_transaction(copy_record):
             return copy_record
 
     return None
 
+
 # ============================================================
 # SCRUM-1184: VALIDATE AVAILABLE-COPY COUNT
 # ============================================================
+
 
 def _validate_inventory_counts(
     total_copies,
@@ -309,22 +289,14 @@ def _validate_inventory_counts(
         return "Total copies must be a valid whole number."
 
     if isinstance(available_copies, bool):
-        return (
-            "Available copies must be a valid "
-            "whole number."
-        )
+        return "Available copies must be a valid " "whole number."
 
     try:
         total_copies = int(total_copies)
-        available_copies = int(
-            available_copies
-        )
+        available_copies = int(available_copies)
 
     except (TypeError, ValueError):
-        return (
-            "Book inventory counts must be valid "
-            "whole numbers."
-        )
+        return "Book inventory counts must be valid " "whole numbers."
 
     if total_copies < 0:
         return "Total copies cannot be negative."
@@ -333,10 +305,7 @@ def _validate_inventory_counts(
         return "Available copies cannot be negative."
 
     if available_copies > total_copies:
-        return (
-            "Available copies cannot be greater "
-            "than total copies."
-        )
+        return "Available copies cannot be greater " "than total copies."
 
     return None
 
@@ -345,6 +314,7 @@ def _validate_inventory_counts(
 # SCRUM-1183 AND SCRUM-1184:
 # RECALCULATE AND VALIDATE INVENTORY
 # ============================================================
+
 
 def _sync_book_inventory_from_copies(book_id):
     """
@@ -356,9 +326,7 @@ def _sync_book_inventory_from_copies(book_id):
 
     copies = _get_book_copies(book_id)
 
-    copy_summary = _calculate_copy_summary(
-        copies
-    )
+    copy_summary = _calculate_copy_summary(copies)
 
     total_copies = int(
         copy_summary.get(
@@ -374,11 +342,9 @@ def _sync_book_inventory_from_copies(book_id):
         )
     )
 
-    validation_error = (
-        _validate_inventory_counts(
-            total_copies,
-            available_copies,
-        )
+    validation_error = _validate_inventory_counts(
+        total_copies,
+        available_copies,
     )
 
     if validation_error:
@@ -391,24 +357,12 @@ def _sync_book_inventory_from_copies(book_id):
 
     inventory_updates = {
         "total_copies": total_copies,
-        "available_copies": (
-            available_copies
-        ),
+        "available_copies": (available_copies),
         "status": inventory_status,
-        "updated_at": (
-            datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-        ),
+        "updated_at": (datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
     }
 
-    (
-        db.collection(
-            COLLECTION_BOOKS
-        )
-        .document(book_id)
-        .update(inventory_updates)
-    )
+    (db.collection(COLLECTION_BOOKS).document(book_id).update(inventory_updates))
 
     return copy_summary
 
@@ -447,6 +401,7 @@ def manage_books():
 # SCRUM-12, SCRUM-1180 AND SCRUM-1181:
 # ADD AND VALIDATE NEW BOOK
 # ============================================================
+
 
 @book_bp.route(
     "/add",
@@ -515,8 +470,7 @@ def add_book():
 
         missing_fields = [
             label
-            for field_name, label
-            in required_fields.items()
+            for field_name, label in required_fields.items()
             if not form_data[field_name]
         ]
 
@@ -525,9 +479,7 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "Please fill in all required fields."
-                    ),
+                    error=("Please fill in all required fields."),
                 ),
                 400,
             )
@@ -541,10 +493,7 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "Book title cannot exceed "
-                        "200 characters."
-                    ),
+                    error=("Book title cannot exceed " "200 characters."),
                 ),
                 400,
             )
@@ -554,10 +503,7 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "Author name cannot exceed "
-                        "150 characters."
-                    ),
+                    error=("Author name cannot exceed " "150 characters."),
                 ),
                 400,
             )
@@ -566,11 +512,7 @@ def add_book():
         # SCRUM-1180: ISBN-format validation
         # ----------------------------------------------------
 
-        normalised_isbn, isbn_error = (
-            _validate_isbn_format(
-                form_data["isbn"]
-            )
-        )
+        normalised_isbn, isbn_error = _validate_isbn_format(form_data["isbn"])
 
         if isbn_error:
             return (
@@ -589,19 +531,14 @@ def add_book():
         # ----------------------------------------------------
 
         try:
-            total_copies = int(
-                form_data["total_copies"]
-            )
+            total_copies = int(form_data["total_copies"])
 
         except (TypeError, ValueError):
             return (
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "Total copies must be a valid "
-                        "whole number."
-                    ),
+                    error=("Total copies must be a valid " "whole number."),
                 ),
                 400,
             )
@@ -611,9 +548,7 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "Total copies must be at least 1."
-                    ),
+                    error=("Total copies must be at least 1."),
                 ),
                 400,
             )
@@ -623,9 +558,7 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "Total copies cannot exceed 999."
-                    ),
+                    error=("Total copies cannot exceed 999."),
                 ),
                 400,
             )
@@ -634,9 +567,7 @@ def add_book():
         # SCRUM-1180: Publication-year validation
         # ----------------------------------------------------
 
-        year_error = _validate_publication_year(
-            form_data["publication_year"]
-        )
+        year_error = _validate_publication_year(form_data["publication_year"])
 
         if year_error:
             return (
@@ -652,24 +583,17 @@ def add_book():
         # SCRUM-1181: Duplicate-ISBN prevention
         # ----------------------------------------------------
 
-        if _isbn_already_exists(
-            form_data["isbn"]
-        ):
+        if _isbn_already_exists(form_data["isbn"]):
             return (
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=(
-                        "A book with this ISBN "
-                        "already exists."
-                    ),
+                    error=("A book with this ISBN " "already exists."),
                 ),
                 400,
             )
 
-        current_time = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         book_data = {
             "title": form_data["title"],
@@ -677,9 +601,7 @@ def add_book():
             "isbn": form_data["isbn"],
             "category": form_data["category"],
             "publisher": form_data["publisher"],
-            "publication_year": (
-                form_data["publication_year"]
-            ),
+            "publication_year": (form_data["publication_year"]),
             "description": form_data["description"],
             "total_copies": total_copies,
             "available_copies": total_copies,
@@ -691,12 +613,7 @@ def add_book():
             "updated_at": current_time,
         }
 
-        _, book_reference = (
-            db.collection(
-                COLLECTION_BOOKS
-            )
-            .add(book_data)
-        )
+        _, book_reference = db.collection(COLLECTION_BOOKS).add(book_data)
 
         _generate_initial_book_copies(
             book_reference,
@@ -712,11 +629,7 @@ def add_book():
             "success",
         )
 
-        return redirect(
-            url_for(
-                "book_catalogue.add_book"
-            )
-        )
+        return redirect(url_for("book_catalogue.add_book"))
 
     return render_template(
         "add_book.html",
@@ -1134,6 +1047,7 @@ def add_book_copies(book_id):
 # DELETE BOOK ONLY WHEN NO ACTIVE TRANSACTION EXISTS
 # ============================================================
 
+
 @book_bp.route(
     "/delete/<book_id>",
     methods=["GET", "POST"],
@@ -1147,9 +1061,7 @@ def delete_book(book_id):
 
     copies = _get_book_copies(book_id)
 
-    unsafe_copy = _find_unsafe_copy(
-        copies
-    )
+    unsafe_copy = _find_unsafe_copy(copies)
 
     if request.method == "GET":
         return render_template(
@@ -1168,12 +1080,16 @@ def delete_book(book_id):
             ),
         )
 
-        copy_status = str(
-            unsafe_copy.get(
-                "status",
-                "",
+        copy_status = (
+            str(
+                unsafe_copy.get(
+                    "status",
+                    "",
+                )
             )
-        ).strip().title()
+            .strip()
+            .title()
+        )
 
         return (
             render_template(
@@ -1191,18 +1107,9 @@ def delete_book(book_id):
             400,
         )
 
-    book_reference = (
-        db.collection(
-            COLLECTION_BOOKS
-        )
-        .document(book_id)
-    )
+    book_reference = db.collection(COLLECTION_BOOKS).document(book_id)
 
-    for copy_document in (
-        book_reference
-        .collection("copies")
-        .stream()
-    ):
+    for copy_document in book_reference.collection("copies").stream():
         copy_document.reference.delete()
 
     book_reference.delete()
@@ -1212,16 +1119,14 @@ def delete_book(book_id):
         "success",
     )
 
-    return redirect(
-        url_for(
-            "book_catalogue.manage_books"
-        )
-    )
+    return redirect(url_for("book_catalogue.manage_books"))
+
 
 # ============================================================
 # SCRUM-1182:
 # DELETE PHYSICAL COPY ONLY WHEN SAFE
 # ============================================================
+
 
 @book_bp.route(
     "/copies/delete/<book_id>/<copy_id>",
@@ -1248,30 +1153,26 @@ def delete_book_copy(
             404,
         )
 
-    if _copy_has_active_transaction(
-        copy_record
-    ):
-        copies = _get_book_copies(
-            book_id
-        )
+    if _copy_has_active_transaction(copy_record):
+        copies = _get_book_copies(book_id)
 
-        copy_status = str(
-            copy_record.get(
-                "status",
-                "",
+        copy_status = (
+            str(
+                copy_record.get(
+                    "status",
+                    "",
+                )
             )
-        ).strip().title()
+            .strip()
+            .title()
+        )
 
         return (
             render_template(
                 "librarian_book_details.html",
                 book=book,
                 copies=copies,
-                copy_summary=(
-                    _calculate_copy_summary(
-                        copies
-                    )
-                ),
+                copy_summary=(_calculate_copy_summary(copies)),
                 error=(
                     f"{copy_id} cannot be deleted because "
                     f"it is currently {copy_status}. "
@@ -1283,18 +1184,14 @@ def delete_book_copy(
         )
 
     (
-        db.collection(
-            COLLECTION_BOOKS
-        )
+        db.collection(COLLECTION_BOOKS)
         .document(book_id)
         .collection("copies")
         .document(copy_id)
         .delete()
     )
 
-    _sync_book_inventory_from_copies(
-        book_id
-    )
+    _sync_book_inventory_from_copies(book_id)
 
     flash(
         (

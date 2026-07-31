@@ -17,7 +17,6 @@ from modules.authentication.decorators import (
     librarian_required,
 )
 
-
 user_management_bp = Blueprint(
     "user_management",
     __name__,
@@ -68,9 +67,7 @@ def manage_users():
     for document in user_documents:
         user = document.to_dict() or {}
 
-        role = str(
-            user.get("role", "")
-        ).strip().lower()
+        role = str(user.get("role", "")).strip().lower()
 
         # User Management displays only Student accounts.
         if role != "student":
@@ -84,11 +81,7 @@ def manage_users():
 
         users.append(user)
 
-    users.sort(
-        key=lambda user: str(
-            user.get("full_name", "")
-        ).lower()
-    )
+    users.sort(key=lambda user: str(user.get("full_name", "")).lower())
 
     return render_template(
         "manage_users.html",
@@ -197,9 +190,11 @@ def deactivate_student(user_id):
         )
     )
 
+
 # ============================================================
 # SCRUM-509: REACTIVATE STUDENT ACCOUNT
 # ============================================================
+
 
 @user_management_bp.route(
     "/reactivate/<user_id>",
@@ -212,12 +207,16 @@ def reactivate_student(user_id):
     if user is None:
         return "User record not found.", 404
 
-    user_role = str(
-        user.get(
-            "role",
-            "",
+    user_role = (
+        str(
+            user.get(
+                "role",
+                "",
+            )
         )
-    ).strip().lower()
+        .strip()
+        .lower()
+    )
 
     if user_role != "student":
         return (
@@ -225,12 +224,16 @@ def reactivate_student(user_id):
             400,
         )
 
-    current_status = str(
-        user.get(
-            "account_status",
-            "",
+    current_status = (
+        str(
+            user.get(
+                "account_status",
+                "",
+            )
         )
-    ).strip().lower()
+        .strip()
+        .lower()
+    )
 
     if current_status == "active":
         return (
@@ -266,4 +269,3 @@ def reactivate_student(user_id):
             user_id=user_id,
         )
     )
-    

@@ -60,9 +60,7 @@ def approve_request(request_id: str):
 @student_required
 def return_book(transaction_id: str):
     request_book_return(transaction_id)
-    return redirect(
-    url_for("catalogue_reservation.view_currently_borrowed_books")
-)
+    return redirect(url_for("catalogue_reservation.view_currently_borrowed_books"))
 
 
 # Student Page Routes with test user "USR001" Alice,
@@ -104,9 +102,7 @@ def renew_book(transaction_id: str):
             "error",
         )
 
-    return redirect(
-    url_for("catalogue_reservation.view_currently_borrowed_books")
-)
+    return redirect(url_for("catalogue_reservation.view_currently_borrowed_books"))
 
 
 @borrowing_bp.post("/approve-renewal/<transaction_id>")
@@ -171,9 +167,7 @@ def cancel_renewal(transaction_id: str):
             "error",
         )
 
-    return redirect(
-    url_for("catalogue_reservation.view_currently_borrowed_books")
-)
+    return redirect(url_for("catalogue_reservation.view_currently_borrowed_books"))
 
 
 @borrowing_bp.post("/manual-extend/<transaction_id>")

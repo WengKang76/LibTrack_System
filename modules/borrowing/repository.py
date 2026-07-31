@@ -119,9 +119,7 @@ def add_borrow_transaction(transaction):
 
 def delete_borrow_transaction(transaction_id: str):
     db = get_db()
-    db.collection(COLLECTION_BORROW_TRANSACTIONS).document(
-        transaction_id
-    ).delete()
+    db.collection(COLLECTION_BORROW_TRANSACTIONS).document(transaction_id).delete()
 
 
 def get_borrow_transactions():
@@ -231,11 +229,7 @@ def has_active_reservation(book_id: str):
 
 def find_reservation(reservation_id: str):
     db = get_db()
-    doc = (
-        db.collection(COLLECTION_RESERVATIONS)
-        .document(reservation_id)
-        .get()
-    )
+    doc = db.collection(COLLECTION_RESERVATIONS).document(reservation_id).get()
 
     if not doc.exists:
         return None
@@ -251,11 +245,7 @@ def update_reservation(
     updates: dict,
 ):
     db = get_db()
-    (
-        db.collection(COLLECTION_RESERVATIONS)
-        .document(reservation_id)
-        .update(updates)
-    )
+    (db.collection(COLLECTION_RESERVATIONS).document(reservation_id).update(updates))
 
 
 # ==========================

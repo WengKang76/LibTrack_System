@@ -179,9 +179,7 @@ class FakeDocumentReference:
                 records.pop(index)
                 return
 
-        raise ValueError(
-            f"Document not found: {self._document_id}"
-        )
+        raise ValueError(f"Document not found: {self._document_id}")
 
 
 class FakeQuery:
@@ -316,9 +314,7 @@ class FakeFirestore:
                 borrow_request.copy() for borrow_request in (borrow_requests or [])
             ],
             "borrow_transactions": [
-                transaction.copy()
-                for transaction
-                in (borrow_transactions or [])
+                transaction.copy() for transaction in (borrow_transactions or [])
             ],
         }
 
@@ -370,9 +366,7 @@ def app_factory(monkeypatch):
         test_app.config.update(
             TESTING=True,
             SECRET_KEY="test-secret-key",
-            PERMANENT_SESSION_LIFETIME=timedelta(
-                minutes=30
-            ),
+            PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
             SESSION_COOKIE_HTTPONLY=True,
             SESSION_COOKIE_SAMESITE="Lax",
             SESSION_REFRESH_EACH_REQUEST=True,
@@ -392,9 +386,7 @@ def app_factory(monkeypatch):
                 session.setdefault("user_id", session_user_id)
                 session.setdefault("role", session_role)
 
-        test_app.register_blueprint(
-            catalogue_routes.catalogue_bp
-        )
+        test_app.register_blueprint(catalogue_routes.catalogue_bp)
         return test_app
 
     return create_app

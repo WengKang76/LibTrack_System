@@ -1,14 +1,9 @@
-from urllib import response
-
 import pytest
 from datetime import datetime
 
 import modules.user_management.routes as user_routes
 
-
-pytestmark = pytest.mark.usefixtures(
-    "login_as_librarian"
-)
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
 
 
 class FakeDocumentSnapshot:
@@ -259,10 +254,7 @@ def test_scrum_512_student_details_page_loads(
     assert b"USR001" in response.data
     assert b"Alicia Tan" in response.data
 
-    assert (
-        b"alicia.tan@student.demo"
-        in response.data
-    )
+    assert b"alicia.tan@student.demo" in response.data
 
     assert b"012-3456789" in response.data
     assert b"Student" in response.data
@@ -281,15 +273,9 @@ def test_scrum_512_active_student_shows_deactivate_button(
 
     assert b"Deactivate Student Account" in response.data
 
-    assert (
-        b"Deactivate Student Account"
-        in response.data
-    )
+    assert b"Deactivate Student Account" in response.data
 
-    assert (
-        b"Reactivate Student Account"
-        not in response.data
-    )
+    assert b"Reactivate Student Account" not in response.data
 
 
 def test_scrum_512_inactive_student_shows_inactive_message(
@@ -317,20 +303,11 @@ def test_scrum_512_librarian_is_protected(
 
     assert response.status_code == 200
 
-    assert (
-        b"Librarian accounts cannot be"
-        in response.data
-    )
+    assert b"Librarian accounts cannot be" in response.data
 
-    assert (
-        b"Deactivate Student Account"
-        not in response.data
-    )
+    assert b"Deactivate Student Account" not in response.data
 
-    assert (
-        b"Reactivate Student Account"
-        not in response.data
-    )
+    assert b"Reactivate Student Account" not in response.data
 
 
 def test_scrum_512_unknown_user_returns_404(

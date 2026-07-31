@@ -114,9 +114,7 @@ def test_hidden_book_cannot_be_reserved_through_direct_url(app_factory):
         "/catalogue/reserve/B001",
         follow_redirects=True,
     )
-    reservations = app.extensions["fake_firestore"].collections[
-        "reservations"
-    ]
+    reservations = app.extensions["fake_firestore"].collections["reservations"]
 
     assert response.status_code == 200
     assert "Book not found" in response.get_data(as_text=True)
@@ -138,9 +136,7 @@ def test_hidden_book_cannot_be_borrowed_through_direct_url(app_factory):
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "Book not found" in response.get_data(as_text=True)

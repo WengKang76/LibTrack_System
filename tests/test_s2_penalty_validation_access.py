@@ -15,7 +15,7 @@ def reset_demo_penalties():
         "book_id": "B001",
         "book_title": "Python Programming",
         "penalty_amount": 10.00,
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     penalty_routes.DEMO_PENALTIES["S2P002"] = {
@@ -24,7 +24,7 @@ def reset_demo_penalties():
         "book_id": "B002",
         "book_title": "Database System",
         "penalty_amount": 15.00,
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     yield
@@ -66,8 +66,7 @@ def test_validate_penalty_amount_rejects_invalid_text():
 
 def test_student_can_access_own_penalty():
     success, message, penalty = penalty_routes.validate_student_penalty_access(
-        "S2P001",
-        "S001"
+        "S2P001", "S001"
     )
 
     assert success is True
@@ -76,8 +75,7 @@ def test_student_can_access_own_penalty():
 
 def test_student_cannot_access_other_student_penalty():
     success, message, penalty = penalty_routes.validate_student_penalty_access(
-        "S2P002",
-        "S001"
+        "S2P002", "S001"
     )
 
     assert success is False
@@ -86,10 +84,7 @@ def test_student_cannot_access_other_student_penalty():
 
 def test_student_can_pay_own_penalty():
     success, message = penalty_routes.pay_student_own_penalty(
-        "S2P001",
-        "S001",
-        10.00,
-        "Credit Card"
+        "S2P001", "S001", 10.00, "Credit Card"
     )
 
     assert success is True
@@ -99,10 +94,7 @@ def test_student_can_pay_own_penalty():
 
 def test_student_cannot_pay_other_student_penalty():
     success, message = penalty_routes.pay_student_own_penalty(
-        "S2P002",
-        "S001",
-        15.00,
-        "Credit Card"
+        "S2P002", "S001", 15.00, "Credit Card"
     )
 
     assert success is False

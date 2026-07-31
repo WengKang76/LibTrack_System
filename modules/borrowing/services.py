@@ -57,9 +57,7 @@ def get_student_borrowed_books(student_id):
 
 
 def _normalise_status(value):
-    return " ".join(
-        str(value or "").strip().lower().replace("_", " ").split()
-    )
+    return " ".join(str(value or "").strip().lower().replace("_", " ").split())
 
 
 def _book_can_be_issued(book):
@@ -112,11 +110,7 @@ def approve_borrow_request(request_id: str):
         return False
 
     reservation_id = borrow_request.get("reservation_id")
-    reservation = (
-        find_reservation(reservation_id)
-        if reservation_id
-        else None
-    )
+    reservation = find_reservation(reservation_id) if reservation_id else None
 
     original_request_status = borrow_request.get(
         "status",
@@ -134,26 +128,18 @@ def approve_borrow_request(request_id: str):
     if reservation is not None:
         original_reservation_values = {
             "status": reservation.get("status"),
-            "borrowing_request_id": reservation.get(
-                "borrowing_request_id"
-            ),
-            "borrowing_transaction_id": reservation.get(
-                "borrowing_transaction_id"
-            ),
+            "borrowing_request_id": reservation.get("borrowing_request_id"),
+            "borrowing_transaction_id": reservation.get("borrowing_transaction_id"),
             "fulfilled_at": reservation.get("fulfilled_at"),
         }
 
     try:
-        available_copies = int(
-            book.get("available_copies", 0)
-        )
+        available_copies = int(book.get("available_copies", 0))
     except (TypeError, ValueError):
         return False
 
     remaining_copies = available_copies - 1
-    current_time = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     transaction_id = None
 
     try:
@@ -161,11 +147,7 @@ def approve_borrow_request(request_id: str):
             book_id,
             {
                 "available_copies": remaining_copies,
-                "status": (
-                    "Available"
-                    if remaining_copies > 0
-                    else "Unavailable"
-                ),
+                "status": ("Available" if remaining_copies > 0 else "Unavailable"),
                 "updated_at": current_time,
             },
         )
@@ -194,24 +176,18 @@ def approve_borrow_request(request_id: str):
         if reservation_id:
             transaction["reservation_id"] = reservation_id
 
-        transaction_id = add_borrow_transaction(
-            transaction
-        )
+        transaction_id = add_borrow_transaction(transaction)
 
         if reservation_id:
             if reservation is None:
-                raise ValueError(
-                    "Linked reservation was not found."
-                )
+                raise ValueError("Linked reservation was not found.")
 
             update_reservation(
                 reservation_id,
                 {
                     "status": "Fulfilled",
                     "borrowing_request_id": request_id,
-                    "borrowing_transaction_id": (
-                        transaction_id
-                    ),
+                    "borrowing_transaction_id": (transaction_id),
                     "fulfilled_at": current_time,
                 },
             )
@@ -221,9 +197,7 @@ def approve_borrow_request(request_id: str):
     except Exception:
         if transaction_id:
             try:
-                delete_borrow_transaction(
-                    transaction_id
-                )
+                delete_borrow_transaction(transaction_id)
             except Exception:
                 pass
 
@@ -243,10 +217,7 @@ def approve_borrow_request(request_id: str):
         except Exception:
             pass
 
-        if (
-            reservation_id
-            and original_reservation_values is not None
-        ):
+        if reservation_id and original_reservation_values is not None:
             try:
                 update_reservation(
                     reservation_id,
@@ -256,6 +227,7 @@ def approve_borrow_request(request_id: str):
                 pass
 
         return False
+
 
 def get_borrow_approval_error(request_id: str):
 
@@ -332,14 +304,8 @@ def confirm_book_return(transaction_id: str) -> bool:
             transaction["book_id"],
             {
                 "available_copies": updated_available,
-                "status": (
-                    "Available"
-                    if updated_available > 0
-                    else "Unavailable"
-                ),
-                "updated_at": datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
+                "status": ("Available" if updated_available > 0 else "Unavailable"),
+                "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             },
         )
 

@@ -121,9 +121,7 @@ def test_non_approved_reservation_cannot_continue(app_factory):
 
     assert response.status_code == 200
     assert "Only an approved reservation" in response.get_data(as_text=True)
-    assert app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ] == []
+    assert app.extensions["fake_firestore"].collections["borrow_requests"] == []
 
 
 def test_unavailable_reserved_book_cannot_continue(app_factory):
@@ -140,6 +138,4 @@ def test_unavailable_reserved_book_cannot_continue(app_factory):
 
     assert response.status_code == 200
     assert "not currently available" in response.get_data(as_text=True)
-    assert app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ] == []
+    assert app.extensions["fake_firestore"].collections["borrow_requests"] == []

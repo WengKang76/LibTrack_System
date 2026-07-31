@@ -17,7 +17,7 @@ def reset_demo_data():
         "book_title": "Software Engineering",
         "penalty_amount": 10.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Paid"
+        "status": "Paid",
     }
 
     penalty_routes.DEMO_PENALTIES["S2P004"] = {
@@ -28,7 +28,7 @@ def reset_demo_data():
         "book_title": "Database System",
         "penalty_amount": 15.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Waived"
+        "status": "Waived",
     }
 
     penalty_routes.DEMO_PENALTIES["S2P005"] = {
@@ -39,7 +39,7 @@ def reset_demo_data():
         "book_title": "Python Programming",
         "penalty_amount": 20.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     penalty_routes.DEMO_PENALTIES["S2DUP001"] = {
@@ -50,7 +50,7 @@ def reset_demo_data():
         "book_title": "Computer Security",
         "penalty_amount": 25.00,
         "penalty_type": "Rejected Return",
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     penalty_routes.DEMO_PENALTIES["S2DUP002"] = {
@@ -61,7 +61,7 @@ def reset_demo_data():
         "book_title": "Artificial Intelligence",
         "penalty_amount": 8.00,
         "penalty_type": "Overdue Penalty",
-        "status": "Outstanding"
+        "status": "Outstanding",
     }
 
     yield
@@ -72,10 +72,7 @@ def reset_demo_data():
 
 def test_prevent_payment_for_paid_penalty():
     success, message = penalty_routes.pay_student_own_penalty(
-        "S2P003",
-        "S001",
-        10.00,
-        "Credit Card"
+        "S2P003", "S001", 10.00, "Credit Card"
     )
 
     assert success is False
@@ -84,10 +81,7 @@ def test_prevent_payment_for_paid_penalty():
 
 def test_prevent_payment_for_waived_penalty():
     success, message = penalty_routes.pay_student_own_penalty(
-        "S2P004",
-        "S001",
-        15.00,
-        "Credit Card"
+        "S2P004", "S001", 15.00, "Credit Card"
     )
 
     assert success is False
@@ -96,10 +90,7 @@ def test_prevent_payment_for_waived_penalty():
 
 def test_allow_payment_for_outstanding_penalty():
     success, message = penalty_routes.pay_student_own_penalty(
-        "S2P005",
-        "S001",
-        20.00,
-        "Credit Card"
+        "S2P005", "S001", 20.00, "Credit Card"
     )
 
     assert success is True
@@ -109,8 +100,7 @@ def test_allow_payment_for_outstanding_penalty():
 
 def test_detect_duplicate_rejected_return_penalty():
     exists = penalty_routes.penalty_record_exists_for_transaction(
-        "RTDUP001",
-        "Rejected Return"
+        "RTDUP001", "Rejected Return"
     )
 
     assert exists is True
@@ -118,8 +108,7 @@ def test_detect_duplicate_rejected_return_penalty():
 
 def test_detect_duplicate_overdue_penalty():
     exists = penalty_routes.penalty_record_exists_for_transaction(
-        "OTDUP001",
-        "Overdue Penalty"
+        "OTDUP001", "Overdue Penalty"
     )
 
     assert exists is True
@@ -127,16 +116,13 @@ def test_detect_duplicate_overdue_penalty():
 
 def test_no_duplicate_penalty_for_new_transaction():
     exists = penalty_routes.penalty_record_exists_for_transaction(
-        "NEWTRANSACTION001",
-        "Rejected Return"
+        "NEWTRANSACTION001", "Rejected Return"
     )
 
     assert exists is False
 
 
 def test_penalty_record_exists_for_rejected_return_helper():
-    exists = penalty_routes.penalty_record_exists_for_rejected_return(
-        "RTDUP001"
-    )
+    exists = penalty_routes.penalty_record_exists_for_rejected_return("RTDUP001")
 
     assert exists is True

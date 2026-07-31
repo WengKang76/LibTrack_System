@@ -35,9 +35,7 @@ def test_pending_borrow_request_prevents_another_request(app_factory):
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "already have a pending borrowing request" in (
@@ -87,9 +85,7 @@ def test_active_borrow_transaction_prevents_new_request(app_factory):
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "already borrowing this book" in response.get_data(as_text=True)
@@ -137,9 +133,7 @@ def test_closed_transaction_does_not_prevent_new_request(app_factory):
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert len(requests) == 1
@@ -164,9 +158,7 @@ def test_another_students_transaction_does_not_block_request(app_factory):
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert len(requests) == 1
@@ -191,9 +183,7 @@ def test_duplicate_activity_is_rechecked_before_insert(
         "/catalogue/borrow/B001",
         follow_redirects=True,
     )
-    requests = app.extensions["fake_firestore"].collections[
-        "borrow_requests"
-    ]
+    requests = app.extensions["fake_firestore"].collections["borrow_requests"]
 
     assert response.status_code == 200
     assert "pending borrowing request" in response.get_data(as_text=True)

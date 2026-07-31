@@ -30,8 +30,7 @@ class FakeUsersCollection:
                 document_id,
                 user,
             )
-            for document_id, user
-            in self.database.users.items()
+            for document_id, user in self.database.users.items()
         ]
 
 
@@ -42,11 +41,7 @@ class FakeDatabase:
                 "user_id": "USR001",
                 "full_name": "Active Student",
                 "email": "student@demo.com",
-                "password_hash": (
-                    generate_password_hash(
-                        "Student@123"
-                    )
-                ),
+                "password_hash": (generate_password_hash("Student@123")),
                 "role": "Student",
                 "account_status": "Active",
             },
@@ -54,11 +49,7 @@ class FakeDatabase:
                 "user_id": "USR002",
                 "full_name": "Inactive Student",
                 "email": "inactive@demo.com",
-                "password_hash": (
-                    generate_password_hash(
-                        "Inactive@123"
-                    )
-                ),
+                "password_hash": (generate_password_hash("Inactive@123")),
                 "role": "Student",
                 "account_status": "Inactive",
             },
@@ -66,11 +57,7 @@ class FakeDatabase:
                 "user_id": "USR003",
                 "full_name": "Demo Librarian",
                 "email": "librarian@demo.com",
-                "password_hash": (
-                    generate_password_hash(
-                        "Librarian@123"
-                    )
-                ),
+                "password_hash": (generate_password_hash("Librarian@123")),
                 "role": "Librarian",
                 "account_status": "Active",
             },
@@ -119,16 +106,12 @@ def test_active_student_can_log_in(
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith(
-    "/"
-)
+    assert response.headers["Location"].endswith("/")
 
     with client.session_transaction() as session:
         assert session["user_id"] == "USR001"
         assert session["role"] == "student"
-        assert session["full_name"] == (
-            "Active Student"
-        )
+        assert session["full_name"] == ("Active Student")
 
 
 def test_active_librarian_can_log_in(
@@ -144,9 +127,7 @@ def test_active_librarian_can_log_in(
     )
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith(
-        "/librarian"
-    )
+    assert response.headers["Location"].endswith("/librarian")
 
     with client.session_transaction() as session:
         assert session["user_id"] == "USR003"
@@ -217,10 +198,7 @@ def test_inactive_student_cannot_log_in(
 
     assert response.status_code == 403
 
-    assert (
-        b"Your account is currently inactive."
-        in response.data
-    )
+    assert b"Your account is currently inactive." in response.data
 
     with client.session_transaction() as session:
         assert "user_id" not in session
@@ -255,10 +233,7 @@ def test_login_requires_email_and_password(
 
     assert response.status_code == 400
 
-    assert (
-        b"Email and password are required."
-        in response.data
-    )
+    assert b"Email and password are required." in response.data
 
 
 def test_logout_clears_authenticated_session(
@@ -315,25 +290,13 @@ def test_successful_login_creates_permanent_session(
 
 
 def test_session_security_configuration(app):
-    assert (
-        app.permanent_session_lifetime.total_seconds()
-        == 1800
-    )
+    assert app.permanent_session_lifetime.total_seconds() == 1800
 
-    assert (
-        app.config["SESSION_COOKIE_HTTPONLY"]
-        is True
-    )
+    assert app.config["SESSION_COOKIE_HTTPONLY"] is True
 
-    assert (
-        app.config["SESSION_COOKIE_SAMESITE"]
-        == "Lax"
-    )
+    assert app.config["SESSION_COOKIE_SAMESITE"] == "Lax"
 
-    assert (
-        app.config["SESSION_REFRESH_EACH_REQUEST"]
-        is True
-    )
+    assert app.config["SESSION_REFRESH_EACH_REQUEST"] is True
 
 
 def test_expired_session_is_cleared(
@@ -345,9 +308,7 @@ def test_expired_session_is_cleared(
         user_session["email"] = "expired@demo.com"
         user_session["role"] = "student"
 
-        user_session["last_activity"] = (
-            time.time() - 1900
-        )
+        user_session["last_activity"] = time.time() - 1900
 
         user_session.permanent = True
 
@@ -358,9 +319,7 @@ def test_expired_session_is_cleared(
 
     assert response.status_code == 302
 
-    assert response.headers["Location"].endswith(
-        "/auth/login"
-    )
+    assert response.headers["Location"].endswith("/auth/login")
 
     with client.session_transaction() as user_session:
         assert "user_id" not in user_session
@@ -376,9 +335,7 @@ def test_expired_session_displays_message(
         user_session["user_id"] = "USR001"
         user_session["role"] = "student"
 
-        user_session["last_activity"] = (
-            time.time() - 1900
-        )
+        user_session["last_activity"] = time.time() - 1900
 
         user_session.permanent = True
 
@@ -389,10 +346,7 @@ def test_expired_session_displays_message(
 
     assert response.status_code == 200
 
-    assert (
-        b"Your session has expired due to inactivity."
-        in response.data
-    )
+    assert b"Your session has expired due to inactivity." in response.data
 
 
 def test_active_session_updates_last_activity(
@@ -404,9 +358,7 @@ def test_active_session_updates_last_activity(
         user_session["user_id"] = "USR001"
         user_session["full_name"] = "Active User"
         user_session["role"] = "student"
-        user_session["last_activity"] = (
-            old_activity_time
-        )
+        user_session["last_activity"] = old_activity_time
         user_session.permanent = True
 
     response = client.get("/auth/register")
@@ -414,7 +366,4 @@ def test_active_session_updates_last_activity(
     assert response.status_code == 200
 
     with client.session_transaction() as user_session:
-        assert (
-            user_session["last_activity"]
-            > old_activity_time
-        )
+        assert user_session["last_activity"] > old_activity_time

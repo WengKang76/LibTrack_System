@@ -3,9 +3,8 @@ from unittest.mock import MagicMock
 
 import modules.book_catalogue.routes as book_routes
 
-pytestmark = pytest.mark.usefixtures(
-    "login_as_librarian"
-)
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
+
 
 def build_fake_db(existing_isbn=False):
     fake_db = MagicMock()
@@ -123,4 +122,3 @@ def test_scrum_12_rejects_duplicate_isbn(client, monkeypatch):
     assert response.status_code == 400
     assert b"A book with this ISBN already exists." in response.data
     collection.add.assert_not_called()
-

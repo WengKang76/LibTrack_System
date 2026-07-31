@@ -18,11 +18,7 @@ def _reservation(
 
 def _flashed_messages(client):
     with client.session_transaction() as session_data:
-        return [
-            message
-            for _category, message
-            in session_data.get("_flashes", [])
-        ]
+        return [message for _category, message in session_data.get("_flashes", [])]
 
 
 def test_logged_out_user_cannot_cancel_reservation(app_factory):
@@ -32,18 +28,13 @@ def test_logged_out_user_cannot_cancel_reservation(app_factory):
     )
     client = app.test_client()
 
-    response = client.post(
-        "/catalogue/cancel-reservation/R001"
-    )
+    response = client.post("/catalogue/cancel-reservation/R001")
     stored = app.extensions["fake_firestore"].collections["reservations"][0]
 
     assert response.status_code == 302
     assert stored["status"] == "Active"
     assert "cancellation_date" not in stored
-    assert any(
-        "Please log in" in message
-        for message in _flashed_messages(client)
-    )
+    assert any("Please log in" in message for message in _flashed_messages(client))
 
 
 def test_librarian_cannot_cancel_student_reservation(app_factory):
@@ -54,18 +45,13 @@ def test_librarian_cannot_cancel_student_reservation(app_factory):
     )
     client = app.test_client()
 
-    response = client.post(
-        "/catalogue/cancel-reservation/R001"
-    )
+    response = client.post("/catalogue/cancel-reservation/R001")
     stored = app.extensions["fake_firestore"].collections["reservations"][0]
 
     assert response.status_code == 302
     assert stored["status"] == "Active"
     assert "cancellation_date" not in stored
-    assert any(
-        "Access denied" in message
-        for message in _flashed_messages(client)
-    )
+    assert any("Access denied" in message for message in _flashed_messages(client))
 
 
 def test_student_cannot_cancel_another_students_reservation(app_factory):
@@ -92,9 +78,7 @@ def test_owner_can_open_confirmation_without_changing_record(app_factory):
     app = app_factory(reservations=[_reservation()])
     client = app.test_client()
 
-    response = client.get(
-        "/catalogue/cancel-reservation/R001"
-    )
+    response = client.get("/catalogue/cancel-reservation/R001")
     page = response.get_data(as_text=True)
     stored = app.extensions["fake_firestore"].collections["reservations"][0]
 
@@ -123,9 +107,7 @@ def test_owner_can_cancel_active_reservation(app_factory):
 
 
 def test_inactive_reservation_cannot_be_cancelled(app_factory):
-    app = app_factory(
-        reservations=[_reservation(status="Cancelled")]
-    )
+    app = app_factory(reservations=[_reservation(status="Cancelled")])
     client = app.test_client()
 
     response = client.post(

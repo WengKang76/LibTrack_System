@@ -63,9 +63,7 @@ def test_unauthenticated_user_is_redirected_to_login(
     response = role_client.get("/authenticated")
 
     assert response.status_code == 302
-    assert response.headers["Location"].endswith(
-        "/auth/login"
-    )
+    assert response.headers["Location"].endswith("/auth/login")
 
 
 def test_authenticated_student_can_access_common_page(

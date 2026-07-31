@@ -4,11 +4,7 @@
 def _get_flashed_messages(client):
     """Return messages currently stored in the Flask test session."""
     with client.session_transaction() as session_data:
-        return [
-            message
-            for _category, message
-            in session_data.get("_flashes", [])
-        ]
+        return [message for _category, message in session_data.get("_flashes", [])]
 
 
 def test_authenticated_student_can_access_catalogue(app_factory):
@@ -45,7 +41,9 @@ def test_guest_user_can_preview_catalogue_without_login(app_factory):
     assert "Preview Book" in response.get_data(as_text=True)
 
 
-def test_unauthenticated_user_is_redirected_to_login_for_student_only_pages(app_factory):
+def test_unauthenticated_user_is_redirected_to_login_for_student_only_pages(
+    app_factory,
+):
     app = app_factory(authenticated=False)
     client = app.test_client()
 
@@ -144,9 +142,7 @@ def test_unauthorized_reservation_post_creates_no_record(app_factory):
     client = app.test_client()
 
     response = client.post("/catalogue/reserve/B001")
-    reservations = app.extensions["fake_firestore"].collections[
-        "reservations"
-    ]
+    reservations = app.extensions["fake_firestore"].collections["reservations"]
 
     assert response.status_code == 302
     assert reservations == []
