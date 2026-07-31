@@ -58,6 +58,25 @@ def test_unlisted_book_is_hidden_from_available_books(app_factory):
     assert "Unlisted Book" not in response.get_data(as_text=True)
 
 
+def test_unavailable_book_remains_visible_for_reservation(app_factory):
+    app = app_factory(
+        books=[
+            _book(
+                "B002",
+                "Unavailable Book",
+                status="Unavailable",
+                available_copies=0,
+            )
+        ]
+    )
+    client = app.test_client()
+
+    response = client.get("/catalogue/")
+
+    assert response.status_code == 200
+    assert "Unavailable Book" in response.get_data(as_text=True)
+
+
 def test_hidden_book_direct_details_url_is_blocked(app_factory):
     app = app_factory(
         books=[
