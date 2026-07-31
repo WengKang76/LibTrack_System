@@ -166,12 +166,11 @@ def _normalise_status(value):
 
 
 def _book_is_visible_to_students(book):
-    """Return True only for books that may appear in student catalogue preview.
+    """Return True only for books that may appear in student functions.
 
-    A book should stay hidden if the librarian has deactivated it, or if its
-    stored inventory status is explicitly unavailable even when positive copy
-    counts remain. This keeps preview pages accurate without allowing students
-    to borrow or reserve disabled books.
+    Catalogue visibility is controlled by dedicated visibility fields. The
+    inventory status ``Unavailable`` must not hide a book because students
+    still need to view its details and reserve it when no copies are available.
     """
     for field_name in (
         "is_visible_to_students",
@@ -185,20 +184,13 @@ def _book_is_visible_to_students(book):
     catalogue_status = _normalise_status(
         book.get("catalogue_status", "active")
     )
-    if catalogue_status in {
+    return catalogue_status not in {
         "inactive",
         "deactivated",
         "unlisted",
         "hidden",
         "removed",
-    }:
-        return False
-
-    book_status = _normalise_status(book.get("status"))
-    if book_status == "unavailable":
-        return False
-
-    return True
+    }
 
 
 def _student_existing_borrowing_activity(student_id, book_id):
