@@ -123,21 +123,31 @@ def student_required(view_function):
     @wraps(view_function)
     def protected_view(*args, **kwargs):
         student_id, role = _get_authenticated_student()
-        login_url = current_app.config.get("STUDENT_LOGIN_URL", "/")
 
         if student_id is None:
-            flash(
-                "Please log in before accessing the student catalogue.",
-                "warning",
-            )
-            return redirect(login_url)
+            function_name = view_function.__name__
+            if function_name == "view_my_reservations":
+                message = "Please log in as a student to view your reservations."
+            elif function_name == "view_currently_borrowed_books":
+                message = "Please log in as a student to view your borrowed books."
+            elif function_name == "view_catalogue":
+                message = "Please log in as a student to browse the book catalogue."
+            elif function_name == "reserve_book":
+                message = "Please log in as a student to reserve this book."
+            elif function_name == "request_borrow_book":
+                message = "Please log in as a student to borrow this book."
+            else:
+                message = "Please log in as a student to access this page."
+
+            flash(message, "warning")
+            return redirect("/auth/login")
 
         if role != "student":
             flash(
                 "Access denied. This function is available to students only.",
                 "danger",
             )
-            return redirect(login_url)
+            return redirect("/auth/login")
 
         return view_function(*args, **kwargs)
 
@@ -156,12 +166,12 @@ def _normalise_status(value):
 
 
 def _book_is_visible_to_students(book):
-    """Return True only for books that may appear in student functions.
+    """Return True only for books that may appear in student catalogue preview.
 
-    Current Book Catalogue records use ``is_visible_to_students`` and
-    ``catalogue_status``. The additional boolean fields support older or
-    imported records without treating the inventory status ``Unavailable``
-    as a catalogue deactivation.
+    A book should stay hidden if the librarian has deactivated it, or if its
+    stored inventory status is explicitly unavailable even when positive copy
+    counts remain. This keeps preview pages accurate without allowing students
+    to borrow or reserve disabled books.
     """
     for field_name in (
         "is_visible_to_students",
@@ -175,13 +185,20 @@ def _book_is_visible_to_students(book):
     catalogue_status = _normalise_status(
         book.get("catalogue_status", "active")
     )
-    return catalogue_status not in {
+    if catalogue_status in {
         "inactive",
         "deactivated",
         "unlisted",
         "hidden",
         "removed",
-    }
+    }:
+        return False
+
+    book_status = _normalise_status(book.get("status"))
+    if book_status == "unavailable":
+        return False
+
+    return True
 
 
 def _student_existing_borrowing_activity(student_id, book_id):
@@ -417,7 +434,6 @@ def _matches_search(book, search_keyword):
 
 # SCRUM-44: Setup module + View book catalogue
 @catalogue_bp.route("/")
-@student_required
 def view_catalogue():
     books = []
     search_keyword = request.args.get("search", "").strip().lower()
@@ -460,7 +476,6 @@ def view_catalogue():
 
 # SCRUM-684: Display all available books
 @catalogue_bp.route("/available")
-@student_required
 def view_available_books():
     books = []
     search_keyword = request.args.get("search", "").strip().lower()
