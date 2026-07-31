@@ -355,13 +355,6 @@ def _normalise_current_borrowing(document):
     if status not in CURRENT_BORROWING_STATUSES:
         return None
 
-    borrowing_period_days = _safe_int(
-        borrowing.get("borrowing_period_days", BORROWING_PERIOD_DAYS),
-        BORROWING_PERIOD_DAYS,
-    )
-    if borrowing_period_days <= 0:
-        borrowing_period_days = BORROWING_PERIOD_DAYS
-
     borrow_date = (
         _parse_date(borrowing.get("borrow_date"))
         or _parse_date(borrowing.get("issued_date"))
@@ -371,6 +364,19 @@ def _normalise_current_borrowing(document):
     )
     due_date = _parse_date(borrowing.get("due_date"))
 
+    borrowing_period_days = _safe_int(
+    borrowing.get("borrowing_period_days"),
+    0,
+)
+
+
+    if borrowing_period_days <= 0:
+        if borrow_date and due_date:
+            borrowing_period_days = (
+                due_date - borrow_date
+            ).days
+        else:
+            borrowing_period_days = 14
     # SCRUM-677 integration: records created by SCRUM-16 already include
     # borrowing_period_days. When the approval module has not stored a due
     # date, derive it from the approval/borrow/request date.
@@ -381,7 +387,25 @@ def _normalise_current_borrowing(document):
     if due_date is not None:
         remaining_days = (due_date - _today()).days
 
-    borrowing["borrowing_id"] = document.id
+    borrowing["id"] = document.id
+    # Load book title if transaction only stores book_id
+    if not borrowing.get("book_title") and borrowing.get("book_id"):
+
+        book_doc = (
+            db.collection(BOOKS_COLLECTION)
+            .document(borrowing["book_id"])
+            .get()
+        )
+
+        if book_doc.exists:
+            book_data = book_doc.to_dict() or {}
+            borrowing["book_title"] = book_data.get(
+                "title",
+                "Untitled Book"
+            )
+        else:
+            borrowing["book_title"] = "Untitled Book"
+
     borrowing["borrow_date_value"] = borrow_date
     borrowing["due_date_value"] = due_date
     borrowing["borrow_date_display"] = (
@@ -1208,7 +1232,7 @@ def view_currently_borrowed_books():
 
     try:
         documents = (
-            db.collection(BORROW_REQUESTS_COLLECTION)
+            db.collection(BORROW_TRANSACTIONS_COLLECTION)
             .where("student_id", "==", student_id)
             .stream()
         )
@@ -1236,5 +1260,5 @@ def view_currently_borrowed_books():
 
     return render_template(
         "catalogue_reservation/currently_borrowed_books.html",
-        borrowed_books=borrowed_books,
+        books=borrowed_books,
     )

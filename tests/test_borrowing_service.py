@@ -227,13 +227,20 @@ def test_due_date_follows_library_policy():
     """
     GIVEN a borrowing request is approved
     WHEN the system generates the due date
-    THEN the due date should be the same day as the borrow date for the dummy flow
+    THEN the due date should be 14 days after the borrow date
     """
+
     approve_borrow_request("REQ001")
 
     transaction = service.get_borrow_transactions()[0]
 
-    assert transaction["due_date"] == transaction["borrow_date"]
+    borrow_date = date.fromisoformat(transaction["borrow_date"])
+
+    expected_due_date = (
+        borrow_date + timedelta(days=14)
+    ).isoformat()
+
+    assert transaction["due_date"] == expected_due_date
 
 
 # ==================================================

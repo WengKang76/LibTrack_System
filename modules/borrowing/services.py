@@ -39,18 +39,21 @@ def get_all_borrow_transactions():
 
 
 # Route for Students
-def get_student_borrowed_books(student_id: str):
+def get_student_borrowed_books(student_id):
 
-    return [
-        transaction
-        for transaction in get_borrow_transactions()
-        if transaction["student_id"] == student_id
-        and transaction["status"]
-        in [
-            "Borrowed",
-            "Return Pending",
-        ]
-    ]
+    books = []
+
+    for transaction in get_borrow_transactions():
+
+        if transaction["student_id"] == student_id:
+
+            book = find_book(transaction["book_id"])
+
+            transaction["book_title"] = book["title"]
+
+            books.append(transaction)
+
+    return books
 
 
 def _normalise_status(value):
@@ -173,7 +176,7 @@ def approve_borrow_request(request_id: str):
         )
 
         borrow_date = date.today()
-        due_date = borrow_date + timedelta(days=0)
+        due_date = borrow_date + timedelta(days=14)
 
         transaction = {
             "request_id": request_id,

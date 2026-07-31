@@ -1,6 +1,6 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
-from modules.authentication.decorators import librarian_required
+from modules.authentication.decorators import librarian_required, student_required
 
 from modules.borrowing.services import (
     approve_borrow_request,
@@ -57,10 +57,12 @@ def approve_request(request_id: str):
 
 
 @borrowing_bp.post("/return/<transaction_id>")
-@librarian_required
+@student_required
 def return_book(transaction_id: str):
     request_book_return(transaction_id)
-    return redirect(url_for("borrowing.student_books"))
+    return redirect(
+    url_for("catalogue_reservation.view_currently_borrowed_books")
+)
 
 
 # Student Page Routes with test user "USR001" Alice,
@@ -86,7 +88,7 @@ def confirm_return(transaction_id: str):
 
 
 @borrowing_bp.post("/renew-book/<transaction_id>")
-@librarian_required
+@student_required
 def renew_book(transaction_id: str):
 
     result = request_book_renewal(transaction_id)
@@ -102,7 +104,9 @@ def renew_book(transaction_id: str):
             "error",
         )
 
-    return redirect(url_for("borrowing.student_books"))
+    return redirect(
+    url_for("catalogue_reservation.view_currently_borrowed_books")
+)
 
 
 @borrowing_bp.post("/approve-renewal/<transaction_id>")
@@ -151,7 +155,7 @@ def reject_renewal(transaction_id: str):
 
 
 @borrowing_bp.post("/cancel-renewal/<transaction_id>")
-@librarian_required
+@student_required
 def cancel_renewal(transaction_id: str):
 
     result = cancel_renewal_request(transaction_id)
@@ -167,7 +171,9 @@ def cancel_renewal(transaction_id: str):
             "error",
         )
 
-    return redirect(url_for("borrowing.student_books"))
+    return redirect(
+    url_for("catalogue_reservation.view_currently_borrowed_books")
+)
 
 
 @borrowing_bp.post("/manual-extend/<transaction_id>")
