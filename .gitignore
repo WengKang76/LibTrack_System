@@ -1,11 +1,16 @@
+# Python cache files
 __pycache__/
 *.py[cod]
 .pytest_cache/
 
+# Virtual environment and environment files
 .env
 .venv/
 venv/
+
+# VS Code settings
 .vscode/
 
+# Firebase service account key
 config/serviceAccountKey.json
 **/serviceAccountKey.json

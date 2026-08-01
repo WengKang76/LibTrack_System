@@ -15,10 +15,7 @@ class FakeCollection:
         self.records = records
 
     def stream(self):
-        return [
-            FakeDoc(doc_id, data)
-            for doc_id, data in self.records.items()
-        ]
+        return [FakeDoc(doc_id, data) for doc_id, data in self.records.items()]
 
 
 class FakeDB:
@@ -30,7 +27,7 @@ class FakeDB:
                 "book_title": "Python Programming",
                 "overdue_days": 5,
                 "penalty_amount": 5.00,
-                "status": "Outstanding"
+                "status": "Outstanding",
             },
             "P002": {
                 "student_id": "S002",
@@ -38,7 +35,7 @@ class FakeDB:
                 "book_title": "Database System",
                 "overdue_days": 3,
                 "penalty_amount": 3.00,
-                "status": "Paid"
+                "status": "Paid",
             },
             "P003": {
                 "student_id": "S003",
@@ -46,8 +43,8 @@ class FakeDB:
                 "book_title": "Software Engineering",
                 "overdue_days": 2,
                 "penalty_amount": 2.00,
-                "status": "Waived"
-            }
+                "status": "Waived",
+            },
         }
 
     def collection(self, collection_name):

@@ -1,6 +1,9 @@
+﻿import pytest
 from unittest.mock import MagicMock
 
 import modules.book_catalogue.routes as book_routes
+
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
 
 
 def build_fake_db(existing_isbn=False):
@@ -9,9 +12,7 @@ def build_fake_db(existing_isbn=False):
     query = collection.where.return_value
     limited_query = query.limit.return_value
     limited_query.stream.return_value = (
-        [MagicMock(id="EXISTING_BOOK")]
-        if existing_isbn
-        else []
+        [MagicMock(id="EXISTING_BOOK")] if existing_isbn else []
     )
 
     book_reference = MagicMock()

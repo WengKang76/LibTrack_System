@@ -2,13 +2,14 @@ import os
 
 from flask import Flask, render_template
 
+from modules.authentication.routes import authentication_bp
 from modules.book_catalogue.routes import book_bp
 from modules.borrowing.routes import borrowing_bp
 from modules.catalogue_reservation.routes import catalogue_bp
 from modules.penalty_transaction.routes import penalty_bp
 from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
-
+from datetime import timedelta
 
 app = Flask(__name__)
 
@@ -18,8 +19,26 @@ app.config["SECRET_KEY"] = os.environ.get(
     "libtrack-local-development-key",
 )
 
+app.config.update(
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_REFRESH_EACH_REQUEST=True,
+    # Password-reset link expires after 15 minutes.
+    PASSWORD_RESET_TOKEN_MAX_AGE=900,
+    # Display the reset link only for local demonstration.
+    SHOW_PASSWORD_RESET_LINK=(
+        os.environ.get(
+            "SHOW_PASSWORD_RESET_LINK",
+            "0",
+        )
+        == "1"
+    ),
+)
+
 
 # Register each integrated module exactly once.
+app.register_blueprint(authentication_bp)
 app.register_blueprint(book_bp)
 app.register_blueprint(student_catalogue_bp)
 app.register_blueprint(user_management_bp)
@@ -31,6 +50,7 @@ app.register_blueprint(borrowing_bp)
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/")
 def role_selection():
@@ -51,8 +71,6 @@ def student_dashboard():
 @app.route("/health")
 def health():
     return {"status": "ok"}
-
-    
 
 
 if __name__ == "__main__":

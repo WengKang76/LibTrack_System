@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="penalty-header">
+    <h1>Penalty, Transactions & Exception Handling</h1>
+    <h2>Waive Outstanding Penalties</h2>
+    <p>Select a penalty record to review the student and book details before waiving it.</p>
+</div>
+
+{% if outstanding_penalties %}
+<div class="penalty-card">
+    <h3>Outstanding Penalty Records</h3>
+    <p>Choose one of the records below to continue with waiver processing.</p>
+
+    <div class="penalty-list">
+        {% for penalty in outstanding_penalties %}
+        <div class="penalty-item">
+            <div class="penalty-item-header">
+                <strong>{{ penalty.penalty_id }}</strong>
+                <span class="penalty-badge">{{ penalty.status }}</span>
+            </div>
+            <p><strong>Student:</strong> {{ penalty.student_id }}</p>
+            <p><strong>Book:</strong> {{ penalty.book_title or 'N/A' }}</p>
+            <p><strong>Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
+            <p><strong>Overdue Days:</strong> {{ penalty.overdue_days or 0 }}</p>
+            <div class="penalty-actions">
+                <a href="{{ url_for('penalty_transaction.librarian_waive_penalty', penalty_id=penalty.penalty_id) }}" class="button">Waive This Penalty</a>
+                {% if penalty.transaction_id %}
+                <a href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=penalty.transaction_id) }}" class="button secondary">Record Lost/Damaged Book</a>
+                {% else %}
+                <span class="button secondary disabled" aria-disabled="true" title="This penalty is not linked to a borrowing transaction">Record Lost/Damaged Book</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="penalty-card">
+    <p>No outstanding penalties are available at the moment.</p>
+</div>
+{% endif %}
+{% endblock %}

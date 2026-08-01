@@ -1,3 +1,4 @@
+# Author: Tan Wei Khye
 """Tests for borrowing service functions."""
 
 from datetime import date, timedelta
@@ -42,7 +43,8 @@ def fake_repository(monkeypatch):
     book = {
         "id": "BOOK001",
         "title": "Database System Concepts",
-        "available_copies": 0,
+        "available_copies": 1,
+        "status": "Available",
     }
 
     def fake_find_request(request_id):
@@ -227,17 +229,16 @@ def test_due_date_follows_library_policy():
     WHEN the system generates the due date
     THEN the due date should be 14 days after the borrow date
     """
+
     approve_borrow_request("REQ001")
 
     transaction = service.get_borrow_transactions()[0]
 
-    from datetime import date, timedelta
+    borrow_date = date.fromisoformat(transaction["borrow_date"])
 
-    expected_due_date = date.fromisoformat(transaction["borrow_date"]) + timedelta(
-        days=14
-    )
+    expected_due_date = (borrow_date + timedelta(days=14)).isoformat()
 
-    assert transaction["due_date"] == expected_due_date.isoformat()
+    assert transaction["due_date"] == expected_due_date
 
 
 # ==================================================

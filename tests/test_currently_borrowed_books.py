@@ -18,6 +18,30 @@ def _approved_request(**overrides):
     return record
 
 
+def _borrow_transaction(
+    transaction_id="BT001",
+    request_id=None,
+    student_id="S001",
+    book_title="Test Book",
+    status="Approved",
+    borrow_date="2026-07-01",
+    due_date="2026-07-15",
+    borrowing_period_days=14,
+):
+
+    return {
+        "id": transaction_id,
+        "request_id": request_id,
+        "student_id": student_id,
+        "book_id": "BOOK001",
+        "book_title": book_title,
+        "status": status,
+        "borrow_date": borrow_date,
+        "due_date": due_date,
+        "borrowing_period_days": borrowing_period_days,
+    }
+
+
 def test_currently_borrowed_books_route_returns_success(app_factory):
     app = app_factory()
     client = app.test_client()
@@ -31,35 +55,35 @@ def test_currently_borrowed_books_route_returns_success(app_factory):
 
 
 def test_only_current_borrowing_statuses_are_displayed(app_factory):
-    borrow_requests = [
-        _approved_request(
-            request_id="BR001",
+    borrow_transactions = [
+        _borrow_transaction(
+            transaction_id="BR001",
             book_title="Approved Book",
             status="Approved",
         ),
-        _approved_request(
-            request_id="BR002",
+        _borrow_transaction(
+            transaction_id="BR002",
             book_title="Issued Book",
             status="Issued",
         ),
-        _approved_request(
-            request_id="BR003",
+        _borrow_transaction(
+            transaction_id="BR003",
             book_title="Pending Book",
             status="Pending",
         ),
-        _approved_request(
-            request_id="BR004",
+        _borrow_transaction(
+            transaction_id="BR004",
             book_title="Returned Book",
             status="Returned",
         ),
-        _approved_request(
-            request_id="BR005",
+        _borrow_transaction(
+            transaction_id="BR005",
             book_title="Rejected Book",
             status="Rejected",
         ),
     ]
 
-    app = app_factory(borrow_requests=borrow_requests)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -79,14 +103,15 @@ def test_remaining_borrowing_period_is_displayed(app_factory, monkeypatch):
         "_today",
         lambda: date(2026, 7, 10),
     )
-    borrow_requests = [
-        _approved_request(
+    borrow_transactions = [
+        _borrow_transaction(
             borrow_date="2026-07-01",
             due_date="2026-07-15",
+            borrowing_period_days=14,
         )
     ]
 
-    app = app_factory(borrow_requests=borrow_requests)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -108,16 +133,15 @@ def test_due_date_is_derived_from_scrum_16_request_data(
         "_today",
         lambda: date(2026, 7, 10),
     )
-    borrow_requests = [
-        _approved_request(
-            request_date="2026-07-01 09:30:00",
+    borrow_transactions = [
+        _borrow_transaction(
+            borrow_date="2026-07-01",
+            due_date="2026-07-15",
             borrowing_period_days=14,
-            due_date=None,
-            borrow_date=None,
         )
     ]
 
-    app = app_factory(borrow_requests=borrow_requests)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -136,11 +160,16 @@ def test_due_today_message_is_displayed(app_factory, monkeypatch):
         "_today",
         lambda: date(2026, 7, 15),
     )
+
     app = app_factory(
-        borrow_requests=[
-            _approved_request(due_date="2026-07-15")
+        borrow_transactions=[
+            _borrow_transaction(
+                due_date="2026-07-15",
+                borrow_date="2026-07-01",
+            )
         ]
     )
+
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -157,11 +186,16 @@ def test_overdue_borrowing_period_is_displayed(app_factory, monkeypatch):
         "_today",
         lambda: date(2026, 7, 18),
     )
+
     app = app_factory(
-        borrow_requests=[
-            _approved_request(due_date="2026-07-15")
+        borrow_transactions=[
+            _borrow_transaction(
+                due_date="2026-07-15",
+                borrow_date="2026-07-01",
+            )
         ]
     )
+
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -173,20 +207,20 @@ def test_overdue_borrowing_period_is_displayed(app_factory, monkeypatch):
 
 
 def test_other_students_borrowed_books_are_not_displayed(app_factory):
-    borrow_requests = [
-        _approved_request(
+    borrow_transactions = [
+        _borrow_transaction(
             request_id="BR001",
             student_id="S001",
             book_title="Current Student Book",
         ),
-        _approved_request(
+        _borrow_transaction(
             request_id="BR002",
             student_id="S999",
             book_title="Another Student Book",
         ),
     ]
 
-    app = app_factory(borrow_requests=borrow_requests)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")
@@ -203,20 +237,20 @@ def test_books_are_sorted_by_nearest_due_date(app_factory, monkeypatch):
         "_today",
         lambda: date(2026, 7, 10),
     )
-    borrow_requests = [
-        _approved_request(
+    borrow_transactions = [
+        _borrow_transaction(
             request_id="BR001",
             book_title="Later Due Book",
             due_date="2026-07-25",
         ),
-        _approved_request(
+        _borrow_transaction(
             request_id="BR002",
             book_title="Earlier Due Book",
             due_date="2026-07-12",
         ),
     ]
 
-    app = app_factory(borrow_requests=borrow_requests)
+    app = app_factory(borrow_transactions=borrow_transactions)
     client = app.test_client()
 
     response = client.get("/catalogue/my-borrowed-books")

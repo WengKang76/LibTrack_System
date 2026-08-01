@@ -1,31 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}
-Dashboard | LibTrack
-{% endblock %}
+{% block title %}Dashboard | LibTrack{% endblock %}
 
 {% block content %}
-
 <section class="dashboard-hero">
     <div class="dashboard-hero-content">
         <p class="dashboard-label">Library Management System</p>
-
         <h1>Welcome to LibTrack</h1>
-
-        <p class="dashboard-description">
-            Manage books, browse the library catalogue, submit borrowing
-            requests, reserve unavailable books, and monitor library
-            transactions from one central platform.
-        </p>
+        <p class="dashboard-description">Access the library services available for your account.</p>
 
         <div class="dashboard-actions">
-            <a href="/catalogue/" class="primary-button">
-                Browse Book Catalogue
-            </a>
-
-            <a href="/borrowing/" class="secondary-button">
-                Borrowing &amp; Returning
-            </a>
+            {% if not session.get('user_id') %}
+                <a href="/auth/login" class="primary-button">Login</a>
+                <a href="/auth/register" class="secondary-button">Register Student Account</a>
+            {% elif session.get('role', '') | lower == 'librarian' %}
+                <a href="/books/" class="primary-button">Manage Book Catalogue</a>
+                <a href="/borrowing/" class="secondary-button">Borrowing &amp; Returning</a>
+            {% else %}
+                <a href="/catalogue/" class="primary-button">Browse Book Catalogue</a>
+                <a href="/catalogue/my-borrowed-books" class="secondary-button">My Borrowed Books</a>
+            {% endif %}
         </div>
     </div>
 </section>
@@ -37,143 +31,49 @@ Dashboard | LibTrack
     </div>
 
     <div class="dashboard-card-grid">
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">📚</div>
-
-            <h3>Book Catalogue Management</h3>
-
-            <p>
-                Add, update, remove, and manage library books and
-                individual physical copies.
-            </p>
-
-            <a href="/books/add">
-                Manage Book Catalogue
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">🔎</div>
-
-            <h3>Student Book Catalogue</h3>
-
-            <p>
-                View books and availability information through the
-                student catalogue.
-            </p>
-
-            <a href="/student-catalogue/">
-                View Student Catalogue
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">📖</div>
-
-            <h3>Catalogue Browsing</h3>
-
-            <p>
-                Browse the complete collection of books registered in
-                the LibTrack library.
-            </p>
-
-            <a href="/catalogue/">
-                Open Catalogue
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">✅</div>
-
-            <h3>Available Books</h3>
-
-            <p>
-                View books that currently have at least one available
-                copy for borrowing.
-            </p>
-
-            <a href="/catalogue/available">
-                View Available Books
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">🔖</div>
-
-            <h3>My Reservations</h3>
-
-            <p>
-                Review active and cancelled reservations and cancel an
-                active reservation when necessary.
-            </p>
-
-            <a href="/catalogue/my-reservations">
-                View Reservations
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">📘</div>
-
-            <h3>My Borrowed Books</h3>
-
-            <p>
-                View currently borrowed books, due dates, remaining
-                borrowing periods, and overdue information.
-            </p>
-
-            <a href="/catalogue/my-borrowed-books">
-                View Borrowed Books
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">🔄</div>
-
-            <h3>Borrowing and Returning</h3>
-
-            <p>
-                Manage borrowing requests, returns, extension requests,
-                and borrowing transactions.
-            </p>
-
-            <a href="/borrowing/">
-                Open Borrowing and Returning
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">👥</div>
-
-            <h3>User Management</h3>
-
-            <p>
-                Manage student accounts, librarian accounts, user roles,
-                and account statuses.
-            </p>
-
-            <a href="/users/">
-                Manage Users
-            </a>
-        </article>
-
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">💳</div>
-
-            <h3>Penalty and Transactions</h3>
-
-            <p>
-                Review overdue books, outstanding penalties, payment
-                records, and book-return exceptions.
-            </p>
-
-            <a href="/penalty/librarian/overdue">
-                View Penalty Module
-            </a>
-        </article>
-
+        {% if session.get('role', '') | lower == 'librarian' %}
+            <article class="dashboard-card">
+                <h3>Book Catalogue Management</h3>
+                <p>Add, update, remove, and manage books and physical copies.</p>
+                <a href="/books/">Manage Book Catalogue</a>
+            </article>
+            <article class="dashboard-card">
+                <h3>User Management</h3>
+                <p>Manage student accounts, roles, and account statuses.</p>
+                <a href="/users/">Manage Users</a>
+            </article>
+            <article class="dashboard-card">
+                <h3>Borrowing &amp; Returning</h3>
+                <p>Manage borrowing requests, renewals, returns, and transactions.</p>
+                <a href="/borrowing/">Open Borrowing &amp; Returning</a>
+            </article>
+            <article class="dashboard-card">
+                <h3>Penalty &amp; Transactions</h3>
+                <p>Manage overdue books, penalties, payments, and exceptions.</p>
+                <a href="/penalty/librarian">Open Penalty Module</a>
+            </article>
+        {% else %}
+            <article class="dashboard-card">
+                <h3>Browse Book Catalogue</h3>
+                <p>Browse available books and view their details.</p>
+                <a href="/catalogue/">Browse Books</a>
+            </article>
+            <article class="dashboard-card">
+                <h3>My Reservations</h3>
+                <p>Review and manage your own book reservations.</p>
+                <a href="/catalogue/my-reservations">View Reservations</a>
+            </article>
+            <article class="dashboard-card">
+                <h3>My Borrowed Books</h3>
+                <p>View your current loans, due dates, and overdue information.</p>
+                <a href="/catalogue/my-borrowed-books">View Borrowed Books</a>
+            </article>
+            <article class="dashboard-card">
+                <h3>My Penalties</h3>
+                <p>Review your penalty records and payment options.</p>
+                <a href="/penalty/student">View Penalties</a>
+            </article>
+        {% endif %}
     </div>
 </section>
-
 {% endblock %}

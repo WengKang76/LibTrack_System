@@ -35,10 +35,7 @@ class FakeCollection:
         return FakeDocumentRef(self.records, doc_id)
 
     def stream(self):
-        return [
-            FakeDoc(doc_id, data)
-            for doc_id, data in self.records.items()
-        ]
+        return [FakeDoc(doc_id, data) for doc_id, data in self.records.items()]
 
 
 class FakeDB:
@@ -49,15 +46,15 @@ class FakeDB:
                 "book_id": "B001",
                 "book_title": "Python Programming",
                 "return_date": "2026-07-15",
-                "status": "Return Requested"
+                "status": "Return Requested",
             },
             "RT002": {
                 "student_id": "S002",
                 "book_id": "B002",
                 "book_title": "Database System",
                 "return_date": "2026-07-15",
-                "status": "Returned"
-            }
+                "status": "Returned",
+            },
         }
 
         self.book_exceptions = {}
@@ -76,21 +73,24 @@ class FakeDB:
 # SCRUM-707: Record Lost or Damaged Book Exception
 # =========================================================
 
+
 def test_scrum_707_record_damaged_book_exception_success(monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
     monkeypatch.setattr(penalty_routes, "DEMO_BOOK_EXCEPTIONS", {})
 
     success, message = penalty_routes.record_lost_damaged_book_exception(
-        "RT001",
-        "Damaged",
-        "Several pages are torn.",
-        "Librarian"
+        "RT001", "Damaged", "Several pages are torn.", "Librarian"
     )
 
     assert success is True
-    assert fake_db.borrow_transactions["RT001"]["status"] == "Damaged Exception Recorded"
-    assert fake_db.borrow_transactions["RT001"]["book_exception_status"] == "Exception Recorded"
+    assert (
+        fake_db.borrow_transactions["RT001"]["status"] == "Damaged Exception Recorded"
+    )
+    assert (
+        fake_db.borrow_transactions["RT001"]["book_exception_status"]
+        == "Exception Recorded"
+    )
     assert fake_db.borrow_transactions["RT001"]["exception_type"] == "Damaged"
 
     created_exceptions = list(fake_db.book_exceptions.values())
@@ -111,10 +111,7 @@ def test_scrum_707_record_lost_book_exception_success(monkeypatch):
     monkeypatch.setattr(penalty_routes, "DEMO_BOOK_EXCEPTIONS", {})
 
     success, message = penalty_routes.record_lost_damaged_book_exception(
-        "RT002",
-        "Lost",
-        "Student reported that the book was lost.",
-        "Librarian"
+        "RT002", "Lost", "Student reported that the book was lost.", "Librarian"
     )
 
     assert success is True
@@ -126,7 +123,10 @@ def test_scrum_707_record_lost_book_exception_success(monkeypatch):
     assert len(created_exceptions) == 1
     assert created_exceptions[0]["student_id"] == "S002"
     assert created_exceptions[0]["exception_type"] == "Lost"
-    assert created_exceptions[0]["exception_description"] == "Student reported that the book was lost."
+    assert (
+        created_exceptions[0]["exception_description"]
+        == "Student reported that the book was lost."
+    )
 
 
 def test_scrum_707_reject_invalid_exception_type(monkeypatch):
@@ -135,10 +135,7 @@ def test_scrum_707_reject_invalid_exception_type(monkeypatch):
     monkeypatch.setattr(penalty_routes, "DEMO_BOOK_EXCEPTIONS", {})
 
     success, message = penalty_routes.record_lost_damaged_book_exception(
-        "RT001",
-        "Missing",
-        "Invalid exception type.",
-        "Librarian"
+        "RT001", "Missing", "Invalid exception type.", "Librarian"
     )
 
     assert success is False
@@ -152,10 +149,7 @@ def test_scrum_707_reject_empty_exception_description(monkeypatch):
     monkeypatch.setattr(penalty_routes, "DEMO_BOOK_EXCEPTIONS", {})
 
     success, message = penalty_routes.record_lost_damaged_book_exception(
-        "RT001",
-        "Damaged",
-        "",
-        "Librarian"
+        "RT001", "Damaged", "", "Librarian"
     )
 
     assert success is False
@@ -173,17 +167,14 @@ def test_scrum_707_reject_duplicate_book_exception(monkeypatch):
         "book_title": "Python Programming",
         "exception_type": "Damaged",
         "exception_description": "Existing damaged book record.",
-        "exception_status": "Exception Recorded"
+        "exception_status": "Exception Recorded",
     }
 
     monkeypatch.setattr(penalty_routes, "db", fake_db)
     monkeypatch.setattr(penalty_routes, "DEMO_BOOK_EXCEPTIONS", {})
 
     success, message = penalty_routes.record_lost_damaged_book_exception(
-        "RT001",
-        "Damaged",
-        "Several pages are torn.",
-        "Librarian"
+        "RT001", "Damaged", "Several pages are torn.", "Librarian"
     )
 
     assert success is False
@@ -201,20 +192,69 @@ def test_scrum_707_book_exception_page_loads(client, monkeypatch):
     assert response.status_code == 200
 
 
+def test_book_exception_page_resolves_transaction_from_penalty_id(client, monkeypatch):
+    transaction = {
+        "transaction_id": "TX001",
+        "student_id": "S001",
+        "book_id": "B001",
+        "book_title": "Python Programming",
+        "status": "Borrowed",
+    }
+
+    monkeypatch.setattr(
+        penalty_routes,
+        "get_return_transaction_by_id",
+        lambda record_id: transaction.copy() if record_id == "TX001" else None,
+    )
+    monkeypatch.setattr(
+        penalty_routes,
+        "get_penalty_by_id",
+        lambda penalty_id: (
+            {"transaction_id": "TX001"}
+            if penalty_id == "3eqp5U9OBbtCvVGiTL1x"
+            else None
+        ),
+    )
+
+    response = client.get("/penalty/librarian/book-exception/3eqp5U9OBbtCvVGiTL1x")
+
+    assert response.status_code == 200
+    assert b"TX001" in response.data
+    assert b"B001" in response.data
+
+
+def test_demo_penalty_opens_its_demo_borrow_transaction(client, monkeypatch):
+    monkeypatch.setattr(penalty_routes, "db", None)
+
+    response = client.get("/penalty/librarian/book-exception/P001")
+
+    assert response.status_code == 200
+    assert b"T001" in response.data
+    assert b"B001" in response.data
+
+
 def test_scrum_707_book_exception_route_records_exception(client, monkeypatch):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
     monkeypatch.setattr(penalty_routes, "DEMO_BOOK_EXCEPTIONS", {})
 
-    response = client.post("/penalty/librarian/book-exception/RT001", data={
-        "exception_type": "Damaged",
-        "exception_description": "Several pages are torn.",
-        "recorded_by": "Librarian"
-    })
+    response = client.post(
+        "/penalty/librarian/book-exception/RT001",
+        data={
+            "exception_type": "Damaged",
+            "exception_description": "Several pages are torn.",
+            "recorded_by": "Librarian",
+        },
+    )
 
     assert response.status_code == 302
-    assert fake_db.borrow_transactions["RT001"]["status"] == "Damaged Exception Recorded"
-    assert fake_db.borrow_transactions["RT001"]["book_exception_status"] == "Exception Recorded"
+    assert (
+        fake_db.borrow_transactions["RT001"]["status"] == "Damaged Exception Recorded"
+    )
+    assert (
+        fake_db.borrow_transactions["RT001"]["book_exception_status"]
+        == "Exception Recorded"
+    )
     assert fake_db.borrow_transactions["RT001"]["exception_type"] == "Damaged"
 
     created_exceptions = list(fake_db.book_exceptions.values())

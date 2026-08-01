@@ -1,8 +1,17 @@
+﻿import pytest
+
 import modules.book_catalogue.routes as book_routes
+
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
 
 
 class FakeDocumentSnapshot:
-    def __init__(self, document_id, data, reference=None):
+    def __init__(
+        self,
+        document_id,
+        data,
+        reference=None,
+    ):
         self.id = document_id
         self._data = data
         self.exists = data is not None
@@ -11,41 +20,71 @@ class FakeDocumentSnapshot:
     def to_dict(self):
         if self._data is None:
             return None
+
         return dict(self._data)
 
 
 class FakeCopyDocumentReference:
-    def __init__(self, database, book_id, copy_id):
+    def __init__(
+        self,
+        database,
+        book_id,
+        copy_id,
+    ):
         self.database = database
         self.book_id = book_id
         self.copy_id = copy_id
         self.id = copy_id
 
     def delete(self):
-        self.database.copies.get(self.book_id, {}).pop(self.copy_id, None)
+        self.database.copies.get(
+            self.book_id,
+            {},
+        ).pop(
+            self.copy_id,
+            None,
+        )
 
 
 class FakeCopiesCollection:
-    def __init__(self, database, book_id):
+    def __init__(
+        self,
+        database,
+        book_id,
+    ):
         self.database = database
         self.book_id = book_id
 
     def stream(self):
         results = []
-        for copy_id, data in self.database.copies.get(self.book_id, {}).items():
+
+        for copy_id, data in self.database.copies.get(
+            self.book_id,
+            {},
+        ).items():
             reference = FakeCopyDocumentReference(
                 self.database,
                 self.book_id,
                 copy_id,
             )
+
             results.append(
-                FakeDocumentSnapshot(copy_id, data, reference=reference)
+                FakeDocumentSnapshot(
+                    copy_id,
+                    data,
+                    reference=reference,
+                )
             )
+
         return results
 
 
 class FakeBookDocumentReference:
-    def __init__(self, database, book_id):
+    def __init__(
+        self,
+        database,
+        book_id,
+    ):
         self.database = database
         self.book_id = book_id
         self.id = book_id
@@ -58,11 +97,22 @@ class FakeBookDocumentReference:
 
     def collection(self, collection_name):
         assert collection_name == "copies"
-        return FakeCopiesCollection(self.database, self.book_id)
+
+        return FakeCopiesCollection(
+            self.database,
+            self.book_id,
+        )
 
     def delete(self):
-        self.database.books.pop(self.book_id, None)
-        self.database.copies.pop(self.book_id, None)
+        self.database.books.pop(
+            self.book_id,
+            None,
+        )
+
+        self.database.copies.pop(
+            self.book_id,
+            None,
+        )
 
 
 class FakeCollection:
@@ -70,11 +120,17 @@ class FakeCollection:
         self.database = database
 
     def document(self, document_id):
-        return FakeBookDocumentReference(self.database, document_id)
+        return FakeBookDocumentReference(
+            self.database,
+            document_id,
+        )
 
     def stream(self):
         return [
-            FakeDocumentSnapshot(document_id, data)
+            FakeDocumentSnapshot(
+                document_id,
+                data,
+            )
             for document_id, data in self.database.books.items()
         ]
 
@@ -90,6 +146,7 @@ class FakeDatabase:
                 "is_visible_to_students": True,
             }
         }
+
         self.copies = {
             "B001": {
                 "COPY-B001-001": {
@@ -98,19 +155,28 @@ class FakeDatabase:
                 },
                 "COPY-B001-002": {
                     "copy_id": "COPY-B001-002",
-                    "status": "Borrowed",
+                    "status": "Available",
                 },
             }
         }
 
     def collection(self, collection_name):
         assert collection_name == "books"
+
         return FakeCollection(self)
 
 
-def test_scrum_704_confirmation_page_loads(client, monkeypatch):
+def test_scrum_704_confirmation_page_loads(
+    client,
+    monkeypatch,
+):
     fake_database = FakeDatabase()
-    monkeypatch.setattr(book_routes, "db", fake_database)
+
+    monkeypatch.setattr(
+        book_routes,
+        "db",
+        fake_database,
+    )
 
     response = client.get("/books/delete/B001")
 
@@ -119,9 +185,17 @@ def test_scrum_704_confirmation_page_loads(client, monkeypatch):
     assert "B001" in fake_database.books
 
 
-def test_scrum_704_delete_book_and_all_copies(client, monkeypatch):
+def test_scrum_704_delete_book_and_all_copies(
+    client,
+    monkeypatch,
+):
     fake_database = FakeDatabase()
-    monkeypatch.setattr(book_routes, "db", fake_database)
+
+    monkeypatch.setattr(
+        book_routes,
+        "db",
+        fake_database,
+    )
 
     response = client.post("/books/delete/B001")
 
@@ -130,19 +204,36 @@ def test_scrum_704_delete_book_and_all_copies(client, monkeypatch):
     assert "B001" not in fake_database.copies
 
 
-def test_scrum_704_returns_to_book_list(client, monkeypatch):
+def test_scrum_704_returns_to_book_list(
+    client,
+    monkeypatch,
+):
     fake_database = FakeDatabase()
-    monkeypatch.setattr(book_routes, "db", fake_database)
+
+    monkeypatch.setattr(
+        book_routes,
+        "db",
+        fake_database,
+    )
 
     response = client.post("/books/delete/B001")
 
     assert response.status_code == 302
+
     assert response.headers["Location"].endswith("/books/")
 
 
-def test_scrum_704_success_message_displayed(client, monkeypatch):
+def test_scrum_704_success_message_displayed(
+    client,
+    monkeypatch,
+):
     fake_database = FakeDatabase()
-    monkeypatch.setattr(book_routes, "db", fake_database)
+
+    monkeypatch.setattr(
+        book_routes,
+        "db",
+        fake_database,
+    )
 
     response = client.post(
         "/books/delete/B001",
@@ -150,12 +241,21 @@ def test_scrum_704_success_message_displayed(client, monkeypatch):
     )
 
     assert response.status_code == 200
+
     assert b"Book record deleted successfully." in response.data
 
 
-def test_scrum_704_unknown_book_returns_404(client, monkeypatch):
+def test_scrum_704_unknown_book_returns_404(
+    client,
+    monkeypatch,
+):
     fake_database = FakeDatabase()
-    monkeypatch.setattr(book_routes, "db", fake_database)
+
+    monkeypatch.setattr(
+        book_routes,
+        "db",
+        fake_database,
+    )
 
     response = client.get("/books/delete/UNKNOWN")
 

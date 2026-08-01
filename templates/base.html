@@ -1,37 +1,96 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>LibTrack System</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{% block title %}LibTrack System{% endblock %}</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='style.css'
+        ) }}"
+    >
 
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <header class="topbar">
-        <div class="logo">📚 LibTrack</div>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">📚</div>
+                <div>
+                    <h2>LibTrack</h2>
+                    <p>Library Management System</p>
+                </div>
+            </div>
 
-        <nav>
-            <a href="/">Home</a>
-            <a href="/librarian">Librarian</a>
-            <a href="/student">Student</a>
-        </nav>
-    </header>
+            <nav class="sidebar-nav">
+                <a href="/">Dashboard</a>
 
-    <main class="page-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if session.get('user_id') %}
+                    <div class="sidebar-user">
+                        <strong>{{ session.get('full_name', 'User') }}</strong>
+                        <span>{{ session.get('role', '') | title }}</span>
+                    </div>
+
+                    <form method="POST" action="/auth/logout" class="sidebar-logout-form">
+                        <button type="submit" class="sidebar-logout-button">Logout</button>
+                    </form>
+
+                    {% if session.get('role', '') | lower == 'librarian' %}
+                        <a href="/books/">Book Catalogue Management</a>
+                        <a href="/users/">User Management</a>
+                        <a href="/borrowing/">Borrowing &amp; Returning</a>
+                        <a href="/penalty/librarian">Penalty &amp; Transactions</a>
+                    {% else %}
+                        <a href="/catalogue/">Browse &amp; Reserve Books</a>
+                        <a href="/catalogue/my-reservations">My Reservations</a>
+                        <a href="/catalogue/my-borrowed-books">My Borrowed Books</a>
+                        <a href="/penalty/student">Penalty &amp; Transactions</a>
+                    {% endif %}
+                {% else %}
+                    <a href="/auth/login">Login</a>
+                    <a href="/auth/register">Student Registration</a>
+                    <a href="/student/catalogue/">Student Book Catalogue</a>
+                    <a href="/catalogue/">Catalogue Browsing</a>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <main class="page-container">
+
+        {% with messages =
+            get_flashed_messages(
+                with_categories=true
+            )
+        %}
+
             {% if messages %}
+
                 {% for category, message in messages %}
+
                     <div class="alert {{ category }}">
                         {{ message }}
                     </div>
+
                 {% endfor %}
+
             {% endif %}
+
         {% endwith %}
 
-        {% block content %}{% endblock %}
-    </main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 </body>
+
 </html>

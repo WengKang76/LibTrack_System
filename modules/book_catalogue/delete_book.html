@@ -3,7 +3,10 @@
 {% block extra_css %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/book_catalogue.css') }}"
+    href="{{ url_for(
+        'static',
+        filename='css/book_catalogue.css'
+    ) }}"
 >
 {% endblock %}
 
@@ -13,46 +16,101 @@
 
     <h1>Delete Book Record</h1>
 
-    <p>
-        Are you sure you want to delete this book?
-    </p>
+    {% if error %}
+        <div class="error-message">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if unsafe_copy %}
+        <div class="warning-message">
+
+            <strong>
+                Deletion unavailable
+            </strong>
+
+            <p>
+                This book cannot be deleted because
+                {{
+                    unsafe_copy.get(
+                        "copy_id",
+                        unsafe_copy.get(
+                            "document_id",
+                            "a physical copy"
+                        )
+                    )
+                }}
+                is currently
+                {{
+                    unsafe_copy.get(
+                        "status",
+                        "in use"
+                    )
+                }}.
+            </p>
+
+            <p>
+                Complete or cancel the active transaction
+                before deleting this book.
+            </p>
+
+        </div>
+    {% else %}
+        <p>
+            Are you sure you want to permanently delete
+            this book and all its physical-copy records?
+        </p>
+    {% endif %}
 
     <div class="book-summary">
+
         <p>
             <strong>Title:</strong>
-            {{ book.get('title', '-') }}
+            {{ book.get("title", "-") }}
         </p>
 
         <p>
             <strong>Author:</strong>
-            {{ book.get('author', '-') }}
+            {{ book.get("author", "-") }}
         </p>
 
         <p>
             <strong>ISBN:</strong>
-            {{ book.get('isbn', '-') }}
+            {{ book.get("isbn", "-") }}
         </p>
+
     </div>
 
     <div class="form-actions">
 
-        <form
-            method="POST"
-            action="{{ url_for(
-                'book_catalogue.delete_book',
-                book_id=book.book_id
-            ) }}"
-        >
-            <button
-                type="submit"
-                class="button button-danger"
+        {% if not unsafe_copy %}
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'book_catalogue.delete_book',
+                    book_id=book.get('book_id')
+                ) }}"
+                onsubmit="
+                    return confirm(
+                        'Are you sure you want to permanently delete this book record?'
+                    );
+                "
             >
-                Delete Book
-            </button>
-        </form>
+                <button
+                    type="submit"
+                    class="button button-danger"
+                >
+                    Delete Book
+                </button>
+            </form>
+
+        {% endif %}
 
         <a
-            href="{{ url_for('book_catalogue.manage_books') }}"
+            href="{{ url_for(
+                'book_catalogue.manage_books'
+            ) }}"
             class="button button-secondary"
         >
             Cancel
