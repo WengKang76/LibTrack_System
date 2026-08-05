@@ -42,6 +42,7 @@ setattr(config, "firebase_config", fake_firebase_config)
 from modules.authentication.routes import authentication_bp
 from modules.book_catalogue.routes import book_bp
 from modules.catalogue_reservation import routes as catalogue_routes
+from modules.dashboard_report.routes import dashboard_bp
 from modules.penalty_transaction.routes import penalty_bp
 from modules.user_management.routes import user_management_bp
 import app as main_app
@@ -72,10 +73,9 @@ def app():
     application.register_blueprint(penalty_bp)
     application.register_blueprint(book_bp)
     application.register_blueprint(user_management_bp)
+    application.register_blueprint(dashboard_bp)
 
     application.add_url_rule("/", view_func=main_app.home)
-    application.add_url_rule("/librarian", view_func=main_app.librarian_dashboard)
-    application.add_url_rule("/student", view_func=main_app.student_dashboard)
 
     return application
 
