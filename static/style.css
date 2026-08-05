@@ -551,3 +551,42 @@ body {
         grid-template-columns: 1fr;
     }
 }
+/* Sprint 3 dashboard summary improvements. */
+.student-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-link:hover,
+.stat-link:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+    outline: none;
+}
+
+.stat-pill.needs-attention {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.stat-pill.needs-attention strong {
+    color: #b45309;
+}
+
+@media (max-width: 900px) {
+    .student-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .student-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,43 @@
+"""Firestore read operations for the dashboard module."""
+
+from config.firebase_config import (
+    COLLECTION_BORROW_REQUESTS,
+    COLLECTION_BORROW_TRANSACTIONS,
+    COLLECTION_PENALTIES,
+    COLLECTION_RESERVATIONS,
+    db,
+)
+
+
+def _student_records(collection_name, student_id):
+    """Return records owned by one student from a Firestore collection."""
+    documents = (
+        db.collection(collection_name)
+        .where("student_id", "==", student_id)
+        .stream()
+    )
+
+    records = []
+
+    for document in documents:
+        record = document.to_dict() or {}
+        record.setdefault("document_id", document.id)
+        records.append(record)
+
+    return records
+
+
+def get_student_borrow_requests(student_id):
+    return _student_records(COLLECTION_BORROW_REQUESTS, student_id)
+
+
+def get_student_borrow_transactions(student_id):
+    return _student_records(COLLECTION_BORROW_TRANSACTIONS, student_id)
+
+
+def get_student_reservations(student_id):
+    return _student_records(COLLECTION_RESERVATIONS, student_id)
+
+
+def get_student_penalties(student_id):
+    return _student_records(COLLECTION_PENALTIES, student_id)

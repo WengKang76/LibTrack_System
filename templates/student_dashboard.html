@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Student Dashboard | LibTrack{% endblock %}
+
 {% block content %}
 
 <section class="student-dashboard">
@@ -7,7 +9,7 @@
         <div>
             <p class="eyebrow">Student Portal</p>
             <h1>Welcome back, {{ session.get('full_name', 'Student') }}!</h1>
-            <p>Browse books, track your reservations and loans, and manage payments from one simple dashboard.</p>
+            <p>Review your current borrowing, reservations, overdue items, and penalties from one dashboard.</p>
         </div>
 
         <div class="hero-badges">
@@ -22,53 +24,83 @@
                 <span>📅</span>
                 <div>
                     <strong>Reservations</strong>
-                    <small>Book your next read</small>
+                    <small>Monitor reservation progress</small>
                 </div>
             </div>
             <div class="hero-badge">
                 <span>💳</span>
                 <div>
-                    <strong>Payments</strong>
-                    <small>Settle penalties quickly</small>
+                    <strong>Penalties</strong>
+                    <small>Review outstanding payments</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="stats-row">
-        <div class="stat-pill">
-            <strong>3</strong>
-            <span>Active services</span>
+    <section aria-labelledby="student-summary-heading">
+        <div class="section-heading">
+            <h2 id="student-summary-heading">My Current Library Summary</h2>
+            <p>
+                {% if dashboard_data_available %}
+                    Values are calculated from your latest library records.
+                {% else %}
+                    Temporary values are shown because the latest records could not be loaded.
+                {% endif %}
+            </p>
         </div>
-        <div class="stat-pill">
-            <strong>24/7</strong>
-            <span>Library access</span>
+
+        <div class="stats-row student-summary-grid">
+            <a class="stat-pill stat-link" href="/catalogue/my-borrowed-books">
+                <strong id="active-borrowings-count">{{ summary.active_borrowings }}</strong>
+                <span>Active borrowings</span>
+            </a>
+
+            <a class="stat-pill stat-link" href="/catalogue/my-reservations">
+                <strong id="active-reservations-count">{{ summary.active_reservations }}</strong>
+                <span>Active reservations</span>
+            </a>
+
+            <a class="stat-pill stat-link" href="/catalogue/">
+                <strong id="pending-borrow-requests-count">{{ summary.pending_borrow_requests }}</strong>
+                <span>Pending borrow requests</span>
+            </a>
+
+            <a class="stat-pill stat-link {% if summary.overdue_items > 0 %}needs-attention{% endif %}" href="/catalogue/my-borrowed-books">
+                <strong id="overdue-items-count">{{ summary.overdue_items }}</strong>
+                <span>Overdue items</span>
+            </a>
+
+            <a class="stat-pill stat-link {% if summary.outstanding_penalties > 0 %}needs-attention{% endif %}" href="/penalty/student">
+                <strong id="outstanding-penalties-count">{{ summary.outstanding_penalties }}</strong>
+                <span>Outstanding penalties</span>
+            </a>
+
+            <a class="stat-pill stat-link {% if summary.outstanding_penalty_amount > 0 %}needs-attention{% endif %}" href="/penalty/student">
+                <strong id="outstanding-penalty-amount">RM {{ '%.2f'|format(summary.outstanding_penalty_amount) }}</strong>
+                <span>Outstanding amount</span>
+            </a>
         </div>
-        <div class="stat-pill">
-            <strong>Fast</strong>
-            <span>Penalty payment</span>
-        </div>
-    </div>
+    </section>
 
     <div class="card-grid">
         <div class="dashboard-card featured-card">
             <div class="card-icon">📚</div>
             <h3>Book Catalogue</h3>
-            <p>Browse available books and discover new titles in the library.</p>
+            <p>Browse visible books and choose the available borrowing or reservation action.</p>
             <a href="/student/catalogue/" class="button">Explore</a>
         </div>
 
         <div class="dashboard-card">
             <div class="card-icon">📝</div>
             <h3>Reservations</h3>
-            <p>View your reservations and keep track of upcoming picks.</p>
-            <a href="/catalogue/" class="button">Open</a>
+            <p>View your reservation statuses and continue approved reservations into borrowing.</p>
+            <a href="/catalogue/my-reservations" class="button">Open</a>
         </div>
 
         <div class="dashboard-card">
             <div class="card-icon">💰</div>
             <h3>My Penalty Record</h3>
-            <p>Review outstanding penalty records and choose cash or credit card payment.</p>
+            <p>Review outstanding penalty records and available payment methods.</p>
             <a href="/penalty/student" class="button">Manage</a>
         </div>
 
