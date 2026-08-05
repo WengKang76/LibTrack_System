@@ -97,7 +97,7 @@ def _create_dummy_overdue_case(index, today, now):
     }
 
 
-def seed_penalty_test_data(count=2):
+def seed_penalty_test_data(count=3):
     today = date.today()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -116,4 +116,4 @@ def seed_penalty_test_data(count=2):
 
 
 if __name__ == "__main__":
-    seed_penalty_test_data(count=2)
+    seed_penalty_test_data(count=3)
