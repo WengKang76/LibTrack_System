@@ -271,12 +271,29 @@ def test_registered_email_generates_reset_link(
     )
 
     assert response.status_code == 200
+
     assert (
         b"/auth/reset-password/"
         in response.data
     )
+
     assert (
-        b"Local demonstration link"
+        b"Set New Password"
+        in response.data
+    )
+
+    assert (
+        b'name="password"'
+        in response.data
+    )
+
+    assert (
+        b'name="confirm_password"'
+        in response.data
+    )
+
+    assert (
+        b"Reset Password"
         in response.data
     )
 
@@ -305,9 +322,12 @@ def test_valid_reset_token_loads_form(
 
     assert response.status_code == 200
     assert b"Reset Password" in response.data
-    assert b"New Password" in response.data
     assert (
-        b"Confirm New Password"
+        b'name="password"'
+        in response.data
+    )
+    assert (
+        b'name="confirm_password"'
         in response.data
     )
 

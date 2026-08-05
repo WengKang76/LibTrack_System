@@ -35,10 +35,7 @@ class FakeCollection:
         return FakeDocumentRef(self.records, doc_id)
 
     def stream(self):
-        return [
-            FakeDoc(doc_id, data)
-            for doc_id, data in self.records.items()
-        ]
+        return [FakeDoc(doc_id, data) for doc_id, data in self.records.items()]
 
 
 class FakeDB:
@@ -50,7 +47,7 @@ class FakeDB:
                 "book_id": "B001",
                 "book_title": "Python Programming",
                 "request_date": "2026-07-15",
-                "status": "Pending"
+                "status": "Pending",
             },
             "BR002": {
                 "request_id": "BR002",
@@ -58,7 +55,7 @@ class FakeDB:
                 "book_id": "B002",
                 "book_title": "Database System",
                 "request_date": "2026-07-15",
-                "status": "Pending"
+                "status": "Pending",
             },
             "BR003": {
                 "request_id": "BR003",
@@ -66,8 +63,8 @@ class FakeDB:
                 "book_id": "B003",
                 "book_title": "Software Engineering",
                 "request_date": "2026-07-15",
-                "status": "Approved"
-            }
+                "status": "Approved",
+            },
         }
 
         self.penalties = {
@@ -77,7 +74,7 @@ class FakeDB:
                 "book_title": "Python Programming",
                 "penalty_type": "Overdue Penalty",
                 "penalty_amount": 5.00,
-                "status": "Outstanding"
+                "status": "Outstanding",
             },
             "P002": {
                 "penalty_id": "P002",
@@ -85,7 +82,7 @@ class FakeDB:
                 "book_title": "Database System",
                 "penalty_type": "Overdue Penalty",
                 "penalty_amount": 3.00,
-                "status": "Paid"
+                "status": "Paid",
             },
             "P003": {
                 "penalty_id": "P003",
@@ -93,8 +90,8 @@ class FakeDB:
                 "book_title": "Software Engineering",
                 "penalty_type": "Overdue Penalty",
                 "penalty_amount": 2.00,
-                "status": "Waived"
-            }
+                "status": "Waived",
+            },
         }
 
     def collection(self, collection_name):
@@ -110,6 +107,7 @@ class FakeDB:
 # =========================================================
 # SCRUM-709: Prevent Borrowing Approval for Unpaid Penalties
 # =========================================================
+
 
 def test_scrum_709_get_unpaid_penalties_by_student(monkeypatch):
     fake_db = FakeDB()
@@ -137,8 +135,7 @@ def test_scrum_709_block_borrow_approval_when_unpaid_penalty_exists(monkeypatch)
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR001",
-        "Librarian"
+        "BR001", "Librarian"
     )
 
     assert success is False
@@ -151,8 +148,7 @@ def test_scrum_709_approve_borrow_request_when_no_unpaid_penalty(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR002",
-        "Librarian"
+        "BR002", "Librarian"
     )
 
     assert success is True
@@ -166,8 +162,7 @@ def test_scrum_709_reject_non_pending_borrow_request(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR003",
-        "Librarian"
+        "BR003", "Librarian"
     )
 
     assert success is False
@@ -179,15 +174,16 @@ def test_scrum_709_reject_missing_borrow_request(monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     success, message = penalty_routes.approve_borrow_request_with_penalty_check(
-        "BR999",
-        "Librarian"
+        "BR999", "Librarian"
     )
 
     assert success is False
     assert message == "Borrow request not found."
 
 
-def test_scrum_709_check_borrow_approval_page_loads_for_blocked_student(client, monkeypatch):
+def test_scrum_709_check_borrow_approval_page_loads_for_blocked_student(
+    client, monkeypatch
+):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
@@ -196,7 +192,9 @@ def test_scrum_709_check_borrow_approval_page_loads_for_blocked_student(client, 
     assert response.status_code == 200
 
 
-def test_scrum_709_check_borrow_approval_page_loads_for_allowed_student(client, monkeypatch):
+def test_scrum_709_check_borrow_approval_page_loads_for_allowed_student(
+    client, monkeypatch
+):
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
@@ -209,9 +207,10 @@ def test_scrum_709_route_approves_student_without_unpaid_penalty(client, monkeyp
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    response = client.post("/penalty/librarian/check-borrow-approval/BR002", data={
-        "approved_by": "Librarian"
-    })
+    response = client.post(
+        "/penalty/librarian/check-borrow-approval/BR002",
+        data={"approved_by": "Librarian"},
+    )
 
     assert response.status_code == 302
     assert fake_db.borrow_requests["BR002"]["status"] == "Approved"
@@ -222,9 +221,10 @@ def test_scrum_709_route_blocks_student_with_unpaid_penalty(client, monkeypatch)
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
-    response = client.post("/penalty/librarian/check-borrow-approval/BR001", data={
-        "approved_by": "Librarian"
-    })
+    response = client.post(
+        "/penalty/librarian/check-borrow-approval/BR001",
+        data={"approved_by": "Librarian"},
+    )
 
     assert response.status_code == 400
     assert fake_db.borrow_requests["BR001"]["status"] == "Pending"

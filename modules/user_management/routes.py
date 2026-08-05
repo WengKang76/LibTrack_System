@@ -18,7 +18,6 @@ from modules.authentication.decorators import (
     librarian_required,
 )
 
-
 user_management_bp = Blueprint(
     "user_management",
     __name__,
@@ -46,9 +45,7 @@ VALID_STUDENT_SORT_OPTIONS = {
 
 
 def _current_timestamp():
-    return datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _normalise_text(value):
@@ -284,11 +281,8 @@ def get_user_by_id(user_id):
     """
     Retrieve one user using the Firestore document ID.
     """
-
     user_document = (
-        db.collection(
-            COLLECTION_USERS
-        )
+        db.collection(COLLECTION_USERS)
         .document(user_id)
         .get()
     )
@@ -313,17 +307,22 @@ def get_user_by_id(user_id):
 # VIEW, SEARCH, FILTER AND SORT STUDENT ACCOUNTS
 # ============================================================
 
+
 @user_management_bp.route(
     "/",
     methods=["GET"],
 )
 @librarian_required
 def manage_users():
+    # SCRUM-1519:
+    # Search by name, Student ID, or email.
     search_query = request.args.get(
         "q",
         "",
     ).strip()
 
+    # SCRUM-1520:
+    # Filter by Active or Inactive status.
     status_filter = _normalise_text(
         request.args.get(
             "status",
@@ -337,6 +336,8 @@ def manage_users():
     ):
         status_filter = "all"
 
+    # SCRUM-1521:
+    # Sort using the selected option.
     sort_option = _normalise_text(
         request.args.get(
             "sort",
@@ -368,6 +369,8 @@ def manage_users():
             )
         )
 
+        # User Management displays
+        # only Student accounts.
         if role != "student":
             continue
 
@@ -423,10 +426,10 @@ def manage_users():
         ),
     )
 
-
 # ============================================================
 # SCRUM-512: VIEW SELECTED USER DETAILS
 # ============================================================
+
 
 @user_management_bp.route(
     "/details/<user_id>",
@@ -449,6 +452,7 @@ def user_details(user_id):
 # SCRUM-509: DEACTIVATE STUDENT ACCOUNT
 # ============================================================
 
+
 @user_management_bp.route(
     "/deactivate/<user_id>",
     methods=["POST"],
@@ -460,12 +464,12 @@ def deactivate_student(user_id):
     if user is None:
         return "User record not found.", 404
 
-    user_role = _normalise_text(
+    user_role = str(
         user.get(
             "role",
             "",
         )
-    )
+    ).strip().lower()
 
     if user_role != "student":
         return (
@@ -473,12 +477,12 @@ def deactivate_student(user_id):
             400,
         )
 
-    current_status = _normalise_text(
+    current_status = str(
         user.get(
             "account_status",
             "",
         )
-    )
+    ).strip().lower()
 
     if current_status == "inactive":
         return (
@@ -522,6 +526,7 @@ def deactivate_student(user_id):
 # SCRUM-509: REACTIVATE STUDENT ACCOUNT
 # ============================================================
 
+
 @user_management_bp.route(
     "/reactivate/<user_id>",
     methods=["POST"],
@@ -533,12 +538,12 @@ def reactivate_student(user_id):
     if user is None:
         return "User record not found.", 404
 
-    user_role = _normalise_text(
+    user_role = str(
         user.get(
             "role",
             "",
         )
-    )
+    ).strip().lower()
 
     if user_role != "student":
         return (
@@ -546,12 +551,12 @@ def reactivate_student(user_id):
             400,
         )
 
-    current_status = _normalise_text(
+    current_status = str(
         user.get(
             "account_status",
             "",
         )
-    )
+    ).strip().lower()
 
     if current_status == "active":
         return (

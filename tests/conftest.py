@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import os
 import sys
 import time
@@ -7,8 +8,7 @@ from types import ModuleType
 from unittest.mock import MagicMock
 
 import pytest
-from flask import Flask
-
+from flask import Flask, session
 
 # Prevent automated tests from connecting to real Firebase.
 os.environ["TESTING"] = "1"
@@ -30,9 +30,7 @@ fake_firebase_config.db = MagicMock()
 fake_firebase_config.COLLECTION_BOOKS = "books"
 fake_firebase_config.COLLECTION_USERS = "users"
 fake_firebase_config.COLLECTION_BORROW_REQUESTS = "borrow_requests"
-fake_firebase_config.COLLECTION_BORROW_TRANSACTIONS = (
-    "borrow_transactions"
-)
+fake_firebase_config.COLLECTION_BORROW_TRANSACTIONS = "borrow_transactions"
 fake_firebase_config.COLLECTION_PENALTIES = "penalties"
 fake_firebase_config.COLLECTION_RESERVATIONS = "reservations"
 
@@ -46,11 +44,12 @@ from modules.book_catalogue.routes import book_bp
 from modules.catalogue_reservation import routes as catalogue_routes
 from modules.penalty_transaction.routes import penalty_bp
 from modules.user_management.routes import user_management_bp
-
+import app as main_app
 
 # ============================================================
 # Shared TestMain application fixture
 # ============================================================
+
 
 @pytest.fixture
 def app():
@@ -73,6 +72,10 @@ def app():
     application.register_blueprint(penalty_bp)
     application.register_blueprint(book_bp)
     application.register_blueprint(user_management_bp)
+
+    application.add_url_rule("/", view_func=main_app.home)
+    application.add_url_rule("/librarian", view_func=main_app.librarian_dashboard)
+    application.add_url_rule("/student", view_func=main_app.student_dashboard)
 
     return application
 
@@ -106,6 +109,7 @@ COLLECTION_ID_FIELDS = {
     "books": "book_id",
     "reservations": "reservation_id",
     "borrow_requests": "request_id",
+    "borrow_transactions": "transaction_id",
 }
 
 
@@ -134,10 +138,12 @@ class FakeDocumentReference:
     def _id_field(self):
         return COLLECTION_ID_FIELDS[self._collection_name]
 
+    @property
+    def id(self):
+        return self._document_id
+
     def get(self):
-        records = self._database.collections[
-            self._collection_name
-        ]
+        records = self._database.collections[self._collection_name]
 
         for record in records:
             if record.get(self._id_field) == self._document_id:
@@ -157,18 +163,23 @@ class FakeDocumentReference:
         )
 
     def update(self, changes):
-        records = self._database.collections[
-            self._collection_name
-        ]
+        records = self._database.collections[self._collection_name]
 
         for record in records:
             if record.get(self._id_field) == self._document_id:
                 record.update(changes)
                 return
 
-        raise ValueError(
-            f"Document not found: {self._document_id}"
-        )
+        raise ValueError(f"Document not found: {self._document_id}")
+
+    def delete(self):
+        records = self._database.collections[self._collection_name]
+        for index, record in enumerate(records):
+            if record.get(self._id_field) == self._document_id:
+                records.pop(index)
+                return
+
+        raise ValueError(f"Document not found: {self._document_id}")
 
 
 class FakeQuery:
@@ -183,14 +194,11 @@ class FakeQuery:
         expected_value,
     ):
         if operator != "==":
-            raise ValueError(
-                f"Unsupported operator: {operator}"
-            )
+            raise ValueError(f"Unsupported operator: {operator}")
 
         return FakeQuery(
             self._collection,
-            self._filters
-            + [(field_name, expected_value)],
+            self._filters + [(field_name, expected_value)],
         )
 
     def stream(self):
@@ -200,10 +208,8 @@ class FakeQuery:
             document
             for document in documents
             if all(
-                document.to_dict().get(field_name)
-                == expected_value
-                for field_name, expected_value
-                in self._filters
+                document.to_dict().get(field_name) == expected_value
+                for field_name, expected_value in self._filters
             )
         ]
 
@@ -219,15 +225,11 @@ class FakeCollection:
 
     @property
     def _id_field(self):
-        return COLLECTION_ID_FIELDS[
-            self._collection_name
-        ]
+        return COLLECTION_ID_FIELDS[self._collection_name]
 
     @property
     def records(self):
-        return self._database.collections[
-            self._collection_name
-        ]
+        return self._database.collections[self._collection_name]
 
     def stream(self):
         documents = []
@@ -240,10 +242,7 @@ class FakeCollection:
 
             document_id = copied_record.pop(
                 self._id_field,
-                (
-                    f"{self._collection_name[:1].upper()}"
-                    f"{index:03d}"
-                ),
+                (f"{self._collection_name[:1].upper()}" f"{index:03d}"),
             )
 
             documents.append(
@@ -279,11 +278,10 @@ class FakeCollection:
             "books": "B",
             "reservations": "R",
             "borrow_requests": "BR",
+            "borrow_transactions": "BT",
         }[self._collection_name]
 
-        document_id = (
-            f"{prefix}{len(self.records) + 1:03d}"
-        )
+        document_id = f"{prefix}{len(self.records) + 1:03d}"
 
         stored_record = data.copy()
         stored_record[self._id_field] = document_id
@@ -305,29 +303,24 @@ class FakeFirestore:
         books=None,
         reservations=None,
         borrow_requests=None,
+        borrow_transactions=None,
     ):
         self.collections = {
-            "books": [
-                book.copy()
-                for book in (books or [])
-            ],
+            "books": [book.copy() for book in (books or [])],
             "reservations": [
-                reservation.copy()
-                for reservation
-                in (reservations or [])
+                reservation.copy() for reservation in (reservations or [])
             ],
             "borrow_requests": [
-                borrow_request.copy()
-                for borrow_request
-                in (borrow_requests or [])
+                borrow_request.copy() for borrow_request in (borrow_requests or [])
+            ],
+            "borrow_transactions": [
+                transaction.copy() for transaction in (borrow_transactions or [])
             ],
         }
 
     def collection(self, collection_name):
         if collection_name not in self.collections:
-            raise ValueError(
-                f"Unexpected collection: {collection_name}"
-            )
+            raise ValueError(f"Unexpected collection: {collection_name}")
 
         return FakeCollection(
             collection_name,
@@ -339,17 +332,23 @@ class FakeFirestore:
 # Catalogue reservation application factory
 # ============================================================
 
+
 @pytest.fixture
 def app_factory(monkeypatch):
     def create_app(
         books=None,
         reservations=None,
         borrow_requests=None,
+        borrow_transactions=None,
+        authenticated=True,
+        session_user_id="S001",
+        session_role="student",
     ):
         fake_db = FakeFirestore(
             books=books,
             reservations=reservations,
             borrow_requests=borrow_requests,
+            borrow_transactions=borrow_transactions,
         )
 
         monkeypatch.setattr(
@@ -360,24 +359,18 @@ def app_factory(monkeypatch):
 
         test_app = Flask(
             "libtrack_catalogue_test",
-            template_folder=str(
-                PROJECT_ROOT / "templates"
-            ),
-            static_folder=str(
-                PROJECT_ROOT / "static"
-            ),
+            template_folder=str(PROJECT_ROOT / "templates"),
+            static_folder=str(PROJECT_ROOT / "static"),
         )
 
         test_app.config.update(
-    TESTING=True,
-    SECRET_KEY="test-secret-key",
-    PERMANENT_SESSION_LIFETIME=timedelta(
-        minutes=30
-    ),
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_REFRESH_EACH_REQUEST=True,
-)
+            TESTING=True,
+            SECRET_KEY="test-secret-key",
+            PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
+            SESSION_COOKIE_HTTPONLY=True,
+            SESSION_COOKIE_SAMESITE="Lax",
+            SESSION_REFRESH_EACH_REQUEST=True,
+        )
 
         test_app.extensions["fake_firestore"] = fake_db
 
@@ -385,10 +378,15 @@ def app_factory(monkeypatch):
         def home():
             return "LibTrack Test Home"
 
-        test_app.register_blueprint(
-            catalogue_routes.catalogue_bp
-        )
+        if authenticated:
 
+            @test_app.before_request
+            def seed_authenticated_student():
+                """Provide an authenticated student session for protected routes."""
+                session.setdefault("user_id", session_user_id)
+                session.setdefault("role", session_role)
+
+        test_app.register_blueprint(catalogue_routes.catalogue_bp)
         return test_app
 
     return create_app

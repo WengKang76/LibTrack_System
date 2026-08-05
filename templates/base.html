@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>LibTrack System</title>
+    <title>{% block title %}LibTrack System{% endblock %}</title>
 
     <link
         rel="stylesheet"
@@ -23,81 +23,50 @@
 </head>
 
 <body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">📚</div>
+                <div>
+                    <h2>LibTrack</h2>
+                    <p>Library Management System</p>
+                </div>
+            </div>
 
-    <div class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="/">Dashboard</a>
 
-        <h2>📚 LibTrack</h2>
+                {% if session.get('user_id') %}
+                    <div class="sidebar-user">
+                        <strong>{{ session.get('full_name', 'User') }}</strong>
+                        <span>{{ session.get('role', '') | title }}</span>
+                    </div>
 
-        <p>Library Management System</p>
+                    <form method="POST" action="/auth/logout" class="sidebar-logout-form">
+                        <button type="submit" class="sidebar-logout-button">Logout</button>
+                    </form>
 
-        <a href="/">
-            Dashboard
-        </a>
-        {% if session.get('user_id') %}
+                    {% if session.get('role', '') | lower == 'librarian' %}
+                        <a href="/books/">Book Catalogue Management</a>
+                        <a href="/users/">User Management</a>
+                        <a href="/borrowing/">Borrowing &amp; Returning</a>
+                        <a href="/penalty/librarian">Penalty &amp; Transactions</a>
+                    {% else %}
+                        <a href="/catalogue/">Browse &amp; Reserve Books</a>
+                        <a href="/catalogue/my-reservations">My Reservations</a>
+                        <a href="/catalogue/my-borrowed-books">My Borrowed Books</a>
+                        <a href="/penalty/student">Penalty &amp; Transactions</a>
+                    {% endif %}
+                {% else %}
+                    <a href="/auth/login">Login</a>
+                    <a href="/auth/register">Student Registration</a>
+                    <a href="/student/catalogue/">Student Book Catalogue</a>
+                    <a href="/catalogue/">Catalogue Browsing</a>
+                {% endif %}
+            </nav>
+        </aside>
 
-    <div class="sidebar-user">
-        <strong>
-            {{ session.get('full_name', 'User') }}
-        </strong>
-
-        <span>
-            {{ session.get('role', '') | title }}
-        </span>
-    </div>
-
-    <form
-        method="POST"
-        action="/auth/logout"
-        class="sidebar-logout-form"
-    >
-        <button
-            type="submit"
-            class="sidebar-logout-button"
-        >
-            Logout
-        </button>
-    </form>
-
-{% else %}
-
-    <a href="/auth/login">
-        Login
-    </a>
-
-    <a href="/auth/register">
-        Student Registration
-    </a>
-
-    
-{% endif %}
-
-        <a href="/auth/register">
-            Student Registration
-        </a>
-
-        <a href="/books/">
-            Book Catalogue Management
-        </a>
-
-        <a href="/users/">
-            User Management
-        </a>
-
-        <a href="/catalogue/">
-            Catalogue Reservation
-        </a>
-
-        <a href="/borrowing/requests">
-            Borrowing &amp; Returning
-        </a>
-
-        <a href="/penalty/overdue">
-            Penalty &amp; Transactions
-        </a>
-
-    </div>
-
-    <main class="page-container">
+        <main class="page-container">
 
         {% with messages =
             get_flashed_messages(
@@ -119,10 +88,9 @@
 
         {% endwith %}
 
-        {% block content %}{% endblock %}
-
-    </main>
-
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 </body>
 
 </html>

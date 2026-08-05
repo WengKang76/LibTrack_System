@@ -13,24 +13,40 @@
 <div class="reservation-page">
     <nav class="reservation-navigation reservation-navigation-left"
          aria-label="Borrow request navigation">
-        <a href="{{ url_for(
-            'catalogue_reservation.view_book_details',
-            book_id=book.book_id
-        ) }}"
-           class="reservation-button reservation-button-secondary">
-            ← Back to Book Details
-        </a>
+        {% if reservation %}
+            <a href="{{ url_for('catalogue_reservation.view_my_reservations') }}"
+               class="reservation-button reservation-button-secondary">
+                ← Back to My Reservations
+            </a>
+        {% else %}
+            <a href="{{ url_for(
+                'catalogue_reservation.view_book_details',
+                book_id=book.book_id
+            ) }}"
+               class="reservation-button reservation-button-secondary">
+                ← Back to Book Details
+            </a>
+        {% endif %}
     </nav>
 
     <header class="reservation-header">
         <div>
             <p class="reservation-eyebrow">
-                SCRUM-16 · SCRUM-36
+                {% if reservation %}
+                    SCRUM-1194 · Approved Reservation to Borrowing
+                {% else %}
+                    SCRUM-16 · SCRUM-36
+                {% endif %}
             </p>
             <h1>Request to Borrow Book</h1>
             <p>
-                Review the selected book and borrowing period before
-                submitting your request.
+                {% if reservation %}
+                    Confirm the approved reservation details before creating
+                    the borrowing request.
+                {% else %}
+                    Review the selected book and borrowing period before
+                    submitting your request.
+                {% endif %}
             </p>
         </div>
     </header>
@@ -39,7 +55,13 @@
              aria-labelledby="borrow-confirmation-heading">
         <div class="reservation-confirmation-heading">
             <div>
-                <p class="reservation-eyebrow">Selected Available Book</p>
+                <p class="reservation-eyebrow">
+                    {% if reservation %}
+                        Approved Reserved Book
+                    {% else %}
+                        Selected Available Book
+                    {% endif %}
+                </p>
                 <h2 id="borrow-confirmation-heading">
                     {{ book.title|default("Untitled Book") }}
                 </h2>
@@ -51,6 +73,18 @@
         </div>
 
         <dl class="availability-details">
+            {% if reservation %}
+                <div>
+                    <dt>Reservation ID</dt>
+                    <dd>{{ reservation.reservation_id }}</dd>
+                </div>
+
+                <div>
+                    <dt>Reservation Status</dt>
+                    <dd>{{ reservation.status }}</dd>
+                </div>
+            {% endif %}
+
             <div>
                 <dt>Book ID</dt>
                 <dd>{{ book.book_id|default("N/A") }}</dd>
@@ -71,39 +105,55 @@
             <div>
                 <dt>Borrowing Period</dt>
                 <dd class="borrowing-period-value">
-                    {{ borrowing_period_days }} days
+                    Dummy period
                 </dd>
             </div>
         </dl>
 
         <div class="borrow-period-notice">
             <strong>Borrowing period:</strong>
-            The book may be borrowed for {{ borrowing_period_days }} days
-            after the request is approved and the book is issued.
+            The borrowing period is currently set as a dummy placeholder for
+            this demo flow.
         </div>
 
         <div class="borrow-request-notice">
-            Submitting this form creates a pending borrowing request. It does
-            not immediately reduce the book's available copy count.
+            {% if reservation %}
+                This request will be linked to reservation
+                {{ reservation.reservation_id }} and sent to the Borrowing
+                module for librarian processing.
+            {% else %}
+                Submitting this form creates a pending borrowing request. It
+                does not immediately reduce the book's available copy count.
+            {% endif %}
         </div>
 
         <form method="POST"
-              action="{{ url_for(
+              action="{% if reservation %}{{ url_for(
+                  'catalogue_reservation.continue_approved_reservation',
+                  reservation_id=reservation.reservation_id
+              ) }}{% else %}{{ url_for(
                   'catalogue_reservation.request_borrow_book',
                   book_id=book.book_id
-              ) }}"
+              ) }}{% endif %}"
               class="reservation-confirmation-actions">
             <button type="submit" class="reservation-button">
                 Confirm Borrow Request
             </button>
 
-            <a href="{{ url_for(
-                'catalogue_reservation.view_book_details',
-                book_id=book.book_id
-            ) }}"
-               class="reservation-button reservation-button-secondary">
-                Cancel
-            </a>
+            {% if reservation %}
+                <a href="{{ url_for('catalogue_reservation.view_my_reservations') }}"
+                   class="reservation-button reservation-button-secondary">
+                    Cancel
+                </a>
+            {% else %}
+                <a href="{{ url_for(
+                    'catalogue_reservation.view_book_details',
+                    book_id=book.book_id
+                ) }}"
+                   class="reservation-button reservation-button-secondary">
+                    Cancel
+                </a>
+            {% endif %}
         </form>
     </section>
 </div>

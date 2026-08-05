@@ -4,10 +4,10 @@ from modules.book_catalogue.routes import (
     _validate_inventory_counts,
 )
 
-
 # ============================================================
 # SCRUM-1184: VALID INVENTORY COUNTS
 # ============================================================
+
 
 @pytest.mark.parametrize(
     (
@@ -40,15 +40,14 @@ def test_scrum_1184_accepts_valid_counts(
 # SCRUM-1184: NEGATIVE COUNT PREVENTION
 # ============================================================
 
+
 def test_scrum_1184_rejects_negative_total():
     error = _validate_inventory_counts(
         -1,
         0,
     )
 
-    assert error == (
-        "Total copies cannot be negative."
-    )
+    assert error == ("Total copies cannot be negative.")
 
 
 def test_scrum_1184_rejects_negative_available():
@@ -57,14 +56,13 @@ def test_scrum_1184_rejects_negative_available():
         -1,
     )
 
-    assert error == (
-        "Available copies cannot be negative."
-    )
+    assert error == ("Available copies cannot be negative.")
 
 
 # ============================================================
 # SCRUM-1184: AVAILABLE CANNOT EXCEED TOTAL
 # ============================================================
+
 
 def test_scrum_1184_rejects_available_above_total():
     error = _validate_inventory_counts(
@@ -72,10 +70,7 @@ def test_scrum_1184_rejects_available_above_total():
         6,
     )
 
-    assert error == (
-        "Available copies cannot be greater "
-        "than total copies."
-    )
+    assert error == ("Available copies cannot be greater " "than total copies.")
 
 
 def test_scrum_1184_rejects_available_when_total_zero():
@@ -84,15 +79,13 @@ def test_scrum_1184_rejects_available_when_total_zero():
         1,
     )
 
-    assert error == (
-        "Available copies cannot be greater "
-        "than total copies."
-    )
+    assert error == ("Available copies cannot be greater " "than total copies.")
 
 
 # ============================================================
 # SCRUM-1184: INVALID DATA TYPES
 # ============================================================
+
 
 @pytest.mark.parametrize(
     (

@@ -2,10 +2,10 @@ import pytest
 
 import modules.book_catalogue.routes as book_routes
 
-
 # ============================================================
 # FAKE FIRESTORE
 # ============================================================
+
 
 class FakeBookDocumentReference:
     def __init__(self):
@@ -38,24 +38,18 @@ class FakeBooksCollection:
 
 class FakeDatabase:
     def __init__(self):
-        self.book_reference = (
-            FakeBookDocumentReference()
-        )
+        self.book_reference = FakeBookDocumentReference()
 
     def collection(self, collection_name):
-        assert (
-            collection_name
-            == book_routes.COLLECTION_BOOKS
-        )
+        assert collection_name == book_routes.COLLECTION_BOOKS
 
-        return FakeBooksCollection(
-            self.book_reference
-        )
+        return FakeBooksCollection(self.book_reference)
 
 
 # ============================================================
 # FIXTURE
 # ============================================================
+
 
 @pytest.fixture
 def inventory_environment(monkeypatch):
@@ -74,6 +68,7 @@ def inventory_environment(monkeypatch):
 # SCRUM-1183: COPY-SUMMARY CALCULATION
 # ============================================================
 
+
 def test_scrum_1183_calculates_copy_summary():
     copies = [
         {"status": "Available"},
@@ -84,11 +79,7 @@ def test_scrum_1183_calculates_copy_summary():
         {"status": "Lost"},
     ]
 
-    summary = (
-        book_routes._calculate_copy_summary(
-            copies
-        )
-    )
+    summary = book_routes._calculate_copy_summary(copies)
 
     assert summary == {
         "total": 6,
@@ -108,11 +99,7 @@ def test_scrum_1183_status_is_case_insensitive():
         {"status": "damaged"},
     ]
 
-    summary = (
-        book_routes._calculate_copy_summary(
-            copies
-        )
-    )
+    summary = book_routes._calculate_copy_summary(copies)
 
     assert summary["total"] == 4
     assert summary["available"] == 2
@@ -123,6 +110,7 @@ def test_scrum_1183_status_is_case_insensitive():
 # ============================================================
 # SCRUM-1183: PARENT-BOOK TOTAL RECALCULATION
 # ============================================================
+
 
 def test_scrum_1183_recalculates_parent_totals(
     inventory_environment,
@@ -143,18 +131,9 @@ def test_scrum_1183_recalculates_parent_totals(
         lambda book_id: copies,
     )
 
-    result = (
-        book_routes
-        ._sync_book_inventory_from_copies(
-            "BOOK001"
-        )
-    )
+    result = book_routes._sync_book_inventory_from_copies("BOOK001")
 
-    saved_book = (
-        inventory_environment
-        .book_reference
-        .data
-    )
+    saved_book = inventory_environment.book_reference.data
 
     assert saved_book["total_copies"] == 6
     assert saved_book["available_copies"] == 2
@@ -180,15 +159,9 @@ def test_scrum_1183_corrects_inaccurate_old_totals(
         lambda book_id: copies,
     )
 
-    book_routes._sync_book_inventory_from_copies(
-        "BOOK001"
-    )
+    book_routes._sync_book_inventory_from_copies("BOOK001")
 
-    saved_book = (
-        inventory_environment
-        .book_reference
-        .data
-    )
+    saved_book = inventory_environment.book_reference.data
 
     # Old values were both 99.
     assert saved_book["total_copies"] == 3
@@ -213,15 +186,9 @@ def test_scrum_1183_marks_book_unavailable_when_zero_available(
         lambda book_id: copies,
     )
 
-    book_routes._sync_book_inventory_from_copies(
-        "BOOK001"
-    )
+    book_routes._sync_book_inventory_from_copies("BOOK001")
 
-    saved_book = (
-        inventory_environment
-        .book_reference
-        .data
-    )
+    saved_book = inventory_environment.book_reference.data
 
     assert saved_book["total_copies"] == 4
     assert saved_book["available_copies"] == 0
@@ -238,18 +205,9 @@ def test_scrum_1183_handles_book_with_no_copies(
         lambda book_id: [],
     )
 
-    result = (
-        book_routes
-        ._sync_book_inventory_from_copies(
-            "BOOK001"
-        )
-    )
+    result = book_routes._sync_book_inventory_from_copies("BOOK001")
 
-    saved_book = (
-        inventory_environment
-        .book_reference
-        .data
-    )
+    saved_book = inventory_environment.book_reference.data
 
     assert saved_book["total_copies"] == 0
     assert saved_book["available_copies"] == 0
@@ -271,16 +229,9 @@ def test_scrum_1183_updates_correct_book_document(
         ],
     )
 
-    book_routes._sync_book_inventory_from_copies(
-        "BOOK888"
-    )
+    book_routes._sync_book_inventory_from_copies("BOOK888")
 
-    assert (
-        inventory_environment
-        .book_reference
-        .book_id
-        == "BOOK888"
-    )
+    assert inventory_environment.book_reference.book_id == "BOOK888"
 
 
 def test_scrum_1183_stores_updated_timestamp(
@@ -295,15 +246,9 @@ def test_scrum_1183_stores_updated_timestamp(
         ],
     )
 
-    book_routes._sync_book_inventory_from_copies(
-        "BOOK001"
-    )
+    book_routes._sync_book_inventory_from_copies("BOOK001")
 
-    saved_book = (
-        inventory_environment
-        .book_reference
-        .data
-    )
+    saved_book = inventory_environment.book_reference.data
 
     assert "updated_at" in saved_book
     assert isinstance(

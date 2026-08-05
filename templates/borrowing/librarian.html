@@ -1,34 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Borrowing & Returning</title>
+{% block title %}
+Borrowing & Returning
+{% endblock %}
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet"
+{% block extra_css %}
+<link rel="stylesheet"
       href="{{ url_for('static', filename='borrowing/librarian.css') }}">
-</head>
+{% endblock %}
 
-
-<body>
+{% block content %}
 
 <div class="main-content">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert">
-                {{ message }}
-            </div>
-        {% endfor %}
-        {% endif %}
-    {% endwith %}
 
-    <h1>Borrowing & Returning</h1>
+    <div class="page-header">
+    <div>
+        <h1>📖 Borrowing & Returning</h1>
+        <p>
+            Approve borrow requests, manage returns,
+            renewals and borrowing transactions.
+        </p>
+    </div>
+</div>
 
-    <h2>Pending Borrow Requests</h2>
+    <div class="section-heading">
+    <div>
+        <h2>Pending Borrow Requests</h2>
+        <p>Review and approve student borrowing requests.</p>
+    </div>
+</div>
 
+<div class="table-container">
 <table class="data-table">
 
     <thead>
@@ -97,6 +99,7 @@
     </tbody>
 
 </table>
+</div>
 
 
     
@@ -105,6 +108,7 @@
 
 {% if transactions %}
 
+<div class="table-container">
 <table class="data-table">
 
     <thead>
@@ -266,11 +270,20 @@
 
             </form>
 
+            <a
+                class="btn btn-danger"
+                href="{{ url_for('penalty_transaction.librarian_reject_return_exception',
+                transaction_id=transaction.id) }}">
+
+                Reject
+
+            </a>
+
             {% endif %}
 
             <!-- Close -->
 
-            {% if transaction.status == "Returned" %}
+            {% if transaction.status in ["Returned", "Exception Completed"] %}
 
             <form
                 method="POST"
@@ -298,6 +311,7 @@
     </tbody>
 
 </table>
+</div>
 
 {% else %}
 
@@ -306,7 +320,10 @@
 {% endif %}
 </div>
 
-</body>
+{% endblock %}
+
+
+{% block extra_js %}
 
 <script>
 function confirmApproveRenewal() {
@@ -322,4 +339,4 @@ function confirmRejectRenewal() {
 }
 </script>
 
-</html>
+{% endblock %}

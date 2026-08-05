@@ -11,7 +11,6 @@ from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
 from datetime import timedelta
 
-
 app = Flask(__name__)
 
 # Required for Flask sessions and flash messages.
@@ -21,16 +20,12 @@ app.config["SECRET_KEY"] = os.environ.get(
 )
 
 app.config.update(
-    PERMANENT_SESSION_LIFETIME=timedelta(
-        minutes=30
-    ),
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_REFRESH_EACH_REQUEST=True,
-
     # Password-reset link expires after 15 minutes.
     PASSWORD_RESET_TOKEN_MAX_AGE=900,
-
     # Display the reset link only for local demonstration.
     SHOW_PASSWORD_RESET_LINK=(
         os.environ.get(
@@ -56,6 +51,7 @@ app.register_blueprint(borrowing_bp)
 def home():
     return render_template("index.html")
 
+
 @app.route("/")
 def role_selection():
     return render_template("role_selection.html")
@@ -75,8 +71,6 @@ def student_dashboard():
 @app.route("/health")
 def health():
     return {"status": "ok"}
-
-    
 
 
 if __name__ == "__main__":

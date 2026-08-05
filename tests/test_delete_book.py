@@ -2,10 +2,7 @@
 
 import modules.book_catalogue.routes as book_routes
 
-
-pytestmark = pytest.mark.usefixtures(
-    "login_as_librarian"
-)
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
 
 
 class FakeDocumentSnapshot:
@@ -61,18 +58,14 @@ class FakeCopiesCollection:
     def stream(self):
         results = []
 
-        for copy_id, data in (
-            self.database.copies.get(
+        for copy_id, data in self.database.copies.get(
+            self.book_id,
+            {},
+        ).items():
+            reference = FakeCopyDocumentReference(
+                self.database,
                 self.book_id,
-                {},
-            ).items()
-        ):
-            reference = (
-                FakeCopyDocumentReference(
-                    self.database,
-                    self.book_id,
-                    copy_id,
-                )
+                copy_id,
             )
 
             results.append(
@@ -99,9 +92,7 @@ class FakeBookDocumentReference:
     def get(self):
         return FakeDocumentSnapshot(
             self.book_id,
-            self.database.books.get(
-                self.book_id
-            ),
+            self.database.books.get(self.book_id),
         )
 
     def collection(self, collection_name):
@@ -140,8 +131,7 @@ class FakeCollection:
                 document_id,
                 data,
             )
-            for document_id, data
-            in self.database.books.items()
+            for document_id, data in self.database.books.items()
         ]
 
 
@@ -188,9 +178,7 @@ def test_scrum_704_confirmation_page_loads(
         fake_database,
     )
 
-    response = client.get(
-        "/books/delete/B001"
-    )
+    response = client.get("/books/delete/B001")
 
     assert response.status_code == 200
     assert b"Delete Book Record" in response.data
@@ -209,9 +197,7 @@ def test_scrum_704_delete_book_and_all_copies(
         fake_database,
     )
 
-    response = client.post(
-        "/books/delete/B001"
-    )
+    response = client.post("/books/delete/B001")
 
     assert response.status_code == 302
     assert "B001" not in fake_database.books
@@ -230,17 +216,11 @@ def test_scrum_704_returns_to_book_list(
         fake_database,
     )
 
-    response = client.post(
-        "/books/delete/B001"
-    )
+    response = client.post("/books/delete/B001")
 
     assert response.status_code == 302
 
-    assert response.headers[
-        "Location"
-    ].endswith(
-        "/books/"
-    )
+    assert response.headers["Location"].endswith("/books/")
 
 
 def test_scrum_704_success_message_displayed(
@@ -262,10 +242,7 @@ def test_scrum_704_success_message_displayed(
 
     assert response.status_code == 200
 
-    assert (
-        b"Book record deleted successfully."
-        in response.data
-    )
+    assert b"Book record deleted successfully." in response.data
 
 
 def test_scrum_704_unknown_book_returns_404(
@@ -280,8 +257,6 @@ def test_scrum_704_unknown_book_returns_404(
         fake_database,
     )
 
-    response = client.get(
-        "/books/delete/UNKNOWN"
-    )
+    response = client.get("/books/delete/UNKNOWN")
 
     assert response.status_code == 404

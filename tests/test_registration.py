@@ -23,9 +23,7 @@ class FakeDocumentReference:
         self.document_id = document_id
 
     def set(self, data):
-        self.database.users[
-            self.document_id
-        ] = dict(data)
+        self.database.users[self.document_id] = dict(data)
 
 
 class FakeUsersCollection:
@@ -38,8 +36,7 @@ class FakeUsersCollection:
                 document_id,
                 data,
             )
-            for document_id, data
-            in self.database.users.items()
+            for document_id, data in self.database.users.items()
         ]
 
     def document(self, document_id):
@@ -98,9 +95,7 @@ def test_registration_page_loads(
     client,
     registration_database,
 ):
-    response = client.get(
-        "/auth/register"
-    )
+    response = client.get("/auth/register")
 
     assert response.status_code == 200
     assert b"Student Registration" in response.data
@@ -118,9 +113,7 @@ def test_valid_student_registration_creates_account(
 
     assert response.status_code == 302
 
-    created_user = registration_database.users[
-        "USR002"
-    ]
+    created_user = registration_database.users["USR002"]
 
     assert created_user["student_id"] == "24WMR00002"
     assert created_user["full_name"] == "Sherman Tan"
@@ -139,9 +132,7 @@ def test_password_is_hashed_before_storage(
         data=valid_registration_data(),
     )
 
-    created_user = registration_database.users[
-        "USR002"
-    ]
+    created_user = registration_database.users["USR002"]
 
     assert "password" not in created_user
     assert "confirm_password" not in created_user
@@ -170,9 +161,7 @@ def test_required_registration_fields_are_validated(
     assert b"Phone number is required." in response.data
     assert b"Password is required." in response.data
 
-    assert len(
-        registration_database.users
-    ) == 1
+    assert len(registration_database.users) == 1
 
 
 @pytest.mark.parametrize(
@@ -212,9 +201,7 @@ def test_password_confirmation_must_match(
 ):
     form_data = valid_registration_data()
 
-    form_data["confirm_password"] = (
-        "Different@123"
-    )
+    form_data["confirm_password"] = "Different@123"
 
     response = client.post(
         "/auth/register",
@@ -223,11 +210,7 @@ def test_password_confirmation_must_match(
 
     assert response.status_code == 400
 
-    assert (
-        b"Password and confirmation password "
-        b"do not match."
-        in response.data
-    )
+    assert b"Password and confirmation password " b"do not match." in response.data
 
     assert "USR002" not in registration_database.users
 
@@ -238,9 +221,7 @@ def test_duplicate_email_is_rejected_case_insensitively(
 ):
     form_data = valid_registration_data()
 
-    form_data["email"] = (
-        "EXISTING@STUDENT.DEMO"
-    )
+    form_data["email"] = "EXISTING@STUDENT.DEMO"
 
     response = client.post(
         "/auth/register",
@@ -249,11 +230,7 @@ def test_duplicate_email_is_rejected_case_insensitively(
 
     assert response.status_code == 400
 
-    assert (
-        b"An account already exists with "
-        b"this email address."
-        in response.data
-    )
+    assert b"An account already exists with " b"this email address." in response.data
 
     assert "USR002" not in registration_database.users
 
@@ -272,11 +249,7 @@ def test_duplicate_student_id_is_rejected(
 
     assert response.status_code == 400
 
-    assert (
-        b"An account already exists with "
-        b"this student ID."
-        in response.data
-    )
+    assert b"An account already exists with " b"this student ID." in response.data
 
 
 def test_registration_assigns_student_role_automatically(
@@ -291,9 +264,7 @@ def test_registration_assigns_student_role_automatically(
         data=form_data,
     )
 
-    created_user = registration_database.users[
-        "USR002"
-    ]
+    created_user = registration_database.users["USR002"]
 
     assert created_user["role"] == "Student"
 
@@ -302,9 +273,7 @@ def test_registration_page_has_show_password_control(
     client,
     registration_database,
 ):
-    response = client.get(
-        "/auth/register"
-    )
+    response = client.get("/auth/register")
 
     assert response.status_code == 200
     assert b'id="show_passwords"' in response.data

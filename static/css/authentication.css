@@ -136,3 +136,18 @@
 .development-reset-link a {
     margin-left: 5px;
 }
+
+.development-reset-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #d1d5db;
+}
+
+.development-reset-section h2 {
+    margin-bottom: 8px;
+}
+
+.development-reset-section p {
+    margin-bottom: 18px;
+    line-height: 1.5;
+}

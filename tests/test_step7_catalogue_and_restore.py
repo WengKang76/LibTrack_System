@@ -4,9 +4,8 @@ from datetime import datetime
 import time
 import modules.book_catalogue.routes as book_routes
 
-pytestmark = pytest.mark.usefixtures(
-    "login_as_librarian"
-)
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
+
 
 class FakeSnapshot:
     def __init__(self, document_id, data):
@@ -37,9 +36,7 @@ class FakeCopyReference:
         )
 
     def update(self, data):
-        self.database.copies[
-            self.book_id
-        ][self.copy_id].update(dict(data))
+        self.database.copies[self.book_id][self.copy_id].update(dict(data))
 
 
 class FakeCopiesCollection:
@@ -57,8 +54,7 @@ class FakeCopiesCollection:
     def stream(self):
         return [
             FakeSnapshot(copy_id, data)
-            for copy_id, data
-            in self.database.copies.get(
+            for copy_id, data in self.database.copies.get(
                 self.book_id,
                 {},
             ).items()
@@ -78,9 +74,7 @@ class FakeBookReference:
         )
 
     def update(self, data):
-        self.database.books[self.book_id].update(
-            dict(data)
-        )
+        self.database.books[self.book_id].update(dict(data))
 
     def collection(self, collection_name):
         assert collection_name == "copies"
@@ -102,9 +96,7 @@ class FakeBooksCollection:
 
     def stream(self):
         return [
-            FakeSnapshot(book_id, data)
-            for book_id, data
-            in self.database.books.items()
+            FakeSnapshot(book_id, data) for book_id, data in self.database.books.items()
         ]
 
 
@@ -168,9 +160,7 @@ def use_fake_database(monkeypatch):
 def test_deactivate_book_page_loads(client, monkeypatch):
     use_fake_database(monkeypatch)
 
-    response = client.get(
-        "/books/catalogue/deactivate/BOOK001"
-    )
+    response = client.get("/books/catalogue/deactivate/BOOK001")
 
     assert response.status_code == 200
     assert b"Deactivate Book" in response.data
@@ -182,9 +172,7 @@ def test_deactivate_book_hides_title_without_changing_copies(
     monkeypatch,
 ):
     fake_database = use_fake_database(monkeypatch)
-    copies_before = deepcopy(
-        fake_database.copies["BOOK001"]
-    )
+    copies_before = deepcopy(fake_database.copies["BOOK001"])
 
     response = client.post(
         "/books/catalogue/deactivate/BOOK001",
@@ -195,10 +183,7 @@ def test_deactivate_book_hides_title_without_changing_copies(
     book = fake_database.books["BOOK001"]
     assert book["catalogue_status"] == "Inactive"
     assert book["is_visible_to_students"] is False
-    assert (
-        book["catalogue_inactive_reason"]
-        == "Outdated Content"
-    )
+    assert book["catalogue_inactive_reason"] == "Outdated Content"
     assert fake_database.copies["BOOK001"] == copies_before
     assert book["total_copies"] == 3
     assert book["available_copies"] == 2
@@ -216,12 +201,7 @@ def test_deactivate_book_rejects_invalid_reason(
     )
 
     assert response.status_code == 400
-    assert (
-        fake_database.books["BOOK001"][
-            "catalogue_status"
-        ]
-        == "Active"
-    )
+    assert fake_database.books["BOOK001"]["catalogue_status"] == "Active"
 
 
 def test_activate_book_makes_title_visible_again(
@@ -233,15 +213,11 @@ def test_activate_book_makes_title_visible_again(
         {
             "catalogue_status": "Inactive",
             "is_visible_to_students": False,
-            "catalogue_inactive_reason": (
-                "Outdated Content"
-            ),
+            "catalogue_inactive_reason": ("Outdated Content"),
         }
     )
 
-    response = client.post(
-        "/books/catalogue/activate/BOOK001"
-    )
+    response = client.post("/books/catalogue/activate/BOOK001")
 
     assert response.status_code == 302
     book = fake_database.books["BOOK001"]
@@ -256,9 +232,7 @@ def test_activate_already_active_book_returns_400(
 ):
     use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/books/catalogue/activate/BOOK001"
-    )
+    response = client.post("/books/catalogue/activate/BOOK001")
 
     assert response.status_code == 400
     assert b"already active" in response.data
@@ -270,15 +244,10 @@ def test_restore_damaged_copy_returns_it_to_available(
 ):
     fake_database = use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/books/copies/restore/"
-        "BOOK001/COPY-BOOK001-003"
-    )
+    response = client.post("/books/copies/restore/" "BOOK001/COPY-BOOK001-003")
 
     assert response.status_code == 302
-    copy_record = fake_database.copies[
-        "BOOK001"
-    ]["COPY-BOOK001-003"]
+    copy_record = fake_database.copies["BOOK001"]["COPY-BOOK001-003"]
     assert copy_record["status"] == "Available"
     assert copy_record["condition"] == "Good"
     datetime.strptime(
@@ -299,17 +268,10 @@ def test_restore_non_damaged_copy_returns_400(
 ):
     fake_database = use_fake_database(monkeypatch)
 
-    response = client.post(
-        "/books/copies/restore/"
-        "BOOK001/COPY-BOOK001-001"
-    )
+    response = client.post("/books/copies/restore/" "BOOK001/COPY-BOOK001-001")
 
     assert response.status_code == 400
-    assert (
-        fake_database.copies["BOOK001"]
-        ["COPY-BOOK001-001"]["status"]
-        == "Available"
-    )
+    assert fake_database.copies["BOOK001"]["COPY-BOOK001-001"]["status"] == "Available"
 
 
 def test_deactivate_and_activate_changes_student_catalogue_visibility(
@@ -318,9 +280,7 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
 ):
     import modules.student_catalogue.routes as student_routes
 
-    app.register_blueprint(
-        student_routes.student_catalogue_bp
-    )
+    app.register_blueprint(student_routes.student_catalogue_bp)
 
     fake_database = FakeDatabase()
 
@@ -350,9 +310,7 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
         user_session["last_activity"] = time.time()
         user_session.permanent = True
 
-    before = client.get(
-        "/student/catalogue/"
-    )
+    before = client.get("/student/catalogue/")
 
     assert before.status_code == 200
     assert b"Old Programming Guide" in before.data
@@ -367,34 +325,18 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
 
     assert deactivate_response.status_code == 302
 
-    assert not deactivate_response.headers[
-        "Location"
-    ].endswith("/auth/login")
+    assert not deactivate_response.headers["Location"].endswith("/auth/login")
 
-    assert (
-        fake_database.books["BOOK001"][
-            "catalogue_status"
-        ]
-        == "Inactive"
-    )
+    assert fake_database.books["BOOK001"]["catalogue_status"] == "Inactive"
 
-    assert (
-        fake_database.books["BOOK001"][
-            "is_visible_to_students"
-        ]
-        is False
-    )
+    assert fake_database.books["BOOK001"]["is_visible_to_students"] is False
 
-    hidden = client.get(
-        "/student/catalogue/"
-    )
+    hidden = client.get("/student/catalogue/")
 
     assert hidden.status_code == 200
     assert b"Old Programming Guide" not in hidden.data
 
-    direct_details = client.get(
-        "/student/catalogue/details/BOOK001"
-    )
+    direct_details = client.get("/student/catalogue/details/BOOK001")
 
     assert direct_details.status_code == 404
 
@@ -405,27 +347,13 @@ def test_deactivate_and_activate_changes_student_catalogue_visibility(
 
     assert activate_response.status_code == 302
 
-    assert not activate_response.headers[
-        "Location"
-    ].endswith("/auth/login")
+    assert not activate_response.headers["Location"].endswith("/auth/login")
 
-    assert (
-        fake_database.books["BOOK001"][
-            "catalogue_status"
-        ]
-        == "Active"
-    )
+    assert fake_database.books["BOOK001"]["catalogue_status"] == "Active"
 
-    assert (
-        fake_database.books["BOOK001"][
-            "is_visible_to_students"
-        ]
-        is True
-    )
+    assert fake_database.books["BOOK001"]["is_visible_to_students"] is True
 
-    visible_again = client.get(
-        "/student/catalogue/"
-    )
+    visible_again = client.get("/student/catalogue/")
 
     assert visible_again.status_code == 200
     assert b"Old Programming Guide" in visible_again.data

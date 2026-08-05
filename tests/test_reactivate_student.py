@@ -11,10 +11,8 @@ from tests.test_user_management import (
     use_fake_database,
 )
 
+pytestmark = pytest.mark.usefixtures("login_as_librarian")
 
-pytestmark = pytest.mark.usefixtures(
-    "login_as_librarian"
-)
 
 def test_inactive_student_shows_reactivate_button(client, monkeypatch):
     use_fake_database(monkeypatch)
@@ -86,53 +84,27 @@ def test_student_account_can_be_deactivated_and_reactivated(
     client,
     monkeypatch,
 ):
-    fake_database = use_fake_database(
-        monkeypatch
-    )
+    fake_database = use_fake_database(monkeypatch)
 
     # Active -> Inactive
-    deactivate_response = client.post(
-        "/users/deactivate/USR001"
-    )
+    deactivate_response = client.post("/users/deactivate/USR001")
 
     assert deactivate_response.status_code == 302
 
-    assert (
-        fake_database.users["USR001"][
-            "account_status"
-        ]
-        == "Inactive"
-    )
+    assert fake_database.users["USR001"]["account_status"] == "Inactive"
 
     # Inactive -> Active
-    reactivate_response = client.post(
-        "/users/reactivate/USR001"
-    )
+    reactivate_response = client.post("/users/reactivate/USR001")
 
     assert reactivate_response.status_code == 302
 
-    assert (
-        fake_database.users["USR001"][
-            "account_status"
-        ]
-        == "Active"
-    )
+    assert fake_database.users["USR001"]["account_status"] == "Active"
 
     # Two Firestore update operations were recorded.
-    assert len(
-        fake_database.update_history
-    ) == 2
+    assert len(fake_database.update_history) == 2
 
     assert (
-        fake_database.update_history[0][
-            "updated_data"
-        ]["account_status"]
-        == "Inactive"
+        fake_database.update_history[0]["updated_data"]["account_status"] == "Inactive"
     )
 
-    assert (
-        fake_database.update_history[1][
-            "updated_data"
-        ]["account_status"]
-        == "Active"
-    )
+    assert fake_database.update_history[1]["updated_data"]["account_status"] == "Active"

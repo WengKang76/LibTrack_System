@@ -678,6 +678,13 @@ def login():
             "",
         )
 
+        session["student_id"] = (
+            user.get("student_id")
+            or user.get("user_id")
+            or user.get("document_id")
+            or ""
+        )
+
         session["role"] = user_role
 
         flash(
@@ -687,6 +694,9 @@ def login():
             ),
             "success",
         )
+
+        if user_role == "librarian":
+            return redirect("/librarian")
 
         return redirect("/")
     
@@ -709,24 +719,22 @@ def logout():
         "success",
     )
 
-    return redirect(
-        url_for(
-            "authentication.login"
-        )
-    )
+    return redirect("/")
 
 @authentication_bp.route(
     "/forgot-password",
     methods=["GET", "POST"],
 )
 def forgot_password():
+    # Must be created before every possible return path.
+    development_reset_token = None
+
     form_data = {
         "email": "",
     }
 
     error_message = None
     success_message = None
-    development_reset_url = None
 
     if request.method == "POST":
         email = _normalise_email(
@@ -749,7 +757,7 @@ def forgot_password():
                     form_data=form_data,
                     error_message=error_message,
                     success_message=None,
-                    development_reset_url=None,
+                    development_reset_token=None,
                 ),
                 400,
             )
@@ -765,7 +773,7 @@ def forgot_password():
                     form_data=form_data,
                     error_message=error_message,
                     success_message=None,
-                    development_reset_url=None,
+                    development_reset_token=None,
                 ),
                 400,
             )
@@ -789,17 +797,18 @@ def forgot_password():
                 reset_url,
             )
 
+            # Local demonstration only.
             if current_app.config.get(
                 "SHOW_PASSWORD_RESET_LINK",
                 False,
             ):
-                development_reset_url = reset_url
+                development_reset_token = token
 
-        # Always display the same response so outsiders
-        # cannot discover whether an email is registered.
+        # Always use the same message to avoid
+        # revealing whether the email exists.
         success_message = (
             "If an account exists for this email address, "
-            "a password reset link has been generated."
+            "password reset instructions have been generated."
         )
 
     return render_template(
@@ -807,7 +816,7 @@ def forgot_password():
         form_data=form_data,
         error_message=error_message,
         success_message=success_message,
-        development_reset_url=development_reset_url,
+        development_reset_token=development_reset_token,
     )
 
 

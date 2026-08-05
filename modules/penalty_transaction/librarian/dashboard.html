@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Penalty & Transactions | LibTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-hero">
+    <div class="dashboard-hero-content">
+        <p class="dashboard-label">Librarian Workspace</p>
+        <h1>Penalty &amp; Transactions</h1>
+        <p class="dashboard-description">
+            Review overdue books, penalties, payments, waivers, and exception-handling functions.
+        </p>
+    </div>
+</section>
+
+<section class="dashboard-section">
+    <div class="section-heading">
+        <h2>Penalty &amp; Transaction Functions</h2>
+        <p>Select a function to continue.</p>
+    </div>
+
+    <div class="dashboard-card-grid">
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">⏰</div>
+            <h3>Overdue Books</h3>
+            <p>Identify overdue borrowing transactions and calculate penalty amounts.</p>
+            <a href="{{ url_for('penalty_transaction.identify_overdue_books') }}">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">⚠️</div>
+            <h3>Outstanding Penalties</h3>
+            <p>View and search students' outstanding or unpaid penalties.</p>
+            <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">💳</div>
+            <h3>Payment Records</h3>
+            <p>Review completed penalty payments and their transaction details.</p>
+            <a href="{{ url_for('penalty_transaction.view_payment_records') }}">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">📋</div>
+            <h3>Waive Penalty</h3>
+            <p>Select an outstanding penalty and record an approved waiver reason.</p>
+            <a href="{{ url_for('penalty_transaction.librarian_choose_penalty_to_waive') }}">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">↩️</div>
+            <h3>Return Exceptions</h3>
+            <p>Open borrowing and returning records to process return exceptions.</p>
+            <a href="/borrowing/">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">📕</div>
+            <h3>Lost / Damaged Books</h3>
+            <p>Select a borrowing transaction and record a lost or damaged book exception.</p>
+            <a href="{{ url_for('penalty_transaction.librarian_choose_book_exception') }}">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">✅</div>
+            <h3>Borrow Approval Checks</h3>
+            <p>Open borrowing requests and check unpaid penalties before approval.</p>
+            <a href="/borrowing/">Open</a>
+        </article>
+    </div>
+</section>
+{% endblock %}

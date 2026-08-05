@@ -17,14 +17,11 @@ from config.firebase_config import (
     db,
 )
 
-
 DOCUMENT_ID = "LIB001"
 EMAIL = "admin@tarumt.edu.my"
 PASSWORD = "Librarian@123"
 
-current_time = datetime.now().strftime(
-    "%Y-%m-%d %H:%M:%S"
-)
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 librarian_record = {
     "user_id": DOCUMENT_ID,
@@ -33,28 +30,20 @@ librarian_record = {
     "phone_number": "0123456789",
     "role": "Librarian",
     "account_status": "Active",
-    "password_hash": generate_password_hash(
-        PASSWORD
-    ),
+    "password_hash": generate_password_hash(PASSWORD),
     "created_at": current_time,
     "updated_at": current_time,
     "is_dummy_account": False,
 }
 
-document_reference = (
-    db.collection(COLLECTION_USERS)
-    .document(DOCUMENT_ID)
-)
+document_reference = db.collection(COLLECTION_USERS).document(DOCUMENT_ID)
 
 document_reference.set(
     librarian_record,
     merge=True,
 )
 
-saved_record = (
-    document_reference.get().to_dict()
-    or {}
-)
+saved_record = document_reference.get().to_dict() or {}
 
 password_verified = check_password_hash(
     saved_record.get("password_hash", ""),
