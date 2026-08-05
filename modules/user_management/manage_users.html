@@ -15,25 +15,188 @@
 <div class="user-management-page">
 
     <div class="user-page-header">
-
         <div>
             <h1>User Management</h1>
 
             <p>
-                View and manage the dummy user accounts
-                used for system demonstration.
+                Search, filter, sort and manage registered
+                Student accounts.
             </p>
         </div>
-
     </div>
 
-    <div class="dummy-data-notice">
+    <form
+        method="GET"
+        action="{{ url_for(
+            'user_management.manage_users'
+        ) }}"
+        class="user-management-tools"
+    >
 
-        <strong>Demonstration data:</strong>
+        <div class="user-tool-field user-search-field">
+            <label for="student-search">
+                Search Students
+            </label>
 
-        These user records are dummy accounts because
-        account registration has not been implemented yet.
+            <input
+                type="search"
+                id="student-search"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Name, Student ID or email"
+                autocomplete="off"
+            >
+        </div>
 
+        <div class="user-tool-field">
+            <label for="status-filter">
+                Account Status
+            </label>
+
+            <select
+                id="status-filter"
+                name="status"
+            >
+                <option
+                    value="all"
+                    {% if status_filter == 'all' %}
+                        selected
+                    {% endif %}
+                >
+                    All Statuses
+                </option>
+
+                <option
+                    value="active"
+                    {% if status_filter == 'active' %}
+                        selected
+                    {% endif %}
+                >
+                    Active
+                </option>
+
+                <option
+                    value="inactive"
+                    {% if status_filter == 'inactive' %}
+                        selected
+                    {% endif %}
+                >
+                    Inactive
+                </option>
+            </select>
+        </div>
+
+        <div class="user-tool-field">
+            <label for="student-sort">
+                Sort By
+            </label>
+
+            <select
+                id="student-sort"
+                name="sort"
+            >
+                <option
+                    value="name_asc"
+                    {% if sort_option == 'name_asc' %}
+                        selected
+                    {% endif %}
+                >
+                    Name: A–Z
+                </option>
+
+                <option
+                    value="name_desc"
+                    {% if sort_option == 'name_desc' %}
+                        selected
+                    {% endif %}
+                >
+                    Name: Z–A
+                </option>
+
+                <option
+                    value="student_id_asc"
+                    {% if sort_option == 'student_id_asc' %}
+                        selected
+                    {% endif %}
+                >
+                    Student ID: Ascending
+                </option>
+
+                <option
+                    value="student_id_desc"
+                    {% if sort_option == 'student_id_desc' %}
+                        selected
+                    {% endif %}
+                >
+                    Student ID: Descending
+                </option>
+
+                <option
+                    value="registration_newest"
+                    {% if sort_option == 'registration_newest' %}
+                        selected
+                    {% endif %}
+                >
+                    Registration: Newest First
+                </option>
+
+                <option
+                    value="registration_oldest"
+                    {% if sort_option == 'registration_oldest' %}
+                        selected
+                    {% endif %}
+                >
+                    Registration: Oldest First
+                </option>
+
+                <option
+                    value="status_active_first"
+                    {% if sort_option == 'status_active_first' %}
+                        selected
+                    {% endif %}
+                >
+                    Status: Active First
+                </option>
+
+                <option
+                    value="status_inactive_first"
+                    {% if sort_option == 'status_inactive_first' %}
+                        selected
+                    {% endif %}
+                >
+                    Status: Inactive First
+                </option>
+            </select>
+        </div>
+
+        <div class="user-tool-actions">
+            <button
+                type="submit"
+                class="button"
+            >
+                Apply
+            </button>
+
+            <a
+                href="{{ url_for(
+                    'user_management.manage_users'
+                ) }}"
+                class="button button-secondary"
+            >
+                Clear
+            </a>
+        </div>
+
+    </form>
+
+    <div class="user-result-summary">
+        <strong>{{ result_count }}</strong>
+        Student account{% if result_count != 1 %}s{% endif %}
+        found
+
+        {% if has_active_criteria %}
+            using the selected search or organisation options.
+        {% endif %}
     </div>
 
     {% if users %}
@@ -44,11 +207,12 @@
 
             <thead>
                 <tr>
-                    <th>User ID</th>
+                    <th>Student ID</th>
                     <th>Full Name</th>
                     <th>Email</th>
                     <th>Role</th>
                     <th>Account Status</th>
+                    <th>Registration Date</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -60,7 +224,10 @@
                 <tr>
 
                     <td>
-                        {{ user.get('user_id', '-') }}
+                        {{
+                            user.get('student_id')
+                            or user.get('user_id', '-')
+                        }}
                     </td>
 
                     <td>
@@ -102,6 +269,10 @@
                     </td>
 
                     <td>
+                        {{ user.get('created_at', '-') }}
+                    </td>
+
+                    <td>
                         <a
                             href="{{ url_for(
                                 'user_management.user_details',
@@ -127,12 +298,28 @@
 
     <div class="empty-user-message">
 
-        <h2>No user records found</h2>
+        <h2>No Student accounts found</h2>
 
-        <p>
-            Run the dummy-user seed script to create
-            demonstration accounts.
-        </p>
+        {% if has_active_criteria %}
+            <p>
+                No Student account matches the selected
+                search, filter or sorting criteria.
+            </p>
+
+            <a
+                href="{{ url_for(
+                    'user_management.manage_users'
+                ) }}"
+                class="button"
+            >
+                Clear Search and Filters
+            </a>
+        {% else %}
+            <p>
+                There are currently no registered Student
+                accounts to display.
+            </p>
+        {% endif %}
 
     </div>
 

@@ -178,3 +178,115 @@
         grid-template-columns: 1fr;
     }
 }
+/* =========================================================
+   Sprint 3 Day 1: Student search, filtering and sorting
+   ========================================================= */
+
+.user-management-tools {
+    display: grid;
+    grid-template-columns:
+        minmax(250px, 1.5fr)
+        repeat(2, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+    padding: 20px;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow:
+        0 2px 10px
+        rgba(15, 23, 42, 0.06);
+}
+
+.user-tool-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.user-tool-field label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.user-tool-field input,
+.user-tool-field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background-color: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font: inherit;
+}
+
+.user-tool-field input:focus,
+.user-tool-field select:focus {
+    border-color: #2563eb;
+    outline: 3px solid
+        rgba(37, 99, 235, 0.14);
+}
+
+.user-tool-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    grid-column: 1 / -1;
+}
+
+.user-tool-actions .button {
+    min-width: 105px;
+    text-align: center;
+}
+
+.button-secondary {
+    color: #334155;
+    background-color: #e2e8f0;
+}
+
+.button-secondary:hover {
+    background-color: #cbd5e1;
+}
+
+.user-result-summary {
+    margin-bottom: 14px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.user-result-summary strong {
+    color: #0f172a;
+}
+
+@media (max-width: 950px) {
+    .user-management-tools {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .user-search-field {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .user-management-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .user-search-field,
+    .user-tool-actions {
+        grid-column: auto;
+    }
+
+    .user-tool-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .user-tool-actions .button {
+        width: 100%;
+    }
+}
