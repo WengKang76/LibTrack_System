@@ -15,6 +15,69 @@ Librarian Dashboard | LibTrack
     </div>
 </section>
 
+<section class="dashboard-section" aria-labelledby="librarian-statistics-heading">
+    <div class="section-heading">
+        <h2 id="librarian-statistics-heading">Current Library Statistics</h2>
+        <p>
+            {% if librarian_dashboard_data_available %}
+                Values are calculated from the latest integrated library records.
+            {% else %}
+                Temporary zero values are shown because the latest statistics could not be loaded.
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="librarian-statistics-grid">
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">👥</span>
+            <strong id="active-students-count">{{ statistics.active_students }}</strong>
+            <span>Active students</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">📚</span>
+            <strong id="total-book-titles-count">{{ statistics.total_book_titles }}</strong>
+            <span>Book titles</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">📦</span>
+            <strong id="total-physical-copies-count">{{ statistics.total_physical_copies }}</strong>
+            <span>Physical copies</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">✅</span>
+            <strong id="available-copies-count">{{ statistics.available_copies }}</strong>
+            <span>Available copies</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">🔄</span>
+            <strong id="active-borrowings-count">{{ statistics.active_borrowings }}</strong>
+            <span>Active borrowings</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">🗂️</span>
+            <strong id="librarian-active-reservations-count">{{ statistics.active_reservations }}</strong>
+            <span>Active reservations</span>
+        </article>
+
+        <article class="librarian-stat-card {% if statistics.outstanding_penalties > 0 %}librarian-stat-attention{% endif %}">
+            <span class="librarian-stat-icon">⚠️</span>
+            <strong id="librarian-outstanding-penalties-count">{{ statistics.outstanding_penalties }}</strong>
+            <span>Outstanding penalties</span>
+        </article>
+
+        <article class="librarian-stat-card {% if statistics.outstanding_penalty_amount > 0 %}librarian-stat-attention{% endif %}">
+            <span class="librarian-stat-icon">💳</span>
+            <strong id="librarian-outstanding-penalty-amount">RM {{ '%.2f'|format(statistics.outstanding_penalty_amount) }}</strong>
+            <span>Outstanding amount</span>
+        </article>
+    </div>
+</section>
+
 <section class="dashboard-section">
     <div class="section-heading">
         <h2>Library Operations</h2>

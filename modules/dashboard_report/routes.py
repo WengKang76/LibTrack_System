@@ -7,8 +7,10 @@ from modules.authentication.decorators import (
     student_required,
 )
 from modules.dashboard_report.services import (
+    build_librarian_dashboard_statistics,
     build_student_attention_alerts,
     build_student_dashboard_summary,
+    empty_librarian_statistics,
     empty_student_alerts,
     empty_student_summary,
 )
@@ -68,5 +70,27 @@ def student_dashboard():
 @dashboard_bp.route("/librarian")
 @librarian_required
 def librarian_dashboard():
-    """Display the librarian dashboard to authenticated librarians only."""
-    return render_template("librarian_dashboard.html")
+    """Display live read-only library statistics to librarians."""
+    statistics = empty_librarian_statistics()
+    librarian_dashboard_data_available = True
+
+    try:
+        statistics = build_librarian_dashboard_statistics()
+    except Exception:
+        librarian_dashboard_data_available = False
+        current_app.logger.exception(
+            "Failed to load librarian dashboard statistics."
+        )
+        flash(
+            "We could not load the latest library statistics right now. "
+            "You can still open the management modules below.",
+            "error",
+        )
+
+    return render_template(
+        "librarian_dashboard.html",
+        statistics=statistics,
+        librarian_dashboard_data_available=(
+            librarian_dashboard_data_available
+        ),
+    )

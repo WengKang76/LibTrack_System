@@ -711,3 +711,58 @@ body {
         text-align: center;
     }
 }
+
+
+/* SCRUM-1535: live librarian dashboard statistics. */
+.librarian-statistics-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.librarian-stat-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+    box-shadow: 0 7px 18px rgba(15, 23, 42, 0.06);
+    display: grid;
+    gap: 5px;
+    min-height: 120px;
+    padding: 17px;
+}
+
+.librarian-stat-card strong {
+    color: #1d4ed8;
+    font-size: 24px;
+    overflow-wrap: anywhere;
+}
+
+.librarian-stat-card > span:last-child {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.librarian-stat-icon {
+    font-size: 21px;
+}
+
+.librarian-stat-attention {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.librarian-stat-attention strong {
+    color: #b45309;
+}
+
+@media (max-width: 950px) {
+    .librarian-statistics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .librarian-statistics-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -6,6 +6,7 @@ from config.firebase_config import (
     COLLECTION_BORROW_TRANSACTIONS,
     COLLECTION_PENALTIES,
     COLLECTION_RESERVATIONS,
+    COLLECTION_USERS,
     db,
 )
 
@@ -57,3 +58,36 @@ def get_book_by_id(book_id):
     book = document.to_dict() or {}
     book.setdefault("book_id", document.id)
     return book
+
+
+
+def _all_records(collection_name):
+    """Return every record from one dashboard data source."""
+    records = []
+
+    for document in db.collection(collection_name).stream():
+        record = document.to_dict() or {}
+        record.setdefault("document_id", document.id)
+        records.append(record)
+
+    return records
+
+
+def get_all_users():
+    return _all_records(COLLECTION_USERS)
+
+
+def get_all_books():
+    return _all_records(COLLECTION_BOOKS)
+
+
+def get_all_borrow_transactions():
+    return _all_records(COLLECTION_BORROW_TRANSACTIONS)
+
+
+def get_all_reservations():
+    return _all_records(COLLECTION_RESERVATIONS)
+
+
+def get_all_penalties():
+    return _all_records(COLLECTION_PENALTIES)

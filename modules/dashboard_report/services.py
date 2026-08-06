@@ -338,3 +338,104 @@ def build_student_attention_alerts(
     )
 
     return alerts
+
+
+
+INACTIVE_ACCOUNT_STATUSES = {
+    "inactive",
+    "deactivated",
+    "disabled",
+    "suspended",
+}
+
+
+def empty_librarian_statistics():
+    """Return safe zero values when librarian statistics cannot be loaded."""
+    return {
+        "active_students": 0,
+        "total_book_titles": 0,
+        "total_physical_copies": 0,
+        "available_copies": 0,
+        "active_borrowings": 0,
+        "active_reservations": 0,
+        "outstanding_penalties": 0,
+        "outstanding_penalty_amount": 0.0,
+    }
+
+
+def _safe_nonnegative_int(value):
+    """Convert stored numeric values safely for dashboard aggregation."""
+    if isinstance(value, bool):
+        return 0
+
+    try:
+        return max(int(value or 0), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _is_active_student(user):
+    if _normalise_status(user.get("role")) != "student":
+        return False
+
+    account_status = _normalise_status(user.get("account_status"))
+    return account_status not in INACTIVE_ACCOUNT_STATUSES
+
+
+def build_librarian_dashboard_statistics():
+    """Build read-only system-wide statistics for the librarian dashboard."""
+    users = repository.get_all_users()
+    books = repository.get_all_books()
+    borrow_transactions = repository.get_all_borrow_transactions()
+    reservations = repository.get_all_reservations()
+    penalties = repository.get_all_penalties()
+
+    active_students = sum(1 for user in users if _is_active_student(user))
+
+    total_physical_copies = 0
+    available_copies = 0
+
+    for book in books:
+        total_copies = _safe_nonnegative_int(book.get("total_copies"))
+        current_available = _safe_nonnegative_int(book.get("available_copies"))
+
+        total_physical_copies += total_copies
+        if total_copies > 0:
+            current_available = min(current_available, total_copies)
+        available_copies += current_available
+
+    active_borrowings = sum(
+        1
+        for transaction in borrow_transactions
+        if _normalise_status(transaction.get("status"))
+        in ACTIVE_BORROWING_STATUSES
+    )
+
+    active_reservations = sum(
+        1
+        for reservation in reservations
+        if _normalise_status(reservation.get("status"))
+        in ACTIVE_RESERVATION_STATUSES
+    )
+
+    outstanding_penalty_records = [
+        penalty
+        for penalty in penalties
+        if _normalise_status(penalty.get("status"))
+        in OUTSTANDING_PENALTY_STATUSES
+    ]
+    outstanding_penalty_amount = sum(
+        (_penalty_amount(penalty) for penalty in outstanding_penalty_records),
+        Decimal("0"),
+    )
+
+    return {
+        "active_students": active_students,
+        "total_book_titles": len(books),
+        "total_physical_copies": total_physical_copies,
+        "available_copies": available_copies,
+        "active_borrowings": active_borrowings,
+        "active_reservations": active_reservations,
+        "outstanding_penalties": len(outstanding_penalty_records),
+        "outstanding_penalty_amount": float(outstanding_penalty_amount),
+    }
