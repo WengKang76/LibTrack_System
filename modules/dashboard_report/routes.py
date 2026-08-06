@@ -8,8 +8,10 @@ from modules.authentication.decorators import (
 )
 from modules.dashboard_report.services import (
     build_librarian_dashboard_statistics,
+    build_librarian_pending_actions,
     build_student_attention_alerts,
     build_student_dashboard_summary,
+    empty_librarian_pending_actions,
     empty_librarian_statistics,
     empty_student_alerts,
     empty_student_summary,
@@ -72,7 +74,9 @@ def student_dashboard():
 def librarian_dashboard():
     """Display live read-only library statistics to librarians."""
     statistics = empty_librarian_statistics()
+    pending_actions = empty_librarian_pending_actions()
     librarian_dashboard_data_available = True
+    pending_actions_available = True
 
     try:
         statistics = build_librarian_dashboard_statistics()
@@ -87,10 +91,25 @@ def librarian_dashboard():
             "error",
         )
 
+    try:
+        pending_actions = build_librarian_pending_actions()
+    except Exception:
+        pending_actions_available = False
+        current_app.logger.exception(
+            "Failed to load librarian pending-action counts."
+        )
+        flash(
+            "We could not load the latest pending-action summary right now. "
+            "Please check the management modules directly.",
+            "error",
+        )
+
     return render_template(
         "librarian_dashboard.html",
         statistics=statistics,
+        pending_actions=pending_actions,
         librarian_dashboard_data_available=(
             librarian_dashboard_data_available
         ),
+        pending_actions_available=pending_actions_available,
     )

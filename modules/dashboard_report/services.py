@@ -439,3 +439,121 @@ def build_librarian_dashboard_statistics():
         "outstanding_penalties": len(outstanding_penalty_records),
         "outstanding_penalty_amount": float(outstanding_penalty_amount),
     }
+
+
+RETURN_REQUEST_STATUSES = {
+    "return pending",
+    "return requested",
+}
+
+PENDING_RENEWAL_STATUSES = {
+    "pending",
+    "pending approval",
+}
+
+UNRESOLVED_EXCEPTION_STATUSES = {
+    "rejected",
+    "exception pending",
+    "exception recorded",
+    "lost exception recorded",
+    "damaged exception recorded",
+}
+
+RESOLVED_EXCEPTION_STATUSES = {
+    "closed",
+    "completed",
+    "exception completed",
+    "resolved",
+}
+
+
+def empty_librarian_pending_actions():
+    """Return safe zero values for librarian action counts."""
+    return {
+        "pending_borrow_requests": 0,
+        "pending_returns": 0,
+        "pending_renewals": 0,
+        "overdue_transactions": 0,
+        "unresolved_exceptions": 0,
+        "total_pending_actions": 0,
+    }
+
+
+def _has_unresolved_exception(transaction):
+    """Identify exception records that still require librarian attention."""
+    transaction_status = _normalise_status(transaction.get("status"))
+    return_status = _normalise_status(transaction.get("return_status"))
+    exception_status = _normalise_status(
+        transaction.get(
+            "book_exception_status",
+            transaction.get("exception_status"),
+        )
+    )
+
+    if transaction_status in RESOLVED_EXCEPTION_STATUSES:
+        return False
+
+    return any(
+        value in UNRESOLVED_EXCEPTION_STATUSES
+        for value in (
+            transaction_status,
+            return_status,
+            exception_status,
+        )
+    )
+
+
+def build_librarian_pending_actions(today=None):
+    """Build read-only counts of operational work awaiting a librarian."""
+    current_date = today or date.today()
+    borrow_requests = repository.get_all_borrow_requests()
+    borrow_transactions = repository.get_all_borrow_transactions()
+
+    pending_borrow_requests = sum(
+        1
+        for request in borrow_requests
+        if _normalise_status(request.get("status"))
+        in PENDING_BORROW_REQUEST_STATUSES
+    )
+
+    pending_returns = sum(
+        1
+        for transaction in borrow_transactions
+        if _normalise_status(transaction.get("status"))
+        in RETURN_REQUEST_STATUSES
+    )
+
+    pending_renewals = sum(
+        1
+        for transaction in borrow_transactions
+        if _normalise_status(transaction.get("renewal_status"))
+        in PENDING_RENEWAL_STATUSES
+    )
+
+    overdue_transactions = 0
+    for transaction in borrow_transactions:
+        transaction_status = _normalise_status(transaction.get("status"))
+        due_date = _to_date(transaction.get("due_date"))
+
+        if (
+            transaction_status in ACTIVE_BORROWING_STATUSES
+            and due_date is not None
+            and due_date < current_date
+        ):
+            overdue_transactions += 1
+
+    unresolved_exceptions = sum(
+        1
+        for transaction in borrow_transactions
+        if _has_unresolved_exception(transaction)
+    )
+
+    counts = {
+        "pending_borrow_requests": pending_borrow_requests,
+        "pending_returns": pending_returns,
+        "pending_renewals": pending_renewals,
+        "overdue_transactions": overdue_transactions,
+        "unresolved_exceptions": unresolved_exceptions,
+    }
+    counts["total_pending_actions"] = sum(counts.values())
+    return counts

@@ -766,3 +766,88 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* SCRUM-1536: Librarian pending-action summary */
+.dashboard-heading-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.pending-total-badge {
+    background: #e8eefc;
+    border-radius: 999px;
+    color: #243b70;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.5rem 0.85rem;
+    white-space: nowrap;
+}
+
+.pending-action-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.pending-action-card {
+    background: #ffffff;
+    border: 1px solid #e4e9f2;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(32, 52, 89, 0.07);
+    color: #26334d;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-height: 150px;
+    padding: 1.1rem;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pending-action-card:hover,
+.pending-action-card:focus-visible {
+    box-shadow: 0 10px 26px rgba(32, 52, 89, 0.13);
+    transform: translateY(-2px);
+}
+
+.pending-action-card strong {
+    color: #1c2a49;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.pending-action-card span:not(.pending-action-icon) {
+    font-weight: 700;
+}
+
+.pending-action-card small {
+    color: #68758c;
+    margin-top: auto;
+}
+
+.pending-action-icon {
+    font-size: 1.4rem;
+}
+
+.pending-action-warning {
+    border-color: #f2c66d;
+    background: #fffaf0;
+}
+
+.pending-action-danger {
+    border-color: #ef9a9a;
+    background: #fff5f5;
+}
+
+@media (max-width: 640px) {
+    .dashboard-heading-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pending-total-badge {
+        align-self: flex-start;
+    }
+}

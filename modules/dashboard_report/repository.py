@@ -81,6 +81,10 @@ def get_all_books():
     return _all_records(COLLECTION_BOOKS)
 
 
+def get_all_borrow_requests():
+    return _all_records(COLLECTION_BORROW_REQUESTS)
+
+
 def get_all_borrow_transactions():
     return _all_records(COLLECTION_BORROW_TRANSACTIONS)
 

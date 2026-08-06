@@ -78,6 +78,61 @@ Librarian Dashboard | LibTrack
     </div>
 </section>
 
+<section class="dashboard-section" aria-labelledby="pending-actions-heading">
+    <div class="section-heading dashboard-heading-row">
+        <div>
+            <h2 id="pending-actions-heading">Pending Actions</h2>
+            <p>
+                {% if pending_actions_available %}
+                    Review unresolved activities that require librarian attention.
+                {% else %}
+                    Counts are temporarily unavailable. Open the related modules to review current work.
+                {% endif %}
+            </p>
+        </div>
+        <span class="pending-total-badge">
+            {{ pending_actions.total_pending_actions }} total
+        </span>
+    </div>
+
+    <div class="pending-action-grid">
+        <a class="pending-action-card" href="/borrowing/">
+            <span class="pending-action-icon">📥</span>
+            <strong id="pending-borrow-requests-count">{{ pending_actions.pending_borrow_requests }}</strong>
+            <span>Borrow requests</span>
+            <small>Waiting for approval</small>
+        </a>
+
+        <a class="pending-action-card" href="/borrowing/">
+            <span class="pending-action-icon">↩️</span>
+            <strong id="pending-returns-count">{{ pending_actions.pending_returns }}</strong>
+            <span>Return requests</span>
+            <small>Waiting for confirmation</small>
+        </a>
+
+        <a class="pending-action-card" href="/borrowing/">
+            <span class="pending-action-icon">🗓️</span>
+            <strong id="pending-renewals-count">{{ pending_actions.pending_renewals }}</strong>
+            <span>Renewal requests</span>
+            <small>Waiting for a decision</small>
+        </a>
+
+        <a class="pending-action-card {% if pending_actions.overdue_transactions > 0 %}pending-action-warning{% endif %}" href="/penalty/librarian/overdue">
+            <span class="pending-action-icon">⏰</span>
+            <strong id="overdue-transactions-count">{{ pending_actions.overdue_transactions }}</strong>
+            <span>Overdue transactions</span>
+            <small>Past the recorded due date</small>
+        </a>
+
+        <a class="pending-action-card {% if pending_actions.unresolved_exceptions > 0 %}pending-action-danger{% endif %}" href="/penalty/librarian/book-exception">
+            <span class="pending-action-icon">🛠️</span>
+            <strong id="unresolved-exceptions-count">{{ pending_actions.unresolved_exceptions }}</strong>
+            <span>Exception cases</span>
+            <small>Require follow-up</small>
+        </a>
+    </div>
+</section>
+
 <section class="dashboard-section">
     <div class="section-heading">
         <h2>Library Operations</h2>
