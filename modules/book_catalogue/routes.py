@@ -376,25 +376,115 @@ def _is_book_active(book):
     catalogue_status = str(book.get("catalogue_status", "Active")).lower()
     return catalogue_status not in {"inactive", "unavailable"}
 
+# ============================================================
+# SCRUM-1523: SEARCH BOOK RECORDS
+# ============================================================
+
+def _normalise_book_search_text(value):
+    return str(
+        value or ""
+    ).strip().casefold()
+
+
+def _book_matches_search(
+    book,
+    search_query,
+):
+    """
+    Return True when the search keyword matches
+    any searchable book information.
+
+    Search is partial and case-insensitive.
+    """
+
+    normalised_query = (
+        _normalise_book_search_text(
+            search_query
+        )
+    )
+
+    if not normalised_query:
+        return True
+
+    searchable_values = (
+        book.get("title", ""),
+        book.get("author", ""),
+        book.get("isbn", ""),
+        book.get("category", ""),
+        book.get("publisher", ""),
+        book.get("publication_year", ""),
+    )
+
+    return any(
+        normalised_query
+        in _normalise_book_search_text(
+            value
+        )
+        for value in searchable_values
+    )
 
 # ============================================================
 # DISPLAY ALL BOOK RECORDS
 # ============================================================
-
-
-@book_bp.route("/", methods=["GET"])
+@book_bp.route(
+    "/",
+    methods=["GET"],
+)
 @librarian_required
 def manage_books():
+    # SCRUM-1523:
+    # Search by book title, author, ISBN,
+    # category, publisher, or publication year.
+    search_query = request.args.get(
+        "q",
+        "",
+    ).strip()
+
     books = []
 
-    for document in db.collection(COLLECTION_BOOKS).stream():
+    for document in (
+        db.collection(
+            COLLECTION_BOOKS
+        ).stream()
+    ):
         book = document.to_dict() or {}
+
         book["book_id"] = document.id
-        book["catalogue_status"] = "Active" if _is_book_active(book) else "Inactive"
+
+        book["catalogue_status"] = (
+            "Active"
+            if _is_book_active(book)
+            else "Inactive"
+        )
+
+        if not _book_matches_search(
+            book,
+            search_query,
+        ):
+            continue
+
         books.append(book)
 
-    books.sort(key=lambda book: str(book.get("title", "")).lower())
-    return render_template("manage_books.html", books=books)
+    books.sort(
+        key=lambda book: (
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            )
+        )
+    )
+
+    return render_template(
+        "manage_books.html",
+        books=books,
+        search_query=search_query,
+        result_count=len(books),
+        has_active_search=bool(
+            search_query
+        ),
+    )
 
 
 # ============================================================

@@ -42,6 +42,29 @@ VALID_STUDENT_SORT_OPTIONS = {
     "status_active_first",
     "status_inactive_first",
 }
+STUDENTS_PER_PAGE = 10
+
+
+def _parse_page_number(value):
+    """
+    Return a safe positive page number.
+
+    Invalid, empty, zero, and negative values
+    default to the first page.
+    """
+
+    try:
+        page_number = int(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 1
+
+    if page_number < 1:
+        return 1
+
+    return page_number
 
 
 def _current_timestamp():
@@ -350,6 +373,14 @@ def manage_users():
         not in VALID_STUDENT_SORT_OPTIONS
     ):
         sort_option = "name_asc"
+            # SCRUM-1522:
+    # Read and validate the requested page.
+    page_number = _parse_page_number(
+        request.args.get(
+            "page",
+            "1",
+        )
+    )
 
     user_documents = (
         db.collection(
@@ -403,9 +434,52 @@ def manage_users():
 
         users.append(user)
 
-    _sort_students(
+        _sort_students(
         users,
         sort_option,
+    )
+
+    # SCRUM-1522:
+    # Paginate the filtered and sorted results.
+    total_results = len(users)
+
+    total_pages = max(
+        1,
+        (
+            total_results
+            + STUDENTS_PER_PAGE
+            - 1
+        )
+        // STUDENTS_PER_PAGE,
+    )
+
+    # When a page exceeds the available range,
+    # display the final available page.
+    if page_number > total_pages:
+        page_number = total_pages
+
+    start_index = (
+        page_number - 1
+    ) * STUDENTS_PER_PAGE
+
+    end_index = (
+        start_index
+        + STUDENTS_PER_PAGE
+    )
+
+    paginated_users = users[
+        start_index:end_index
+    ]
+
+    first_result_number = (
+        start_index + 1
+        if total_results > 0
+        else 0
+    )
+
+    last_result_number = min(
+        end_index,
+        total_results,
     )
 
     has_active_criteria = bool(
@@ -416,11 +490,37 @@ def manage_users():
 
     return render_template(
         "manage_users.html",
-        users=users,
+        users=paginated_users,
         search_query=search_query,
         status_filter=status_filter,
         sort_option=sort_option,
-        result_count=len(users),
+        result_count=total_results,
+        page_number=page_number,
+        total_pages=total_pages,
+        page_numbers=list(
+            range(
+                1,
+                total_pages + 1,
+            )
+        ),
+        has_previous_page=(
+            page_number > 1
+        ),
+        has_next_page=(
+            page_number < total_pages
+        ),
+        previous_page=(
+            page_number - 1
+        ),
+        next_page=(
+            page_number + 1
+        ),
+        first_result_number=(
+            first_result_number
+        ),
+        last_result_number=(
+            last_result_number
+        ),
         has_active_criteria=(
             has_active_criteria
         ),

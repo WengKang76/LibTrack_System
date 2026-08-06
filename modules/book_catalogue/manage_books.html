@@ -3,7 +3,10 @@
 {% block extra_css %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/book_catalogue.css') }}"
+    href="{{ url_for(
+        'static',
+        filename='css/book_catalogue.css'
+    ) }}"
 >
 {% endblock %}
 
@@ -12,15 +15,83 @@
 <div class="page-header">
     <div>
         <h1>📚 Book Catalogue Management</h1>
-        <p>View and edit all book records.</p>
+
+        <p>
+            View and edit all book records.
+        </p>
     </div>
 
     <a
-        href="{{ url_for('book_catalogue.add_book') }}"
+        href="{{ url_for(
+            'book_catalogue.add_book'
+        ) }}"
         class="button"
     >
         + Add New Book
     </a>
+</div>
+
+<form
+    class="book-search-tools"
+    method="GET"
+    action="{{ url_for(
+        'book_catalogue.manage_books'
+    ) }}"
+>
+    <div class="book-search-field">
+        <label for="book-search">
+            Search Books
+        </label>
+
+        <input
+            id="book-search"
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Search by title, author, ISBN, category, publisher, or year"
+            autocomplete="off"
+        >
+    </div>
+
+    <div class="book-search-actions">
+        <button
+            type="submit"
+            class="button"
+        >
+            Search
+        </button>
+
+        {% if has_active_search %}
+            <a
+                href="{{ url_for(
+                    'book_catalogue.manage_books'
+                ) }}"
+                class="
+                    button
+                    button-secondary
+                "
+            >
+                Clear Search
+            </a>
+        {% endif %}
+    </div>
+</form>
+
+<div class="book-result-summary">
+    <strong>{{ result_count }}</strong>
+
+    {% if result_count == 1 %}
+        book record found
+    {% else %}
+        book records found
+    {% endif %}
+
+    {% if has_active_search %}
+        for
+        <strong>
+            “{{ search_query }}”
+        </strong>
+    {% endif %}
 </div>
 
 {% if books %}
@@ -42,61 +113,112 @@
 
         <tbody>
             {% for book in books %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ book.get('title', '-') }}</td>
-                <td>{{ book.get('author', '-') }}</td>
-                <td>{{ book.get('isbn', '-') }}</td>
-                <td>{{ book.get('category', '-') }}</td>
-                <td>{{ book.get('publisher', '-') or '-' }}</td>
-                <td>{{ book.get('publication_year', '-') or '-' }}</td>
+                <tr>
+                    <td>
+                        {{ loop.index }}
+                    </td>
 
-                <td>
-    <div class="action-buttons">
+                    <td>
+                        {{ book.get(
+                            'title',
+                            '-'
+                        ) }}
+                    </td>
 
-        <a
-            href="{{ url_for(
-                'book_catalogue.librarian_book_details',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small button-view"
-        >
-            View Details
-        </a>
+                    <td>
+                        {{ book.get(
+                            'author',
+                            '-'
+                        ) }}
+                    </td>
 
-        <a
-            href="{{ url_for(
-                'book_catalogue.add_book_copies',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small button-add-copy"
-        >
-            Add Copies
-        </a>
+                    <td>
+                        {{ book.get(
+                            'isbn',
+                            '-'
+                        ) }}
+                    </td>
 
-        <a
-            href="{{ url_for(
-                'book_catalogue.edit_book',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small"
-        >
-            Edit
-        </a>
+                    <td>
+                        {{ book.get(
+                            'category',
+                            '-'
+                        ) }}
+                    </td>
 
-        <a
-            href="{{ url_for(
-                'book_catalogue.delete_book',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small button-danger"
-        >
-            Delete
-        </a>
+                    <td>
+                        {{ book.get(
+                            'publisher',
+                            '-'
+                        ) or '-' }}
+                    </td>
 
-    </div>
-</td>
-            </tr>
+                    <td>
+                        {{ book.get(
+                            'publication_year',
+                            '-'
+                        ) or '-' }}
+                    </td>
+
+                    <td>
+                        <div class="action-buttons">
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.librarian_book_details',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                    button-view
+                                "
+                            >
+                                View Details
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.add_book_copies',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                    button-add-copy
+                                "
+                            >
+                                Add Copies
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.edit_book',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                "
+                            >
+                                Edit
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.delete_book',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                    button-danger
+                                "
+                            >
+                                Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -105,15 +227,38 @@
 {% else %}
 
 <div class="empty-state">
-    <h3>No book records found</h3>
-    <p>Add a book record first.</p>
+    {% if has_active_search %}
+        <h3>No matching books found</h3>
 
-    <a
-        href="{{ url_for('book_catalogue.add_book') }}"
-        class="button"
-    >
-        Add New Book
-    </a>
+        <p>
+            No book record matches
+            “{{ search_query }}”.
+        </p>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.manage_books'
+            ) }}"
+            class="button"
+        >
+            Clear Search
+        </a>
+    {% else %}
+        <h3>No book records found</h3>
+
+        <p>
+            Add a book record first.
+        </p>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.add_book'
+            ) }}"
+            class="button"
+        >
+            Add New Book
+        </a>
+    {% endif %}
 </div>
 
 {% endif %}

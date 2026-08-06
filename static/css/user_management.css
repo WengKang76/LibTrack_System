@@ -290,3 +290,95 @@
         width: 100%;
     }
 }
+/* =========================================================
+   Sprint 3 Day 2: Student Management pagination
+   ========================================================= */
+
+.user-pagination-summary {
+    margin-top: 16px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.user-pagination-summary strong {
+    color: #0f172a;
+}
+
+.user-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.pagination-page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 7px 11px;
+    color: #334155;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pagination-page:hover {
+    color: #1d4ed8;
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.pagination-page-active {
+    color: #ffffff;
+    background-color: #2563eb;
+    border-color: #2563eb;
+    cursor: default;
+}
+
+.pagination-page-active:hover {
+    color: #ffffff;
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.pagination-link {
+    min-width: 100px;
+    text-align: center;
+}
+
+.pagination-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+@media (max-width: 700px) {
+    .user-pagination {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pagination-link {
+        width: 100%;
+    }
+
+    .pagination-pages {
+        order: -1;
+    }
+}

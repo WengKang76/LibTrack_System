@@ -294,6 +294,116 @@
 
     </div>
 
+    <div class="user-pagination-summary">
+    Showing
+    <strong>
+        {{ first_result_number }}
+        –
+        {{ last_result_number }}
+    </strong>
+    of
+    <strong>{{ result_count }}</strong>
+    Student accounts
+</div>
+
+{% if total_pages > 1 %}
+<nav
+    class="user-pagination"
+    aria-label="Student list pagination"
+>
+    {% if has_previous_page %}
+        <a
+            class="
+                button
+                button-secondary
+                pagination-link
+            "
+            href="{{ url_for(
+                'user_management.manage_users',
+                q=search_query,
+                status=status_filter,
+                sort=sort_option,
+                page=previous_page
+            ) }}"
+        >
+            Previous
+        </a>
+    {% else %}
+        <span
+            class="
+                button
+                button-secondary
+                pagination-link
+                pagination-disabled
+            "
+            aria-disabled="true"
+        >
+            Previous
+        </span>
+    {% endif %}
+
+    <div class="pagination-pages">
+        {% for page in page_numbers %}
+            {% if page == page_number %}
+                <span
+                    class="
+                        pagination-page
+                        pagination-page-active
+                    "
+                    aria-current="page"
+                >
+                    {{ page }}
+                </span>
+            {% else %}
+                <a
+                    class="pagination-page"
+                    href="{{ url_for(
+                        'user_management.manage_users',
+                        q=search_query,
+                        status=status_filter,
+                        sort=sort_option,
+                        page=page
+                    ) }}"
+                >
+                    {{ page }}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {% if has_next_page %}
+        <a
+            class="
+                button
+                button-secondary
+                pagination-link
+            "
+            href="{{ url_for(
+                'user_management.manage_users',
+                q=search_query,
+                status=status_filter,
+                sort=sort_option,
+                page=next_page
+            ) }}"
+        >
+            Next
+        </a>
+    {% else %}
+        <span
+            class="
+                button
+                button-secondary
+                pagination-link
+                pagination-disabled
+            "
+            aria-disabled="true"
+        >
+            Next
+        </span>
+    {% endif %}
+</nav>
+{% endif %}
+
     {% else %}
 
     <div class="empty-user-message">
