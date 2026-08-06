@@ -53,15 +53,82 @@
         >
     </div>
 
+    <div class="book-filter-field">
+        <label for="book-category-filter">
+            Category
+        </label>
+
+        <select
+            id="book-category-filter"
+            name="category"
+        >
+            <option value="all">
+                All Categories
+            </option>
+
+            {% for category in category_options %}
+                <option
+                    value="{{ category | lower }}"
+                    {% if
+                        category_filter
+                        == category | lower
+                    %}
+                        selected
+                    {% endif %}
+                >
+                    {{ category }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="book-filter-field">
+        <label for="book-status-filter">
+            Catalogue Status
+        </label>
+
+        <select
+            id="book-status-filter"
+            name="status"
+        >
+            <option
+                value="all"
+                {% if status_filter == 'all' %}
+                    selected
+                {% endif %}
+            >
+                All Statuses
+            </option>
+
+            <option
+                value="active"
+                {% if status_filter == 'active' %}
+                    selected
+                {% endif %}
+            >
+                Active
+            </option>
+
+            <option
+                value="inactive"
+                {% if status_filter == 'inactive' %}
+                    selected
+                {% endif %}
+            >
+                Inactive
+            </option>
+        </select>
+    </div>
+
     <div class="book-search-actions">
         <button
             type="submit"
             class="button"
         >
-            Search
+            Apply
         </button>
 
-        {% if has_active_search %}
+        {% if has_active_criteria %}
             <a
                 href="{{ url_for(
                     'book_catalogue.manage_books'
@@ -71,7 +138,7 @@
                     button-secondary
                 "
             >
-                Clear Search
+                Clear
             </a>
         {% endif %}
     </div>
@@ -87,11 +154,11 @@
     {% endif %}
 
     {% if has_active_search %}
-        for
-        <strong>
-            “{{ search_query }}”
-        </strong>
-    {% endif %}
+    for
+    <strong>
+        “{{ search_query }}”
+    </strong>
+{% endif %}
 </div>
 
 {% if books %}
@@ -227,12 +294,12 @@
 {% else %}
 
 <div class="empty-state">
-    {% if has_active_search %}
+    {% if has_active_criteria %}
         <h3>No matching books found</h3>
 
         <p>
-            No book record matches
-            “{{ search_query }}”.
+    No book records match the selected
+    search or filter criteria.
         </p>
 
         <a
@@ -241,7 +308,7 @@
             ) }}"
             class="button"
         >
-            Clear Search
+            Clear Search and Filters
         </a>
     {% else %}
         <h3>No book records found</h3>

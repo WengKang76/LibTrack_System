@@ -1,5 +1,3 @@
-from urllib import response
-
 import pytest
 
 import modules.book_catalogue.routes as book_routes
@@ -48,7 +46,7 @@ class FakeDatabase:
                 "category": "Programming",
                 "publisher": "Prentice Hall",
                 "publication_year": "2008",
-                "catalogue_status": "Active",
+                "is_active": True,
             },
             "BOOK002": {
                 "title": "Database System Concepts",
@@ -57,16 +55,25 @@ class FakeDatabase:
                 "category": "Database",
                 "publisher": "McGraw Hill",
                 "publication_year": "2019",
-                "catalogue_status": "Active",
+                "is_active": True,
             },
             "BOOK003": {
                 "title": "Software Engineering",
                 "author": "Ian Sommerville",
                 "isbn": "9780133943030",
-                "category": "Software Engineering",
+                "category": "Programming",
                 "publisher": "Pearson",
                 "publication_year": "2016",
-                "catalogue_status": "Inactive",
+                "is_active": False,
+            },
+            "BOOK004": {
+                "title": "Computer Networks",
+                "author": "Andrew Tanenbaum",
+                "isbn": "9780132126953",
+                "category": "Networking",
+                "publisher": "Pearson",
+                "publication_year": "2011",
+                "is_active": False,
             },
         }
 
@@ -79,7 +86,7 @@ class FakeDatabase:
 
 
 @pytest.fixture
-def book_search_database(
+def book_filter_database(
     monkeypatch,
 ):
     fake_database = FakeDatabase()
@@ -90,6 +97,17 @@ def book_search_database(
         fake_database,
     )
 
+    monkeypatch.setattr(
+        book_routes,
+        "_is_book_active",
+        lambda book: bool(
+            book.get(
+                "is_active",
+                False,
+            )
+        ),
+    )
+
     return fake_database
 
 
@@ -97,132 +115,24 @@ def _page_text(response):
     return response.data.decode(
         "utf-8"
     )
-def _table_body_text(response):
-    page_text = _page_text(response)
-
-    start_marker = "<tbody>"
-    end_marker = "</tbody>"
-
-    if (
-        start_marker not in page_text
-        or end_marker not in page_text
-    ):
-        return ""
-
-    return (
-        page_text
-        .split(
-            start_marker,
-            1,
-        )[1]
-        .split(
-            end_marker,
-            1,
-        )[0]
-    )
 
 
 # ============================================================
-# SCRUM-1523: SEARCH BOOK RECORDS
+# SCRUM-1525: FILTER BOOK RECORDS
 # ============================================================
 
-def test_scrum_1523_searches_by_partial_title_case_insensitively(
+def test_scrum_1525_filters_books_by_category(
     client,
-    book_search_database,
+    book_filter_database,
 ):
     response = client.get(
-        "/books/?q=CLEAN"
-    )
-
-    table_text = _table_body_text(
-    response
-)
-
-    assert response.status_code == 200
-    assert "Clean Code" in table_text
-
-    assert (
-    "Database System Concepts"
-    not in table_text
-)
-
-    assert (
-    "Software Engineering"
-    not in table_text
-)
-
-
-def test_scrum_1523_searches_by_author(
-    client,
-    book_search_database,
-):
-    response = client.get(
-        "/books/?q=silberschatz"
+        "/books/?category=programming"
     )
 
     page_text = _page_text(response)
 
     assert response.status_code == 200
-
-    assert (
-        "Database System Concepts"
-        in page_text
-    )
-
-    assert "Clean Code" not in page_text
-
-
-def test_scrum_1523_searches_by_isbn(
-    client,
-    book_search_database,
-):
-    response = client.get(
-        "/books/?q=9780133943030"
-    )
-
-    page_text = _page_text(response)
-
-    assert response.status_code == 200
-
-    assert (
-        "Software Engineering"
-        in page_text
-    )
-
-    assert "Clean Code" not in page_text
-
-
-def test_scrum_1523_searches_by_category(
-    client,
-    book_search_database,
-):
-    response = client.get(
-        "/books/?q=database"
-    )
-
-    page_text = _page_text(response)
-
-    assert response.status_code == 200
-
-    assert (
-        "Database System Concepts"
-        in page_text
-    )
-
-    assert "Clean Code" not in page_text
-
-
-def test_scrum_1523_searches_by_publisher(
-    client,
-    book_search_database,
-):
-    response = client.get(
-        "/books/?q=pearson"
-    )
-
-    page_text = _page_text(response)
-
-    assert response.status_code == 200
+    assert "Clean Code" in page_text
 
     assert (
         "Software Engineering"
@@ -234,34 +144,195 @@ def test_scrum_1523_searches_by_publisher(
         not in page_text
     )
 
-
-def test_scrum_1523_searches_by_publication_year(
-    client,
-    book_search_database,
-):
-    response = client.get(
-        "/books/?q=2008"
+    assert (
+        "Computer Networks"
+        not in page_text
     )
 
-    table_text = _table_body_text(
-    response
-)
 
-    assert response.status_code == 200
-    assert "Clean Code" in table_text
-
-    assert (
-    "Software Engineering"
-    not in table_text
-)
-
-
-def test_scrum_1523_unknown_search_displays_clear_message(
+def test_scrum_1525_filters_active_books(
     client,
-    book_search_database,
+    book_filter_database,
 ):
     response = client.get(
-        "/books/?q=unknown-book"
+        "/books/?status=active"
+    )
+
+    page_text = _page_text(response)
+
+    assert response.status_code == 200
+    assert "Clean Code" in page_text
+
+    assert (
+        "Database System Concepts"
+        in page_text
+    )
+
+    assert (
+        "Software Engineering"
+        not in page_text
+    )
+
+    assert (
+        "Computer Networks"
+        not in page_text
+    )
+
+
+def test_scrum_1525_filters_inactive_books(
+    client,
+    book_filter_database,
+):
+    response = client.get(
+        "/books/?status=inactive"
+    )
+
+    page_text = _page_text(response)
+
+    assert response.status_code == 200
+
+    assert (
+        "Software Engineering"
+        in page_text
+    )
+
+    assert (
+        "Computer Networks"
+        in page_text
+    )
+
+    assert "Clean Code" not in page_text
+
+    assert (
+        "Database System Concepts"
+        not in page_text
+    )
+
+
+def test_scrum_1525_combines_category_and_status_filters(
+    client,
+    book_filter_database,
+):
+    response = client.get(
+        (
+            "/books/"
+            "?category=programming"
+            "&status=inactive"
+        )
+    )
+
+    page_text = _page_text(response)
+
+    assert response.status_code == 200
+
+    assert (
+        "Software Engineering"
+        in page_text
+    )
+
+    assert "Clean Code" not in page_text
+
+    assert (
+        "Database System Concepts"
+        not in page_text
+    )
+
+
+def test_scrum_1525_combines_search_and_filters(
+    client,
+    book_filter_database,
+):
+    response = client.get(
+        (
+            "/books/"
+            "?q=software"
+            "&category=programming"
+            "&status=inactive"
+        )
+    )
+
+    page_text = _page_text(response)
+
+    assert response.status_code == 200
+
+    assert (
+        "Software Engineering"
+        in page_text
+    )
+
+    assert "Clean Code" not in page_text
+
+    assert (
+        "Computer Networks"
+        not in page_text
+    )
+
+
+def test_scrum_1525_invalid_filters_default_to_all(
+    client,
+    book_filter_database,
+):
+    response = client.get(
+        (
+            "/books/"
+            "?category=unknown-category"
+            "&status=unknown-status"
+        )
+    )
+
+    page_text = _page_text(response)
+
+    assert response.status_code == 200
+    assert "Clean Code" in page_text
+
+    assert (
+        "Database System Concepts"
+        in page_text
+    )
+
+    assert (
+        "Software Engineering"
+        in page_text
+    )
+
+    assert (
+        "Computer Networks"
+        in page_text
+    )
+
+
+def test_scrum_1525_displays_available_category_options(
+    client,
+    book_filter_database,
+):
+    response = client.get(
+        "/books/"
+    )
+
+    page_text = _page_text(response)
+
+    assert response.status_code == 200
+
+    assert (
+        "All Categories"
+        in page_text
+    )
+
+    assert "Programming" in page_text
+    assert "Database" in page_text
+    assert "Networking" in page_text
+
+
+def test_scrum_1525_no_matching_filters_displays_message(
+    client,
+    book_filter_database,
+):
+    response = client.get(
+        (
+            "/books/"
+            "?category=database"
+            "&status=inactive"
+        )
     )
 
     page_text = _page_text(response)
@@ -273,45 +344,7 @@ def test_scrum_1523_unknown_search_displays_clear_message(
         in page_text
     )
 
-    assert "Clear Search" in page_text
-
     assert (
-        'value="unknown-book"'
+        "Clear Search and Filters"
         in page_text
     )
-
-
-def test_scrum_1523_blank_search_displays_all_books_in_title_order(
-    client,
-    book_search_database,
-):
-    response = client.get(
-        "/books/"
-    )
-
-    table_text = _table_body_text(
-    response
-)
-
-    assert response.status_code == 200
-    assert "Clean Code" in table_text
-
-    assert (
-    "Database System Concepts"
-    in table_text
-)
-
-    assert (
-    "Software Engineering"
-    in table_text
-)
-
-    assert (
-    table_text.index("Clean Code")
-    < table_text.index(
-        "Database System Concepts"
-    )
-    < table_text.index(
-        "Software Engineering"
-    )
-)

@@ -166,6 +166,7 @@ def _get_book_copies(book_id):
     """Return every physical copy that belongs to a book."""
     copies_documents = (
         db.collection(COLLECTION_BOOKS).document(book_id).collection("copies").stream()
+
     )
 
     copies = []
@@ -176,6 +177,91 @@ def _get_book_copies(book_id):
 
     copies.sort(key=lambda copy_record: int(copy_record.get("copy_number", 0)))
     return copies
+# ============================================================
+# SCRUM-1526: FILTER INDIVIDUAL BOOK COPIES
+# ============================================================
+
+VALID_COPY_STATUS_FILTERS = {
+    "all",
+    "available",
+    "borrowed",
+    "reserved",
+    "damaged",
+    "lost",
+}
+
+
+def _copy_matches_status_filter(
+    copy_record,
+    status_filter,
+):
+    """
+    Return True when the physical copy matches
+    the selected copy-status filter.
+    """
+
+    if status_filter == "all":
+        return True
+
+    copy_status = (
+        _normalise_copy_search_text(
+            copy_record.get(
+                "status",
+                "",
+            )
+        )
+    )
+
+    return copy_status == status_filter
+# ============================================================
+# SCRUM-1524: SEARCH INDIVIDUAL BOOK COPIES
+# ============================================================
+
+def _normalise_copy_search_text(value):
+    return str(
+        value or ""
+    ).strip().casefold()
+
+
+def _copy_identifier(copy_record):
+    """
+    Return the physical copy's unique identifier.
+    """
+
+    return str(
+        copy_record.get("copy_id")
+        or copy_record.get("document_id")
+        or ""
+    ).strip()
+
+
+def _copy_matches_search(
+    copy_record,
+    search_query,
+):
+    """
+    Return True when the complete or partial
+    Copy ID matches the search keyword.
+
+    Matching is case-insensitive.
+    """
+
+    normalised_query = (
+        _normalise_copy_search_text(
+            search_query
+        )
+    )
+
+    if not normalised_query:
+        return True
+
+    copy_id = _normalise_copy_search_text(
+        _copy_identifier(
+            copy_record
+        )
+    )
+
+    return normalised_query in copy_id
 
 
 def _get_book_copy_by_id(book_id, copy_id):
@@ -422,6 +508,60 @@ def _book_matches_search(
         )
         for value in searchable_values
     )
+# ============================================================
+# SCRUM-1525: FILTER BOOK RECORDS
+# ============================================================
+
+VALID_BOOK_STATUS_FILTERS = {
+    "all",
+    "active",
+    "inactive",
+}
+
+
+def _book_matches_filters(
+    book,
+    category_filter,
+    status_filter,
+):
+    """
+    Return True when the book matches the selected
+    category and catalogue-status filters.
+    """
+
+    book_category = (
+        _normalise_book_search_text(
+            book.get(
+                "category",
+                "",
+            )
+        )
+    )
+
+    book_status = (
+        _normalise_book_search_text(
+            book.get(
+                "catalogue_status",
+                "inactive",
+            )
+        )
+    )
+
+    if (
+        category_filter != "all"
+        and book_category
+        != category_filter
+    ):
+        return False
+
+    if (
+        status_filter != "all"
+        and book_status
+        != status_filter
+    ):
+        return False
+
+    return True
 
 # ============================================================
 # DISPLAY ALL BOOK RECORDS
@@ -433,14 +573,40 @@ def _book_matches_search(
 @librarian_required
 def manage_books():
     # SCRUM-1523:
-    # Search by book title, author, ISBN,
-    # category, publisher, or publication year.
+    # Search by book information.
     search_query = request.args.get(
         "q",
         "",
     ).strip()
 
-    books = []
+    # SCRUM-1525:
+    # Filter by category and catalogue status.
+    category_filter = (
+        _normalise_book_search_text(
+            request.args.get(
+                "category",
+                "all",
+            )
+        )
+    )
+
+    status_filter = (
+        _normalise_book_search_text(
+            request.args.get(
+                "status",
+                "all",
+            )
+        )
+    )
+
+    if (
+        status_filter
+        not in VALID_BOOK_STATUS_FILTERS
+    ):
+        status_filter = "all"
+
+    all_books = []
+    category_values = {}
 
     for document in (
         db.collection(
@@ -457,9 +623,51 @@ def manage_books():
             else "Inactive"
         )
 
+        category_name = str(
+            book.get(
+                "category",
+                "",
+            )
+            or ""
+        ).strip()
+
+        if category_name:
+            normalised_category = (
+                _normalise_book_search_text(
+                    category_name
+                )
+            )
+
+            category_values[
+                normalised_category
+            ] = category_name
+
+        all_books.append(book)
+
+    valid_categories = set(
+        category_values.keys()
+    )
+
+    if (
+        category_filter != "all"
+        and category_filter
+        not in valid_categories
+    ):
+        category_filter = "all"
+
+    books = []
+
+    for book in all_books:
         if not _book_matches_search(
             book,
             search_query,
+        ):
+            continue
+
+        if not _book_matches_filters(
+            book,
+            category_filter,
+            status_filter,
         ):
             continue
 
@@ -476,13 +684,30 @@ def manage_books():
         )
     )
 
+    category_options = sorted(
+        category_values.values(),
+        key=_normalise_book_search_text,
+    )
+
+    has_active_criteria = bool(
+        search_query
+        or category_filter != "all"
+        or status_filter != "all"
+    )
+
     return render_template(
         "manage_books.html",
         books=books,
         search_query=search_query,
+        category_filter=category_filter,
+        status_filter=status_filter,
+        category_options=category_options,
         result_count=len(books),
         has_active_search=bool(
             search_query
+        ),
+        has_active_criteria=(
+            has_active_criteria
         ),
     )
 
@@ -748,17 +973,91 @@ def get_book_by_id(book_id):
 @librarian_required
 def librarian_book_details(book_id):
     book = get_book_by_id(book_id)
+
     if book is None:
         return "Book record not found.", 404
 
-    copies = _get_book_copies(book_id)
+    # SCRUM-1524:
+    # Search using a complete or partial Copy ID.
+    copy_search_query = request.args.get(
+        "copy_q",
+        "",
+    ).strip()
+
+    # SCRUM-1526:
+    # Filter individual copies by status.
+    copy_status_filter = (
+        _normalise_copy_search_text(
+            request.args.get(
+                "copy_status",
+                "all",
+            )
+        )
+    )
+
+    if (
+        copy_status_filter
+        not in VALID_COPY_STATUS_FILTERS
+    ):
+        copy_status_filter = "all"
+
+    all_copies = _get_book_copies(
+        book_id
+    )
+
+    copy_summary = _calculate_copy_summary(
+        all_copies
+    )
+
+    copies = []
+
+    for copy_record in all_copies:
+        search_matches = (
+            _copy_matches_search(
+                copy_record,
+                copy_search_query,
+            )
+        )
+
+        status_matches = (
+            _copy_matches_status_filter(
+                copy_record,
+                copy_status_filter,
+            )
+        )
+
+        # The copy must satisfy both criteria.
+        if (
+            search_matches
+            and status_matches
+        ):
+            copies.append(copy_record)
+
+    has_active_copy_criteria = bool(
+        copy_search_query
+        or copy_status_filter != "all"
+    )
+
     return render_template(
         "librarian_book_details.html",
         book=book,
         copies=copies,
-        copy_summary=_calculate_copy_summary(copies),
+        copy_summary=copy_summary,
+        copy_search_query=(
+            copy_search_query
+        ),
+        copy_status_filter=(
+            copy_status_filter
+        ),
+        copy_result_count=len(copies),
+        total_copy_count=len(all_copies),
+        has_active_copy_search=bool(
+            copy_search_query
+        ),
+        has_active_copy_criteria=(
+            has_active_copy_criteria
+        ),
     )
-
 
 # ============================================================
 # DEACTIVATE / ACTIVATE WHOLE BOOK IN STUDENT CATALOGUE
