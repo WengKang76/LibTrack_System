@@ -1,6 +1,6 @@
 """Business rules for dashboard summaries."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from modules.dashboard_report import repository
@@ -161,3 +161,180 @@ def build_student_dashboard_summary(student_id, today=None):
         "outstanding_penalties": len(outstanding_penalties),
         "outstanding_penalty_amount": float(total_penalty),
     }
+
+
+APPROVED_RESERVATION_ALERT_STATUSES = {
+    "approved",
+    "ready for collection",
+}
+
+
+def empty_student_alerts():
+    """Return a safe empty alert list for the student dashboard."""
+    return []
+
+
+def _book_title(record):
+    """Resolve a readable book title without failing on missing related data."""
+    stored_title = str(record.get("book_title", "")).strip()
+    if stored_title:
+        return stored_title
+
+    book_id = str(record.get("book_id", "")).strip()
+    if not book_id:
+        return "Unknown Book"
+
+    try:
+        book = repository.get_book_by_id(book_id)
+    except Exception:
+        book = None
+
+    if not book:
+        return "Unknown Book"
+
+    return str(book.get("title", "Unknown Book")).strip() or "Unknown Book"
+
+
+def build_student_attention_alerts(
+    student_id,
+    today=None,
+    due_soon_days=3,
+):
+    """Build unresolved student alerts for dashboard attention items.
+
+    Alerts are read-only summaries. Existing borrowing, reservation, and
+    penalty modules remain responsible for all state-changing actions.
+    """
+    if not student_id or not str(student_id).strip():
+        raise ValueError("A student ID is required to build dashboard alerts.")
+
+    if due_soon_days < 0:
+        raise ValueError("The due-soon period cannot be negative.")
+
+    current_date = today or date.today()
+    due_soon_limit = current_date + timedelta(days=due_soon_days)
+    alerts = []
+
+    borrow_transactions = repository.get_student_borrow_transactions(student_id)
+    reservations = repository.get_student_reservations(student_id)
+    penalties = repository.get_student_penalties(student_id)
+
+    for transaction in borrow_transactions:
+        if (
+            _normalise_status(transaction.get("status"))
+            not in ACTIVE_BORROWING_STATUSES
+        ):
+            continue
+
+        due_date = _to_date(transaction.get("due_date"))
+        if due_date is None:
+            continue
+
+        title = _book_title(transaction)
+        formatted_due_date = due_date.strftime("%d %b %Y")
+
+        if due_date < current_date:
+            overdue_days = (current_date - due_date).days
+            alerts.append(
+                {
+                    "category": "Overdue Book",
+                    "title": title,
+                    "message": (
+                        f"This book was due on {formatted_due_date} "
+                        f"and is {overdue_days} day"
+                        f"{'s' if overdue_days != 1 else ''} overdue."
+                    ),
+                    "severity": "danger",
+                    "action_url": "/catalogue/my-borrowed-books",
+                    "action_label": "View Borrowed Books",
+                    "sort_order": 0,
+                    "sort_date": due_date.isoformat(),
+                }
+            )
+        elif current_date <= due_date <= due_soon_limit:
+            remaining_days = (due_date - current_date).days
+            if remaining_days == 0:
+                timing = "due today"
+            elif remaining_days == 1:
+                timing = "due tomorrow"
+            else:
+                timing = f"due in {remaining_days} days"
+
+            alerts.append(
+                {
+                    "category": "Due Soon",
+                    "title": title,
+                    "message": (
+                        f"This book is {timing} on {formatted_due_date}."
+                    ),
+                    "severity": "warning",
+                    "action_url": "/catalogue/my-borrowed-books",
+                    "action_label": "View Borrowed Books",
+                    "sort_order": 1,
+                    "sort_date": due_date.isoformat(),
+                }
+            )
+
+    for reservation in reservations:
+        if (
+            _normalise_status(reservation.get("status"))
+            not in APPROVED_RESERVATION_ALERT_STATUSES
+        ):
+            continue
+
+        title = _book_title(reservation)
+        alerts.append(
+            {
+                "category": "Approved Reservation",
+                "title": title,
+                "message": (
+                    "Your reservation is approved and can continue into "
+                    "the borrowing process."
+                ),
+                "severity": "success",
+                "action_url": "/catalogue/my-reservations",
+                "action_label": "Continue Reservation",
+                "sort_order": 2,
+                "sort_date": str(reservation.get("reservation_date", "")),
+            }
+        )
+
+    for penalty in penalties:
+        if (
+            _normalise_status(penalty.get("status"))
+            not in OUTSTANDING_PENALTY_STATUSES
+        ):
+            continue
+
+        amount = _penalty_amount(penalty)
+        title = _book_title(penalty)
+        penalty_reason = str(penalty.get("penalty_reason", "")).strip()
+        reason_text = f" Reason: {penalty_reason}." if penalty_reason else ""
+
+        alerts.append(
+            {
+                "category": "Outstanding Penalty",
+                "title": title,
+                "message": (
+                    f"RM {float(amount):.2f} remains outstanding."
+                    f"{reason_text}"
+                ),
+                "severity": "danger",
+                "action_url": "/penalty/student",
+                "action_label": "Review Penalty",
+                "sort_order": 3,
+                "sort_date": str(
+                    penalty.get("created_date", penalty.get("created_at", ""))
+                ),
+            }
+        )
+
+    alerts.sort(
+        key=lambda alert: (
+            alert.get("sort_order", 99),
+            alert.get("sort_date", ""),
+            alert.get("title", "").lower(),
+        )
+    )
+
+    return alerts

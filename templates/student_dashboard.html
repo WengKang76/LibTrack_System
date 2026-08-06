@@ -82,6 +82,43 @@
         </div>
     </section>
 
+    <section class="attention-section" aria-labelledby="student-attention-heading">
+        <div class="section-heading attention-heading-row">
+            <div>
+                <h2 id="student-attention-heading">Attention Required</h2>
+                <p>Important borrowing, reservation, and penalty items that may need your action.</p>
+            </div>
+            {% if alerts %}
+                <span class="attention-count">{{ alerts|length }} item{% if alerts|length != 1 %}s{% endif %}</span>
+            {% endif %}
+        </div>
+
+        {% if not student_alerts_available %}
+            <div class="attention-empty attention-unavailable" id="student-alerts-unavailable">
+                Attention items are temporarily unavailable. Open the related modules below to review your records.
+            </div>
+        {% elif alerts %}
+            <div class="attention-list" id="student-attention-alerts">
+                {% for alert in alerts %}
+                    <article class="attention-card attention-{{ alert.severity }}">
+                        <div class="attention-card-content">
+                            <span class="attention-category">{{ alert.category }}</span>
+                            <h3>{{ alert.title }}</h3>
+                            <p>{{ alert.message }}</p>
+                        </div>
+                        <a href="{{ alert.action_url }}" class="attention-action">
+                            {{ alert.action_label }}
+                        </a>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="attention-empty" id="student-no-attention-items">
+                <strong>You are all caught up.</strong> There are no due-soon books, overdue items, approved reservations, or outstanding penalties requiring attention.
+            </div>
+        {% endif %}
+    </section>
+
     <div class="card-grid">
         <div class="dashboard-card featured-card">
             <div class="card-icon">📚</div>

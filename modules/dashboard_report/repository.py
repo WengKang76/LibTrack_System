@@ -1,6 +1,7 @@
 """Firestore read operations for the dashboard module."""
 
 from config.firebase_config import (
+    COLLECTION_BOOKS,
     COLLECTION_BORROW_REQUESTS,
     COLLECTION_BORROW_TRANSACTIONS,
     COLLECTION_PENALTIES,
@@ -41,3 +42,18 @@ def get_student_reservations(student_id):
 
 def get_student_penalties(student_id):
     return _student_records(COLLECTION_PENALTIES, student_id)
+
+
+def get_book_by_id(book_id):
+    """Return one book record for dashboard display, or None when missing."""
+    if not book_id or not str(book_id).strip():
+        return None
+
+    document = db.collection(COLLECTION_BOOKS).document(str(book_id).strip()).get()
+
+    if not getattr(document, "exists", False):
+        return None
+
+    book = document.to_dict() or {}
+    book.setdefault("book_id", document.id)
+    return book

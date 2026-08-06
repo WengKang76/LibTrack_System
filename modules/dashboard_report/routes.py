@@ -7,7 +7,9 @@ from modules.authentication.decorators import (
     student_required,
 )
 from modules.dashboard_report.services import (
+    build_student_attention_alerts,
     build_student_dashboard_summary,
+    empty_student_alerts,
     empty_student_summary,
 )
 
@@ -24,7 +26,9 @@ def student_dashboard():
     """Display live information for the authenticated student only."""
     student_id = session.get("student_id") or session.get("user_id")
     summary = empty_student_summary()
+    alerts = empty_student_alerts()
     dashboard_data_available = True
+    student_alerts_available = True
 
     try:
         summary = build_student_dashboard_summary(student_id)
@@ -39,10 +43,25 @@ def student_dashboard():
             "error",
         )
 
+    try:
+        alerts = build_student_attention_alerts(student_id)
+    except Exception:
+        student_alerts_available = False
+        current_app.logger.exception(
+            "Failed to load the authenticated student's attention alerts."
+        )
+        flash(
+            "We could not load your attention-required items right now. "
+            "Please check the related modules directly.",
+            "error",
+        )
+
     return render_template(
         "student_dashboard.html",
         summary=summary,
+        alerts=alerts,
         dashboard_data_available=dashboard_data_available,
+        student_alerts_available=student_alerts_available,
     )
 
 

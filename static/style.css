@@ -590,3 +590,124 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* SCRUM-1534: student attention-required alerts. */
+.attention-section {
+    display: grid;
+    gap: 14px;
+}
+
+.attention-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.attention-count {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 999px;
+    color: #9a3412;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 11px;
+    white-space: nowrap;
+}
+
+.attention-list {
+    display: grid;
+    gap: 12px;
+}
+
+.attention-card {
+    align-items: center;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-left-width: 5px;
+    border-radius: 14px;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+    padding: 17px 18px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.attention-danger {
+    border-left-color: #dc2626;
+}
+
+.attention-warning {
+    border-left-color: #f59e0b;
+}
+
+.attention-success {
+    border-left-color: #16a34a;
+}
+
+.attention-card-content h3 {
+    margin: 4px 0 5px;
+    font-size: 17px;
+}
+
+.attention-card-content p {
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.attention-category {
+    color: #475569;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.attention-action {
+    background: #eff6ff;
+    border-radius: 9px;
+    color: #1d4ed8;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 13px;
+    text-decoration: none;
+}
+
+.attention-action:hover,
+.attention-action:focus-visible {
+    background: #dbeafe;
+    outline: none;
+}
+
+.attention-empty {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    color: #166534;
+    padding: 17px 18px;
+}
+
+.attention-unavailable {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+}
+
+@media (max-width: 700px) {
+    .attention-heading-row,
+    .attention-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .attention-count {
+        align-self: flex-start;
+    }
+
+    .attention-action {
+        text-align: center;
+    }
+}
