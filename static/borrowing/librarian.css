@@ -238,3 +238,19 @@
     color:#6b7280;
 
 }
+
+/** Librarian approval validation indicator for borrow request**/
+.badge.valid {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge.invalid {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}

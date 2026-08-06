@@ -8,20 +8,18 @@ from werkzeug.security import (
 
 import modules.authentication.routes as auth_routes
 
-
 TEST_USER_ID = "USR100"
 TEST_EMAIL = "student100@tarumt.edu.my"
 OLD_PASSWORD = "OldPassword@123"
 NEW_PASSWORD = "NewPassword@123"
 
-GENERIC_RESET_MESSAGE = (
-    b"If an account exists for this email address"
-)
+GENERIC_RESET_MESSAGE = b"If an account exists for this email address"
 
 
 # ============================================================
 # FAKE FIRESTORE
 # ============================================================
+
 
 class FakeUserDocumentReference:
     def __init__(
@@ -34,13 +32,9 @@ class FakeUserDocumentReference:
 
     def update(self, updated_data):
         if self.document_id not in self.database.users:
-            raise KeyError(
-                f"Unknown user: {self.document_id}"
-            )
+            raise KeyError(f"Unknown user: {self.document_id}")
 
-        self.database.users[
-            self.document_id
-        ].update(dict(updated_data))
+        self.database.users[self.document_id].update(dict(updated_data))
 
         self.database.update_history.append(
             {
@@ -79,6 +73,7 @@ class FakeDatabase:
 # FIXTURES AND HELPERS
 # ============================================================
 
+
 @pytest.fixture
 def password_reset_environment(
     app,
@@ -92,9 +87,7 @@ def password_reset_environment(
         "email": TEST_EMAIL,
         "role": "Student",
         "account_status": "Active",
-        "password_hash": generate_password_hash(
-            OLD_PASSWORD
-        ),
+        "password_hash": generate_password_hash(OLD_PASSWORD),
         "password_reset_version": 0,
     }
 
@@ -107,9 +100,7 @@ def password_reset_environment(
     )
 
     def fake_find_user_by_email(email):
-        normalised_email = str(
-            email or ""
-        ).strip().lower()
+        normalised_email = str(email or "").strip().lower()
 
         if normalised_email == TEST_EMAIL:
             return user
@@ -137,28 +128,20 @@ def password_reset_environment(
 
 def generate_reset_token(app, user):
     with app.app_context():
-        return (
-            auth_routes
-            ._generate_password_reset_token(
-                user
-            )
-        )
+        return auth_routes._generate_password_reset_token(user)
 
 
 # ============================================================
 # SCRUM-1179: FORGOT PASSWORD PAGE
 # ============================================================
 
+
 def test_forgot_password_page_loads(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
-    response = client.get(
-        "/auth/forgot-password"
-    )
+    response = client.get("/auth/forgot-password")
 
     assert response.status_code == 200
     assert b"Forgot Password" in response.data
@@ -169,9 +152,7 @@ def test_forgot_password_page_loads(
 def test_forgot_password_rejects_empty_email(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
     response = client.post(
         "/auth/forgot-password",
@@ -181,18 +162,13 @@ def test_forgot_password_rejects_empty_email(
     )
 
     assert response.status_code == 400
-    assert (
-        b"Email address is required"
-        in response.data
-    )
+    assert b"Email address is required" in response.data
 
 
 def test_forgot_password_rejects_invalid_email(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
     response = client.post(
         "/auth/forgot-password",
@@ -202,18 +178,13 @@ def test_forgot_password_rejects_invalid_email(
     )
 
     assert response.status_code == 400
-    assert (
-        b"Enter a valid email address"
-        in response.data
-    )
+    assert b"Enter a valid email address" in response.data
 
 
 def test_registered_email_receives_generic_message(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
     response = client.post(
         "/auth/forgot-password",
@@ -223,18 +194,13 @@ def test_registered_email_receives_generic_message(
     )
 
     assert response.status_code == 200
-    assert (
-        GENERIC_RESET_MESSAGE
-        in response.data
-    )
+    assert GENERIC_RESET_MESSAGE in response.data
 
 
 def test_unknown_email_receives_same_generic_message(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
     response = client.post(
         "/auth/forgot-password",
@@ -244,24 +210,16 @@ def test_unknown_email_receives_same_generic_message(
     )
 
     assert response.status_code == 200
-    assert (
-        GENERIC_RESET_MESSAGE
-        in response.data
-    )
+    assert GENERIC_RESET_MESSAGE in response.data
 
     # An unknown account must not receive a reset URL.
-    assert (
-        b"/auth/reset-password/"
-        not in response.data
-    )
+    assert b"/auth/reset-password/" not in response.data
 
 
 def test_registered_email_generates_reset_link(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
     response = client.post(
         "/auth/forgot-password",
@@ -272,43 +230,27 @@ def test_registered_email_generates_reset_link(
 
     assert response.status_code == 200
 
-    assert (
-        b"/auth/reset-password/"
-        in response.data
-    )
+    assert b"/auth/reset-password/" in response.data
 
-    assert (
-        b"Set New Password"
-        in response.data
-    )
+    assert b"Set New Password" in response.data
 
-    assert (
-        b'name="password"'
-        in response.data
-    )
+    assert b'name="password"' in response.data
 
-    assert (
-        b'name="confirm_password"'
-        in response.data
-    )
+    assert b'name="confirm_password"' in response.data
 
-    assert (
-        b"Reset Password"
-        in response.data
-    )
+    assert b"Reset Password" in response.data
 
 
 # ============================================================
 # RESET TOKEN VALIDATION
 # ============================================================
 
+
 def test_valid_reset_token_loads_form(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     token = generate_reset_token(
@@ -316,53 +258,33 @@ def test_valid_reset_token_loads_form(
         user,
     )
 
-    response = client.get(
-        f"/auth/reset-password/{token}"
-    )
+    response = client.get(f"/auth/reset-password/{token}")
 
     assert response.status_code == 200
     assert b"Reset Password" in response.data
-    assert (
-        b'name="password"'
-        in response.data
-    )
-    assert (
-        b'name="confirm_password"'
-        in response.data
-    )
+    assert b'name="password"' in response.data
+    assert b'name="confirm_password"' in response.data
 
 
 def test_invalid_reset_token_is_rejected(
     password_reset_environment,
 ):
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
 
-    response = client.get(
-        "/auth/reset-password/"
-        "invalid-reset-token"
-    )
+    response = client.get("/auth/reset-password/" "invalid-reset-token")
 
     assert response.status_code == 400
-    assert (
-        b"Invalid Reset Link"
-        in response.data
-    )
+    assert b"Invalid Reset Link" in response.data
 
 
 def test_expired_reset_token_is_rejected(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
-    app.config[
-        "PASSWORD_RESET_TOKEN_MAX_AGE"
-    ] = 0
+    app.config["PASSWORD_RESET_TOKEN_MAX_AGE"] = 0
 
     token = generate_reset_token(
         app,
@@ -372,28 +294,22 @@ def test_expired_reset_token_is_rejected(
     # itsdangerous timestamps use seconds.
     time.sleep(1.1)
 
-    response = client.get(
-        f"/auth/reset-password/{token}"
-    )
+    response = client.get(f"/auth/reset-password/{token}")
 
     assert response.status_code == 400
-    assert (
-        b"Invalid Reset Link"
-        in response.data
-    )
+    assert b"Invalid Reset Link" in response.data
 
 
 # ============================================================
 # NEW PASSWORD VALIDATION
 # ============================================================
 
+
 def test_reset_rejects_empty_password(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     token = generate_reset_token(
@@ -410,23 +326,15 @@ def test_reset_rejects_empty_password(
     )
 
     assert response.status_code == 400
-    assert (
-        b"New password is required"
-        in response.data
-    )
-    assert (
-        b"Password confirmation is required"
-        in response.data
-    )
+    assert b"New password is required" in response.data
+    assert b"Password confirmation is required" in response.data
 
 
 def test_reset_rejects_weak_password(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     original_hash = user["password_hash"]
@@ -445,19 +353,14 @@ def test_reset_rejects_weak_password(
     )
 
     assert response.status_code == 400
-    assert (
-        user["password_hash"]
-        == original_hash
-    )
+    assert user["password_hash"] == original_hash
 
 
 def test_reset_rejects_password_mismatch(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     original_hash = user["password_hash"]
@@ -471,30 +374,20 @@ def test_reset_rejects_password_mismatch(
         f"/auth/reset-password/{token}",
         data={
             "password": NEW_PASSWORD,
-            "confirm_password": (
-                "DifferentPassword@123"
-            ),
+            "confirm_password": ("DifferentPassword@123"),
         },
     )
 
     assert response.status_code == 400
-    assert (
-        b"do not match"
-        in response.data
-    )
-    assert (
-        user["password_hash"]
-        == original_hash
-    )
+    assert b"do not match" in response.data
+    assert user["password_hash"] == original_hash
 
 
 def test_reset_rejects_current_password_reuse(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     original_hash = user["password_hash"]
@@ -513,31 +406,22 @@ def test_reset_rejects_current_password_reuse(
     )
 
     assert response.status_code == 400
-    assert (
-        b"must be different"
-        in response.data
-    )
-    assert (
-        user["password_hash"]
-        == original_hash
-    )
+    assert b"must be different" in response.data
+    assert user["password_hash"] == original_hash
 
 
 # ============================================================
 # SUCCESSFUL PASSWORD RESET
 # ============================================================
 
+
 def test_valid_password_reset_updates_hash(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
-    database = password_reset_environment[
-        "database"
-    ]
+    database = password_reset_environment["database"]
 
     original_hash = user["password_hash"]
 
@@ -555,15 +439,9 @@ def test_valid_password_reset_updates_hash(
     )
 
     assert response.status_code == 302
-    assert (
-        "/auth/login"
-        in response.headers["Location"]
-    )
+    assert "/auth/login" in response.headers["Location"]
 
-    assert (
-        user["password_hash"]
-        != original_hash
-    )
+    assert user["password_hash"] != original_hash
 
     assert check_password_hash(
         user["password_hash"],
@@ -575,18 +453,14 @@ def test_valid_password_reset_updates_hash(
         OLD_PASSWORD,
     )
 
-    assert len(
-        database.update_history
-    ) == 1
+    assert len(database.update_history) == 1
 
 
 def test_successful_reset_increments_reset_version(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     token = generate_reset_token(
@@ -602,19 +476,14 @@ def test_successful_reset_increments_reset_version(
         },
     )
 
-    assert (
-        user["password_reset_version"]
-        == 1
-    )
+    assert user["password_reset_version"] == 1
 
 
 def test_successful_reset_clears_session(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     with client.session_transaction() as session:
@@ -645,9 +514,7 @@ def test_used_reset_token_cannot_be_reused(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     token = generate_reset_token(
@@ -669,26 +536,19 @@ def test_used_reset_token_cannot_be_reused(
         f"/auth/reset-password/{token}",
         data={
             "password": "AnotherPassword@123",
-            "confirm_password": (
-                "AnotherPassword@123"
-            ),
+            "confirm_password": ("AnotherPassword@123"),
         },
     )
 
     assert second_response.status_code == 400
-    assert (
-        b"Invalid Reset Link"
-        in second_response.data
-    )
+    assert b"Invalid Reset Link" in second_response.data
 
 
 def test_new_password_can_be_used_for_login(
     password_reset_environment,
 ):
     app = password_reset_environment["app"]
-    client = password_reset_environment[
-        "client"
-    ]
+    client = password_reset_environment["client"]
     user = password_reset_environment["user"]
 
     token = generate_reset_token(
@@ -715,10 +575,7 @@ def test_new_password_can_be_used_for_login(
     )
 
     assert old_password_response.status_code != 302
-    assert (
-        b"Invalid email or password"
-        in old_password_response.data
-    )
+    assert b"Invalid email or password" in old_password_response.data
 
     new_password_response = client.post(
         "/auth/login",

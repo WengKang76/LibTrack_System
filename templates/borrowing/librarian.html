@@ -40,6 +40,7 @@ Borrowing & Returning
             <th>Student</th>
             <th>Book</th>
             <th>Status</th>
+            <th>Validation</th>
             <th>Action</th>
         </tr>
 
@@ -69,26 +70,52 @@ Borrowing & Returning
 
             <td>
 
-            {% if request.status == "Pending" %}
+            {% if request.approval_error %}
 
-                <form
-                    method="POST"
-                    action="{{ url_for('borrowing.approve_request',
-                                    request_id=request.id) }}">
-
-                    <button class="btn btn-success">
-
-                        Approve
-
-                    </button>
-
-                </form>
+                <span class="badge invalid">
+                    ❌ {{ request.approval_error }}
+                </span>
 
             {% else %}
 
-                -
+                <span class="badge valid">
+                    ✅ Ready to Approve
+                </span>
 
             {% endif %}
+
+            </td>
+
+            <td>
+
+            {% if request.status == "Pending" and not request.approval_error %}
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.approve_request',
+                                request_id=request.id) }}">
+
+                <button class="btn btn-success">
+
+                    Approve
+
+                </button>
+
+            </form>
+
+        {% elif request.approval_error %}
+
+            <button class="btn btn-secondary" disabled>
+
+                Cannot Approve
+
+            </button>
+
+        {% else %}
+
+            -
+
+        {% endif %}
 
             </td>
 

@@ -34,6 +34,19 @@ def get_all_pending_requests():
     return get_pending_requests()
 
 
+def get_pending_requests_with_validation():
+
+    requests = get_pending_requests()
+
+    for borrow_request in requests:
+
+        borrow_request["approval_error"] = get_borrow_approval_error(
+            borrow_request["id"]
+        )
+
+    return requests
+
+
 def get_all_borrow_transactions():
     return get_borrow_transactions()
 

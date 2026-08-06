@@ -9,7 +9,7 @@ from modules.borrowing.services import (
     clear_renewal_alert,
     close_borrow_transaction,
     get_all_borrow_transactions,
-    get_all_pending_requests,
+    get_pending_requests_with_validation,
     get_student_borrowed_books,
     manually_extend_due_date,
     reject_renewal_request,
@@ -29,7 +29,7 @@ borrowing_bp = Blueprint(
 @borrowing_bp.route("/")
 @librarian_required
 def borrowing_home():
-    requests = get_all_pending_requests()
+    requests = get_pending_requests_with_validation()
     transactions = get_all_borrow_transactions()
 
     return render_template(
