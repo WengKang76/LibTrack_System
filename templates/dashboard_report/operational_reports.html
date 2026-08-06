@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}
+Operational Reports | LibTrack
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-hero report-hero">
+    <div class="dashboard-hero-content">
+        <p class="dashboard-label">Dashboard &amp; Report Module</p>
+        <h1>Operational Reports</h1>
+        <p class="dashboard-description">
+            Review read-only borrowing, reservation, overdue, and penalty activities using validated filters.
+        </p>
+    </div>
+</section>
+
+<section class="dashboard-section" aria-labelledby="report-filter-heading">
+    <div class="section-heading">
+        <h2 id="report-filter-heading">Report Filters</h2>
+        <p>Select a report type and narrow the results by date or status.</p>
+    </div>
+
+    <form class="report-filter-form" method="GET" action="{{ url_for('dashboard_report.operational_reports') }}">
+        <label>
+            Report type
+            <select name="report_type" id="report-type" required>
+                {% for option in report_types %}
+                    <option value="{{ option.value }}" {% if filters.report_type == option.value %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Start date
+            <input type="date" name="start_date" value="{{ filters.start_date }}">
+        </label>
+
+        <label>
+            End date
+            <input type="date" name="end_date" value="{{ filters.end_date }}">
+        </label>
+
+        <label>
+            Status
+            <select name="status" id="report-status">
+                <option value="">All statuses</option>
+                {% for option in status_options %}
+                    <option value="{{ option.value }}" {% if filters.status|lower == option.value %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <div class="report-filter-actions">
+            <button class="report-primary-button" type="submit">Generate Report</button>
+            <a class="report-secondary-button" href="{{ url_for('dashboard_report.operational_reports') }}">Reset</a>
+        </div>
+    </form>
+</section>
+
+<section class="dashboard-section" aria-labelledby="report-results-heading">
+    <div class="section-heading dashboard-heading-row">
+        <div>
+            <h2 id="report-results-heading">{{ report.report_title }}</h2>
+            <p>
+                {% if report_data_available %}
+                    {{ report.total_records }} matching record{% if report.total_records != 1 %}s{% endif %} found.
+                {% else %}
+                    No report data is shown until the filter issue is resolved.
+                {% endif %}
+            </p>
+        </div>
+        <span class="pending-total-badge">Read only</span>
+    </div>
+
+    {% if report.status_totals %}
+        <div class="report-status-summary" aria-label="Report status totals">
+            {% for status, total in report.status_totals.items() %}
+                <span><strong>{{ total }}</strong> {{ status }}</span>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if report.records %}
+        <div class="report-table-wrapper">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Record ID</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Student ID</th>
+                        <th>Book ID</th>
+                        <th>Details</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in report.records %}
+                        <tr>
+                            <td>{{ record.record_id }}</td>
+                            <td>{{ record.event_date_display }}</td>
+                            <td><span class="report-status-pill">{{ record.status }}</span></td>
+                            <td>{{ record.student_id }}</td>
+                            <td>{{ record.book_id }}</td>
+                            <td>{{ record.summary }}</td>
+                            <td>
+                                {% if record.amount is not none %}
+                                    RM {{ '%.2f'|format(record.amount) }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="report-empty-state">
+            <span>📄</span>
+            <h3>No matching records</h3>
+            <p>Adjust the selected report type, date range, or status and try again.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

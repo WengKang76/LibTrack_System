@@ -174,6 +174,13 @@ Librarian Dashboard | LibTrack
             <p>Manage overdue books, penalties, payments, waivers, and book exceptions.</p>
             <a href="{{ url_for('penalty_transaction.librarian_penalty_dashboard') }}">Open</a>
         </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">📊</div>
+            <h3>Operational Reports</h3>
+            <p>Filter read-only borrowing, reservation, overdue, and penalty activities.</p>
+            <a href="{{ url_for('dashboard_report.operational_reports') }}">Open</a>
+        </article>
     </div>
 </section>
 {% endblock %}

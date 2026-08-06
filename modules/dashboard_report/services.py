@@ -557,3 +557,293 @@ def build_librarian_pending_actions(today=None):
     }
     counts["total_pending_actions"] = sum(counts.values())
     return counts
+
+
+OPERATIONAL_REPORT_TYPES = {
+    "borrowing": "Borrowing Transactions",
+    "reservation": "Reservation Activities",
+    "penalty": "Penalty Transactions",
+    "overdue": "Overdue Transactions",
+}
+
+OPERATIONAL_REPORT_STATUSES = {
+    "borrowing": (
+        "pending",
+        "approved",
+        "active",
+        "borrowed",
+        "issued",
+        "return pending",
+        "returned",
+        "rejected",
+        "closed",
+        "exception completed",
+    ),
+    "reservation": (
+        "active",
+        "pending",
+        "approved",
+        "ready for collection",
+        "borrow request submitted",
+        "fulfilled",
+        "cancelled",
+    ),
+    "penalty": (
+        "outstanding",
+        "pending",
+        "unpaid",
+        "paid",
+        "waived",
+        "cancelled",
+    ),
+    "overdue": tuple(sorted(ACTIVE_BORROWING_STATUSES)),
+}
+
+
+def get_operational_report_types():
+    """Return report type values and labels for the librarian filter form."""
+    return [
+        {"value": value, "label": label}
+        for value, label in OPERATIONAL_REPORT_TYPES.items()
+    ]
+
+
+def get_operational_report_statuses(report_type):
+    """Return valid status options for one operational report type."""
+    normalised_type = _normalise_status(report_type).replace(" ", "")
+    if normalised_type not in OPERATIONAL_REPORT_TYPES:
+        normalised_type = "borrowing"
+
+    return [
+        {
+            "value": status,
+            "label": status.title(),
+        }
+        for status in OPERATIONAL_REPORT_STATUSES[normalised_type]
+    ]
+
+
+def empty_operational_report_result(report_type="borrowing"):
+    """Return a safe empty report result for rendering and error handling."""
+    selected_type = str(report_type or "borrowing").strip().lower()
+    if selected_type not in OPERATIONAL_REPORT_TYPES:
+        selected_type = "borrowing"
+
+    return {
+        "report_type": selected_type,
+        "report_title": OPERATIONAL_REPORT_TYPES[selected_type],
+        "records": [],
+        "total_records": 0,
+        "status_totals": {},
+    }
+
+
+def _parse_report_filter_date(raw_value, field_label):
+    if raw_value is None or str(raw_value).strip() == "":
+        return None
+
+    parsed_value = _to_date(raw_value)
+    if parsed_value is None:
+        raise ValueError(f"{field_label} must be a valid date.")
+
+    return parsed_value
+
+
+def _record_identifier(record, *candidate_fields):
+    for field_name in candidate_fields:
+        value = str(record.get(field_name, "")).strip()
+        if value:
+            return value
+    return "Unknown"
+
+
+def _operational_event_date(report_type, record):
+    field_candidates = {
+        "borrowing": (
+            "borrow_date",
+            "request_date",
+            "created_at",
+        ),
+        "reservation": (
+            "reservation_date",
+            "created_at",
+            "updated_at",
+        ),
+        "penalty": (
+            "created_date",
+            "created_at",
+            "payment_date",
+            "updated_at",
+        ),
+        "overdue": ("due_date",),
+    }
+
+    for field_name in field_candidates[report_type]:
+        parsed_date = _to_date(record.get(field_name))
+        if parsed_date is not None:
+            return parsed_date
+
+    return None
+
+
+def _operational_record_id(report_type, record):
+    candidates = {
+        "borrowing": (
+            "transaction_id",
+            "request_id",
+            "document_id",
+            "id",
+        ),
+        "reservation": (
+            "reservation_id",
+            "document_id",
+            "id",
+        ),
+        "penalty": (
+            "penalty_id",
+            "document_id",
+            "id",
+        ),
+        "overdue": (
+            "transaction_id",
+            "document_id",
+            "id",
+        ),
+    }
+    return _record_identifier(record, *candidates[report_type])
+
+
+def _operational_summary(report_type, record, current_date):
+    if report_type == "borrowing":
+        return "Borrowing transaction"
+
+    if report_type == "reservation":
+        return "Reservation activity"
+
+    if report_type == "penalty":
+        penalty_type = str(record.get("penalty_type", "")).strip()
+        penalty_reason = str(record.get("penalty_reason", "")).strip()
+        return penalty_type or penalty_reason or "Penalty transaction"
+
+    due_date = _to_date(record.get("due_date"))
+    if due_date is None:
+        return "Overdue borrowing transaction"
+
+    overdue_days = max((current_date - due_date).days, 0)
+    return (
+        f"Overdue by {overdue_days} day"
+        f"{'s' if overdue_days != 1 else ''}"
+    )
+
+
+def _operational_source_records(report_type):
+    if report_type in {"borrowing", "overdue"}:
+        return repository.get_all_borrow_transactions()
+    if report_type == "reservation":
+        return repository.get_all_reservations()
+    return repository.get_all_penalties()
+
+
+def build_operational_report(
+    report_type="borrowing",
+    start_date=None,
+    end_date=None,
+    status=None,
+    today=None,
+):
+    """Generate a read-only operational report using validated filters."""
+    selected_type = str(report_type or "").strip().lower()
+    if selected_type not in OPERATIONAL_REPORT_TYPES:
+        raise ValueError("Please select a supported report type.")
+
+    parsed_start_date = _parse_report_filter_date(start_date, "Start date")
+    parsed_end_date = _parse_report_filter_date(end_date, "End date")
+
+    if (
+        parsed_start_date is not None
+        and parsed_end_date is not None
+        and parsed_start_date > parsed_end_date
+    ):
+        raise ValueError("Start date cannot be later than end date.")
+
+    selected_status = _normalise_status(status)
+    allowed_statuses = set(OPERATIONAL_REPORT_STATUSES[selected_type])
+    if selected_status and selected_status not in allowed_statuses:
+        raise ValueError("Please select a valid status for this report type.")
+
+    current_date = today or date.today()
+    report_records = []
+
+    for record in _operational_source_records(selected_type):
+        record_status = _normalise_status(record.get("status"))
+        event_date = _operational_event_date(selected_type, record)
+
+        if selected_type == "overdue":
+            if (
+                record_status not in ACTIVE_BORROWING_STATUSES
+                or event_date is None
+                or event_date >= current_date
+            ):
+                continue
+
+        if selected_status and record_status != selected_status:
+            continue
+
+        if parsed_start_date is not None:
+            if event_date is None or event_date < parsed_start_date:
+                continue
+
+        if parsed_end_date is not None:
+            if event_date is None or event_date > parsed_end_date:
+                continue
+
+        report_records.append(
+            {
+                "record_id": _operational_record_id(selected_type, record),
+                "event_date": (
+                    event_date.isoformat() if event_date is not None else ""
+                ),
+                "event_date_display": (
+                    event_date.strftime("%d %b %Y")
+                    if event_date is not None
+                    else "Unknown"
+                ),
+                "status": str(record.get("status", "Unknown")).strip()
+                or "Unknown",
+                "student_id": str(record.get("student_id", "Unknown")).strip()
+                or "Unknown",
+                "book_id": str(record.get("book_id", "Unknown")).strip()
+                or "Unknown",
+                "summary": _operational_summary(
+                    selected_type,
+                    record,
+                    current_date,
+                ),
+                "amount": (
+                    float(_penalty_amount(record))
+                    if selected_type == "penalty"
+                    else None
+                ),
+            }
+        )
+
+    report_records.sort(
+        key=lambda item: (
+            item.get("event_date", ""),
+            item.get("record_id", ""),
+        ),
+        reverse=True,
+    )
+
+    status_totals = {}
+    for record in report_records:
+        status_label = record["status"]
+        status_totals[status_label] = status_totals.get(status_label, 0) + 1
+
+    return {
+        "report_type": selected_type,
+        "report_title": OPERATIONAL_REPORT_TYPES[selected_type],
+        "records": report_records,
+        "total_records": len(report_records),
+        "status_totals": status_totals,
+    }

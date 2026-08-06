@@ -851,3 +851,137 @@ body {
         align-self: flex-start;
     }
 }
+
+/* SCRUM-1537: Filtered operational reports */
+.report-filter-form {
+    align-items: end;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.report-filter-form label {
+    color: #34415b;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    font-weight: 700;
+    gap: 0.4rem;
+}
+
+.report-filter-form input,
+.report-filter-form select {
+    background: #ffffff;
+    border: 1px solid #ccd5e5;
+    border-radius: 9px;
+    color: #24324b;
+    font: inherit;
+    min-height: 42px;
+    padding: 0.65rem 0.75rem;
+}
+
+.report-filter-actions {
+    display: flex;
+    gap: 0.65rem;
+}
+
+.report-primary-button,
+.report-secondary-button {
+    align-items: center;
+    border-radius: 9px;
+    display: inline-flex;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0.65rem 0.9rem;
+    text-decoration: none;
+}
+
+.report-primary-button {
+    background: #243f7a;
+    border: 1px solid #243f7a;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.report-secondary-button {
+    background: #ffffff;
+    border: 1px solid #ccd5e5;
+    color: #34415b;
+}
+
+.report-status-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.report-status-summary span {
+    background: #edf2fc;
+    border-radius: 999px;
+    color: #31466f;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.75rem;
+}
+
+.report-table-wrapper {
+    overflow-x: auto;
+}
+
+.report-table {
+    border-collapse: collapse;
+    min-width: 900px;
+    width: 100%;
+}
+
+.report-table th,
+.report-table td {
+    border-bottom: 1px solid #e6ebf3;
+    padding: 0.85rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.report-table th {
+    background: #f4f7fc;
+    color: #31405d;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.report-status-pill {
+    background: #e8eefc;
+    border-radius: 999px;
+    color: #2d4577;
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.55rem;
+    white-space: nowrap;
+}
+
+.report-empty-state {
+    background: #f7f9fd;
+    border: 1px dashed #cbd5e7;
+    border-radius: 12px;
+    color: #59677f;
+    padding: 2rem;
+    text-align: center;
+}
+
+.report-empty-state span {
+    font-size: 2rem;
+}
+
+.report-empty-state h3 {
+    color: #2b3955;
+    margin: 0.6rem 0 0.35rem;
+}
+
+@media (max-width: 640px) {
+    .report-filter-actions {
+        flex-direction: column;
+    }
+}
