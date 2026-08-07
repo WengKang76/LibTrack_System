@@ -13,6 +13,23 @@ penalty_bp = Blueprint(
     "penalty_transaction", __name__, url_prefix="/penalty", template_folder="."
 )
 
+def sort_student_penalties_for_display(penalties):
+    status_priority = {
+        "outstanding": 0,
+        "unpaid": 0,
+        "pending": 0,
+        "waived": 1,
+        "paid": 2
+    }
+
+    return sorted(
+        penalties,
+        key=lambda penalty: (
+            status_priority.get(normalise_text(penalty.get("status")), 1),
+            normalise_text(penalty.get("penalty_id"))
+        )
+    )
+
 
 # =========================================================
 # DEMO DATA FOR UI PREVIEW
@@ -966,8 +983,6 @@ def get_student_penalty_records(student_id):
 
             penalty_student_id = penalty.get("student_id")
 
-            # Old Sprint 1 demo data may not have student_id.
-            # Only block when student_id exists and does not match.
             if penalty_student_id and str(penalty_student_id) != str(student_id):
                 continue
 
@@ -1754,21 +1769,43 @@ def view_outstanding_penalties():
 @penalty_bp.route("/student/<student_id>")
 def student_penalty_records(student_id=None):
     resolved_student_id = (
-        student_id or session.get("student_id") or session.get("user_id")
+        student_id
+        or session.get("student_id")
+        or session.get("student_number")
+        or session.get("student_no")
+        or session.get("user_id")
+        or session.get("id")
+        or "1321"
     )
 
-    if not resolved_student_id:
-        flash("Please log in as a student to view penalty records.", "warning")
-        return redirect(url_for("authentication.login"))
+    keyword = request.args.get("keyword", "").strip()
+    status_filter = request.args.get("status", "all").strip()
+    payment_method_filter = request.args.get("payment_method", "all").strip()
 
-    penalties = get_outstanding_penalties(resolved_student_id)
+    # Important:
+    # Use all student penalties, not only outstanding penalties.
+    # This allows Paid penalties to appear so students can view receipt.
+    all_penalties = get_student_penalty_records(resolved_student_id)
+
+    filtered_penalties = filter_student_penalty_records(
+        all_penalties,
+        keyword,
+        status_filter,
+        payment_method_filter
+    )
+
+    filtered_penalties = sort_student_penalties_for_display(filtered_penalties)
 
     return render_template(
         "student/penalty_records.html",
         student_id=resolved_student_id,
-        penalties=penalties,
+        penalties=filtered_penalties,
+        total_penalties=len(all_penalties),
+        result_count=len(filtered_penalties),
+        keyword=keyword,
+        status_filter=status_filter,
+        payment_method_filter=payment_method_filter
     )
-
 
 @penalty_bp.route("/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 @penalty_bp.route("/student/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
@@ -2182,8 +2219,11 @@ def student_penalty_search_filter():
         payment_method_filter
     )
 
+    filtered_penalties = sort_student_penalties_for_display(filtered_penalties)
+
     return render_template(
         "student/penalty_records.html",
+        student_id=student_id,
         penalties=filtered_penalties,
         total_penalties=len(all_penalties),
         result_count=len(filtered_penalties),
