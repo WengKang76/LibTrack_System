@@ -254,3 +254,79 @@
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+/**Filter Styling**/
+.filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-bar input {
+    flex: 1;
+    min-width: 260px;
+    padding: 8px 12px;
+}
+
+.filter-bar select {
+    padding: 8px 12px;
+}
+
+.filter-bar .btn {
+    white-space: nowrap;
+}
+
+/* Sorting */
+.sort-icon {
+
+    text-decoration: none;
+    font-size: 14px;
+    margin-left: 5px;
+
+}
+
+
+.sort-icon:hover {
+
+    opacity: 0.6;
+
+}
+
+.data-table th a:hover {
+    opacity: 0.6;
+}
+
+/* Pagination Styling */
+.pagination-container {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+
+}
+
+
+.entries-control select {
+
+    padding: 5px 10px;
+
+}
+
+
+.page-navigation {
+
+    display: flex;
+    gap: 15px;
+    align-items: center;
+
+}
+
+
+.page-navigation a {
+
+    text-decoration: none;
+
+}

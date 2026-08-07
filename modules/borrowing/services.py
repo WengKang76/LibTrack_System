@@ -47,8 +47,139 @@ def get_pending_requests_with_validation():
     return requests
 
 
+def get_filtered_pending_requests(
+    keyword: str = "",
+    status: str = "All",
+    sort_by: str = "id",
+    sort_order: str = "asc",
+):
+
+    requests = get_pending_requests()
+
+    keyword = keyword.strip().lower()
+
+    filtered_requests = []
+
+    for borrow_request in requests:
+
+        borrow_request["approval_error"] = get_borrow_approval_error(
+            borrow_request["id"]
+        )
+
+        # Search
+        if keyword:
+
+            searchable_text = " ".join(
+                [
+                    str(borrow_request.get("id", "")),
+                    str(borrow_request.get("student_id", "")),
+                    str(borrow_request.get("student", "")),
+                    str(borrow_request.get("book_id", "")),
+                    str(borrow_request.get("book", "")),
+                ]
+            ).lower()
+
+            if keyword not in searchable_text:
+                continue
+
+        # Filter
+        if status != "All":
+
+            if borrow_request.get("status") != status:
+                continue
+
+        filtered_requests.append(borrow_request)
+
+    # Sorting
+    reverse = sort_order == "desc"
+
+    allowed_sort_fields = {
+        "id": "id",
+        "student": "student",
+        "book": "book",
+        "status": "status",
+    }
+
+    sort_field = allowed_sort_fields.get(
+        sort_by,
+        "id",
+    )
+
+    filtered_requests.sort(
+        key=lambda request: str(request.get(sort_field, "")).lower(),
+        reverse=reverse,
+    )
+
+    return filtered_requests
+
+
 def get_all_borrow_transactions():
     return get_borrow_transactions()
+
+
+def get_filtered_borrow_transactions(
+    keyword: str = "",
+    status: str = "All",
+    sort_by: str = "id",
+    sort_order: str = "asc",
+):
+
+    transactions = get_borrow_transactions()
+
+    keyword = keyword.strip().lower()
+
+    filtered_transactions = []
+
+    for transaction in transactions:
+
+        # Search
+        if keyword:
+
+            searchable_text = " ".join(
+                [
+                    str(transaction.get("id", "")),
+                    str(transaction.get("student_id", "")),
+                    str(transaction.get("student", "")),
+                    str(transaction.get("book_id", "")),
+                    str(transaction.get("book", "")),
+                ]
+            ).lower()
+
+            if keyword not in searchable_text:
+                continue
+
+        # Filter status
+        if status != "All":
+
+            if transaction.get("status") != status:
+                continue
+
+        filtered_transactions.append(transaction)
+
+    # Sorting
+
+    allowed_sort_fields = {
+        "id": "id",
+        "student": "student",
+        "book": "book",
+        "borrow_date": "borrow_date",
+        "due_date": "due_date",
+        "status": "status",
+    }
+
+    sort_field = allowed_sort_fields.get(
+        sort_by,
+        "id",
+    )
+
+    reverse = sort_order == "desc"
+
+    filtered_transactions.sort(
+        key=lambda transaction: str(transaction.get(sort_field, "")).lower(),
+        reverse=reverse,
+    )
+
+    return filtered_transactions
 
 
 # Route for Students
@@ -71,6 +202,62 @@ def get_student_borrowed_books(student_id):
 
 def _normalise_status(value):
     return " ".join(str(value or "").strip().lower().replace("_", " ").split())
+
+
+# Pagination function
+def paginate_records(
+    records,
+    page: int = 1,
+    per_page: int = 10,
+):
+    """
+    Split records into pages.
+
+    Returns:
+        paginated records,
+        current page,
+        total pages
+    """
+
+    try:
+        page = int(page)
+    except (TypeError, ValueError):
+        page = 1
+
+    try:
+        per_page = int(per_page)
+    except (TypeError, ValueError):
+        per_page = 10
+
+    if page < 1:
+        page = 1
+
+    allowed_per_page = [10, 25, 50]
+
+    if per_page not in allowed_per_page:
+        per_page = 10
+
+    total_records = len(records)
+
+    total_pages = (total_records + per_page - 1) // per_page
+
+    if total_pages == 0:
+        total_pages = 1
+
+    if page > total_pages:
+        page = total_pages
+
+    start_index = (page - 1) * per_page
+
+    end_index = start_index + per_page
+
+    return {
+        "records": records[start_index:end_index],
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+        "total_records": total_records,
+    }
 
 
 def _book_can_be_issued(book):

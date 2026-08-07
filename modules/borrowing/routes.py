@@ -3,13 +3,15 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from modules.authentication.decorators import librarian_required, student_required
 
 from modules.borrowing.services import (
+    paginate_records,
     approve_borrow_request,
     get_borrow_approval_error,
     cancel_renewal_request,
     clear_renewal_alert,
     close_borrow_transaction,
     get_all_borrow_transactions,
-    get_pending_requests_with_validation,
+    get_filtered_pending_requests,
+    get_filtered_borrow_transactions,
     get_student_borrowed_books,
     manually_extend_due_date,
     reject_renewal_request,
@@ -29,13 +31,113 @@ borrowing_bp = Blueprint(
 @borrowing_bp.route("/")
 @librarian_required
 def borrowing_home():
-    requests = get_pending_requests_with_validation()
+
+    keyword = request.args.get(
+        "request_keyword",
+        "",
+    ).strip()
+
+    status = request.args.get(
+        "request_status",
+        "All",
+    )
+
+    sort_by = request.args.get(
+        "request_sort",
+        "id",
+    )
+
+    sort_order = request.args.get(
+        "request_order",
+        "asc",
+    )
+
+    request_page = request.args.get(
+        "request_page",
+        1,
+    )
+
+    request_per_page = request.args.get(
+        "request_per_page",
+        10,
+    )
+
+    requests_results = get_filtered_pending_requests(
+        keyword=keyword,
+        status=status,
+        sort_by=sort_by,
+        sort_order=sort_order,
+    )
+
+    request_pagination = paginate_records(
+        requests_results,
+        request_page,
+        request_per_page,
+    )
+
+    requests = request_pagination["records"]
+
     transactions = get_all_borrow_transactions()
+
+    transaction_keyword = request.args.get(
+        "transaction_keyword",
+        "",
+    ).strip()
+
+    transaction_page = request.args.get(
+        "transaction_page",
+        1,
+    )
+
+    transaction_per_page = request.args.get(
+        "transaction_per_page",
+        10,
+    )
+
+    transaction_status = request.args.get(
+        "transaction_status",
+        "All",
+    )
+
+    transaction_sort = request.args.get(
+        "transaction_sort",
+        "id",
+    )
+
+    transaction_order = request.args.get(
+        "transaction_order",
+        "asc",
+    )
+
+    transaction_results = get_filtered_borrow_transactions(
+        keyword=transaction_keyword,
+        status=transaction_status,
+        sort_by=transaction_sort,
+        sort_order=transaction_order,
+    )
+
+    transaction_pagination = paginate_records(
+        transaction_results,
+        transaction_page,
+        transaction_per_page,
+    )
+
+    transactions = transaction_pagination["records"]
 
     return render_template(
         "borrowing/librarian.html",
         requests=requests,
         transactions=transactions,
+        request_keyword=keyword,
+        request_status=status,
+        request_sort=sort_by,
+        request_order=sort_order,
+        transaction_keyword=transaction_keyword,
+        transaction_status=transaction_status,
+        transaction_sort=transaction_sort,
+        transaction_order=transaction_order,
+        request_pagination=request_pagination,
+        transaction_pagination=transaction_pagination,
     )
 
 

@@ -1,11 +1,9 @@
 # Author: Tan Wei Khye
-# For Scrum 1674
+# Test cases for Scrum 1674
 
-import pytest
 
 from modules.borrowing.services import (
     get_borrow_approval_error,
-    get_pending_requests_with_validation,
 )
 
 
