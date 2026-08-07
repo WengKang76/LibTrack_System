@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="penalty-container">
+    <h1 class="penalty-title">Payment Receipt</h1>
+
+    <div class="penalty-card">
+        <div class="penalty-row">
+            <span class="penalty-label">Penalty ID:</span>
+            <span class="penalty-value">{{ receipt.penalty_id }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Student ID:</span>
+            <span class="penalty-value">{{ receipt.student_id }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Book Title:</span>
+            <span class="penalty-value">{{ receipt.book_title }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Penalty Reason:</span>
+            <span class="penalty-value">{{ receipt.penalty_reason }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Payment Amount:</span>
+            <span class="penalty-value">RM {{ "%.2f"|format(receipt.payment_amount|float) }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Payment Method:</span>
+            <span class="penalty-value">{{ receipt.payment_method }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Payment Status:</span>
+            <span class="penalty-value">{{ receipt.payment_status }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Payment Date:</span>
+            <span class="penalty-value">{{ receipt.payment_date }}</span>
+        </div>
+
+        <div class="penalty-row">
+            <span class="penalty-label">Paid By:</span>
+            <span class="penalty-value">{{ receipt.paid_by }}</span>
+        </div>
+    </div>
+
+    <a href="{{ url_for('penalty_transaction.student_penalty_search_filter') }}">
+    Back to Penalty Records
+</a>
+</div>
+{% endblock %}

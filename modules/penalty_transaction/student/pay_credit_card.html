@@ -1,63 +1,177 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
-{% endblock %}
-
 {% block content %}
+<div class="penalty-container">
+    <h1 class="penalty-title">Pay Penalty</h1>
 
-<div class="penalty-header">
-    <h1>Penalty, Transactions & Exception Handling</h1>
-    <h2>SCRUM-703: Pay Penalty with Credit Card</h2>
-    <p>This page allows users to pay outstanding penalties using a credit card.</p>
-</div>
+    {% if error %}
+        <div class="alert error">
+            {{ error }}
+        </div>
+    {% endif %}
 
-{% if error %}
-<div class="penalty-alert penalty-warning">
-    {{ error }}
-</div>
-{% endif %}
+    <div class="penalty-card">
+        <div class="penalty-row">
+            <span class="penalty-label">Penalty ID:</span>
+            <span class="penalty-value">{{ penalty.get("penalty_id", "-") }}</span>
+        </div>
 
-<div class="penalty-card">
-    <h3>Penalty Details</h3>
+        <div class="penalty-row">
+            <span class="penalty-label">Student ID:</span>
+            <span class="penalty-value">{{ penalty.get("student_id", student_id) }}</span>
+        </div>
 
-    <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
-    <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
-    <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
-    <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
-    <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
-    <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
-    <p><strong>Status:</strong> {{ penalty.status }}</p>
-</div>
+        <div class="penalty-row">
+            <span class="penalty-label">Book Title:</span>
+            <span class="penalty-value">{{ penalty.get("book_title", "-") }}</span>
+        </div>
 
-<div class="penalty-card">
-    <form method="POST" class="penalty-payment-form">
+        <div class="penalty-row">
+            <span class="penalty-label">Penalty Amount:</span>
+            <span class="penalty-value">
+                RM {{ "%.2f"|format(penalty.get("penalty_amount", penalty.get("amount", 0))|float) }}
+            </span>
+        </div>
+    </div>
+
+    <form method="POST" class="penalty-form" id="paymentForm">
         <input type="hidden" name="student_id" value="{{ student_id }}">
 
         <label>Payment Amount</label>
-        <input 
-            type="number" 
-            step="0.01" 
-            name="payment_amount" 
-            value="{{ penalty.penalty_amount }}" 
-            readonly 
+        <input
+            type="number"
+            step="0.01"
+            name="payment_amount"
+            id="paymentAmount"
+            value="{{ penalty.get('penalty_amount', penalty.get('amount', 0)) }}"
+            readonly
             required
         >
 
-        <label>Credit Card Number</label>
-        <input type="text" name="card_number" placeholder="Example: 4111 1111 1111 1111" required>
+        <label>Payment Method</label>
+        <select name="payment_method" id="paymentMethod" required>
+            <option value="">-- Select Payment Method --</option>
+            <option value="Visa">Visa</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="PayPal">PayPal</option>
+            <option value="Cash">Cash</option>
+        </select>
 
-        <label>Card Holder Name</label>
-        <input type="text" name="card_holder" placeholder="Example: Tan Guan Hong" required>
+        <div id="cardFields" style="display: none;">
+            <label>Card Holder Name</label>
+            <input type="text" name="card_holder" id="cardHolder" placeholder="Enter card holder name">
 
-        <label>Expiry Date</label>
-        <input type="text" name="expiry_date" placeholder="MM/YY" required>
+            <label>Card Number</label>
+            <input type="text" name="card_number" id="cardNumber" placeholder="Enter card number">
 
-        <label>CVV</label>
-        <input type="password" name="cvv" placeholder="123" required>
+            <label>Expiry Date</label>
+            <input type="text" name="expiry_date" id="expiryDate" placeholder="MM/YY">
 
-        <button type="submit">Pay with Credit Card</button>
+            <label>CVV</label>
+            <input type="password" name="cvv" id="cvv" placeholder="Enter CVV">
+        </div>
+
+        <div id="paypalFields" style="display: none;">
+            <label>PayPal Email</label>
+            <input type="email" name="paypal_email" id="paypalEmail" placeholder="Enter PayPal email">
+        </div>
+
+        <div id="cashInstruction" class="alert success" style="display: none;">
+            Cash payment will be recorded and confirmed by the librarian.
+        </div>
+
+        <div id="confirmationSummary" class="penalty-card" style="display: none;">
+            <h3>Payment Confirmation Summary</h3>
+
+            <div class="penalty-row">
+                <span class="penalty-label">Penalty ID:</span>
+                <span class="penalty-value">{{ penalty.get("penalty_id", "-") }}</span>
+            </div>
+
+            <div class="penalty-row">
+                <span class="penalty-label">Student ID:</span>
+                <span class="penalty-value">{{ penalty.get("student_id", student_id) }}</span>
+            </div>
+
+            <div class="penalty-row">
+                <span class="penalty-label">Payment Amount:</span>
+                <span class="penalty-value">
+                    RM {{ "%.2f"|format(penalty.get("penalty_amount", penalty.get("amount", 0))|float) }}
+                </span>
+            </div>
+
+            <div class="penalty-row">
+                <span class="penalty-label">Selected Payment Method:</span>
+                <span class="penalty-value" id="summaryPaymentMethod">-</span>
+            </div>
+
+            <p>Please confirm that the payment details are correct before submitting.</p>
+        </div>
+
+        <button type="button" onclick="showConfirmationSummary()">
+            Preview Payment Summary
+        </button>
+
+        <button type="submit">
+            Confirm and Pay
+        </button>
+
+        <a href="{{ url_for('penalty_transaction.student_penalty_records') }}">
+            Cancel
+        </a>
     </form>
 </div>
 
+<script>
+    const paymentMethod = document.getElementById("paymentMethod");
+    const cardFields = document.getElementById("cardFields");
+    const paypalFields = document.getElementById("paypalFields");
+    const cashInstruction = document.getElementById("cashInstruction");
+    const confirmationSummary = document.getElementById("confirmationSummary");
+    const summaryPaymentMethod = document.getElementById("summaryPaymentMethod");
+
+    function resetPaymentFields() {
+        cardFields.style.display = "none";
+        paypalFields.style.display = "none";
+        cashInstruction.style.display = "none";
+
+        document.getElementById("cardHolder").required = false;
+        document.getElementById("cardNumber").required = false;
+        document.getElementById("expiryDate").required = false;
+        document.getElementById("cvv").required = false;
+        document.getElementById("paypalEmail").required = false;
+    }
+
+    paymentMethod.addEventListener("change", function () {
+        resetPaymentFields();
+
+        if (paymentMethod.value === "Visa" || paymentMethod.value === "Debit Card") {
+            cardFields.style.display = "block";
+
+            document.getElementById("cardHolder").required = true;
+            document.getElementById("cardNumber").required = true;
+            document.getElementById("expiryDate").required = true;
+            document.getElementById("cvv").required = true;
+        }
+
+        if (paymentMethod.value === "PayPal") {
+            paypalFields.style.display = "block";
+            document.getElementById("paypalEmail").required = true;
+        }
+
+        if (paymentMethod.value === "Cash") {
+            cashInstruction.style.display = "block";
+        }
+    });
+
+    function showConfirmationSummary() {
+        if (paymentMethod.value === "") {
+            alert("Please select a payment method first.");
+            return;
+        }
+
+        confirmationSummary.style.display = "block";
+        summaryPaymentMethod.innerText = paymentMethod.value;
+    }
+</script>
 {% endblock %}
