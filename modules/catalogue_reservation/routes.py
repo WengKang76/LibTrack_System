@@ -13,6 +13,7 @@ from flask import (
 from datetime import date, datetime, timedelta
 
 from config.firebase_config import db
+from modules.borrowing.services import get_renewal_unavailable_reason
 
 catalogue_bp = Blueprint("catalogue_reservation", __name__, url_prefix="/catalogue")
 
@@ -1178,6 +1179,11 @@ def view_currently_borrowed_books():
         _flash_database_error(
             "borrowed_books",
             "Failed to load the current student's borrowed books.",
+        )
+
+    for borrowing in borrowed_books:
+        borrowing["renewal_unavailable_reason"] = get_renewal_unavailable_reason(
+            borrowing["id"]
         )
 
     return render_template(

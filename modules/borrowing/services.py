@@ -512,6 +512,24 @@ def confirm_book_return(transaction_id: str) -> bool:
     return True
 
 
+def get_renewal_unavailable_reason(transaction_id: str):
+    transaction = find_borrow_transaction(transaction_id)
+
+    if transaction is None:
+        return "Borrowing transaction not found."
+
+    if transaction.get("status") != "Borrowed":
+        return "This book is not currently borrowed."
+
+    if transaction.get("renewal_status") == "Pending":
+        return "Renewal request is already pending."
+
+    if has_active_reservation(transaction["book_id"]):
+        return "Renewal unavailable: Book is reserved by another student."
+
+    return None
+
+
 def request_book_renewal(transaction_id: str) -> bool:
 
     transaction = find_borrow_transaction(transaction_id)

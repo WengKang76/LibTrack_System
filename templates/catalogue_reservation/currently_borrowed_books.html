@@ -198,22 +198,26 @@ Currently Borrowed Books | LibTrack
                     <td>
 
 
-
                     {% if borrowing.status == "Borrowed" %}
+                    <!-- Renew -->
+                    
 
+                    {% if borrowing.renewal_unavailable_reason %}
 
+                        <span class="badge">
 
-                        <!-- Renew -->
+                            {{ borrowing.renewal_unavailable_reason }}
+
+                        </span>
+
+                    {% else %}
 
                         <form method="POST"
-
-                              action="{{ url_for(
+                            action="{{ url_for(
                                 'borrowing.renew_book',
                                 transaction_id=borrowing.id
-                              ) }}"
-
-                              onsubmit="return confirmRenewal();">
-
+                            ) }}"
+                            onsubmit="return confirmRenewal();">
 
                             <button class="reservation-button">
 
@@ -221,8 +225,9 @@ Currently Borrowed Books | LibTrack
 
                             </button>
 
-
                         </form>
+
+                    {% endif %}
 
 
 
