@@ -263,6 +263,296 @@ def _copy_matches_search(
 
     return normalised_query in copy_id
 
+def _parse_book_year(value):
+    try:
+        return int(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return None
+
+
+def _parse_book_datetime(value):
+    if isinstance(value, datetime):
+        return value
+
+    text_value = str(
+        value or ""
+    ).strip()
+
+    if not text_value:
+        return None
+
+    supported_formats = (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
+    )
+
+    for date_format in supported_formats:
+        try:
+            return datetime.strptime(
+                text_value,
+                date_format,
+            )
+        except ValueError:
+            continue
+
+    return None
+
+
+def _book_available_copy_count(book):
+    try:
+        return int(
+            book.get(
+                "available_copies",
+                0,
+            )
+            or 0
+        )
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 0
+    # ============================================================
+# SCRUM-1529: LOW AND ZERO BOOK AVAILABILITY
+# ============================================================
+
+LOW_AVAILABILITY_THRESHOLD = 2
+
+
+def _book_availability_details(book):
+    """
+    Classify a book according to its number of
+    currently available physical copies.
+    """
+
+    available_count = max(
+        0,
+        _book_available_copy_count(
+            book
+        ),
+    )
+
+    if available_count == 0:
+        availability_level = "zero"
+        availability_label = (
+            "No Copies Available"
+        )
+        needs_attention = True
+
+    elif (
+        available_count
+        <= LOW_AVAILABILITY_THRESHOLD
+    ):
+        availability_level = "low"
+        availability_label = (
+            "Low Availability"
+        )
+        needs_attention = True
+
+    else:
+        availability_level = "normal"
+        availability_label = "Available"
+        needs_attention = False
+
+    return {
+        "available_count": available_count,
+        "availability_level": (
+            availability_level
+        ),
+        "availability_label": (
+            availability_label
+        ),
+        "needs_attention": needs_attention,
+    }
+
+
+def _sort_books(
+    books,
+    sort_option,
+):
+    def title_key(book):
+        return (
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+            _normalise_book_search_text(
+                book.get(
+                    "author",
+                    "",
+                )
+            ),
+        )
+
+    def author_key(book):
+        return (
+            _normalise_book_search_text(
+                book.get(
+                    "author",
+                    "",
+                )
+            ),
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    def year_key(
+        book,
+        newest=False,
+    ):
+        year = _parse_book_year(
+            book.get(
+                "publication_year"
+            )
+        )
+
+        is_missing = year is None
+        safe_year = (
+            year
+            if year is not None
+            else 0
+        )
+
+        return (
+            is_missing,
+            -safe_year
+            if newest
+            else safe_year,
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    def date_added_key(
+        book,
+        newest=False,
+    ):
+        created_at = _parse_book_datetime(
+            book.get(
+                "created_at"
+            )
+        )
+
+        is_missing = created_at is None
+
+        if created_at is None:
+            safe_timestamp = 0.0
+        else:
+            safe_timestamp = (
+                created_at.timestamp()
+            )
+
+        return (
+            is_missing,
+            -safe_timestamp
+            if newest
+            else safe_timestamp,
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    def available_count_key(
+        book,
+        highest=False,
+    ):
+        available_count = (
+            _book_available_copy_count(
+                book
+            )
+        )
+
+        return (
+            -available_count
+            if highest
+            else available_count,
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    if sort_option == "title_desc":
+        books.sort(
+            key=title_key,
+            reverse=True,
+        )
+
+    elif sort_option == "author_asc":
+        books.sort(
+            key=author_key,
+        )
+
+    elif sort_option == "author_desc":
+        books.sort(
+            key=author_key,
+            reverse=True,
+        )
+
+    elif sort_option == "publication_year_newest":
+        books.sort(
+            key=lambda book: year_key(
+                book,
+                newest=True,
+            )
+        )
+
+    elif sort_option == "publication_year_oldest":
+        books.sort(
+            key=year_key,
+        )
+
+    elif sort_option == "date_added_newest":
+        books.sort(
+            key=lambda book: date_added_key(
+                book,
+                newest=True,
+            )
+        )
+
+    elif sort_option == "date_added_oldest":
+        books.sort(
+            key=date_added_key,
+        )
+
+    elif sort_option == "available_copies_highest":
+        books.sort(
+            key=lambda book: available_count_key(
+                book,
+                highest=True,
+            )
+        )
+
+    elif sort_option == "available_copies_lowest":
+        books.sort(
+            key=available_count_key,
+        )
+
+    else:
+        books.sort(
+            key=title_key,
+        )
+
+    return books
+
 
 def _get_book_copy_by_id(book_id, copy_id):
     """Return one physical copy, or None when it does not exist."""
@@ -517,6 +807,18 @@ VALID_BOOK_STATUS_FILTERS = {
     "active",
     "inactive",
 }
+VALID_BOOK_SORT_OPTIONS = {
+    "title_asc",
+    "title_desc",
+    "author_asc",
+    "author_desc",
+    "publication_year_newest",
+    "publication_year_oldest",
+    "date_added_newest",
+    "date_added_oldest",
+    "available_copies_highest",
+    "available_copies_lowest",
+}
 
 
 def _book_matches_filters(
@@ -562,7 +864,97 @@ def _book_matches_filters(
         return False
 
     return True
+# ============================================================
+# SCRUM-1528: PAGINATE BOOK MANAGEMENT RESULTS
+# ============================================================
 
+BOOKS_PER_PAGE = 10
+
+
+def _normalise_page_number(value):
+    try:
+        page_number = int(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 1
+
+    if page_number < 1:
+        return 1
+
+    return page_number
+
+
+def _paginate_books(
+    books,
+    requested_page,
+    per_page=BOOKS_PER_PAGE,
+):
+    total_items = len(books)
+
+    total_pages = max(
+        1,
+        (
+            total_items
+            + per_page
+            - 1
+        )
+        // per_page,
+    )
+
+    current_page = min(
+        _normalise_page_number(
+            requested_page
+        ),
+        total_pages,
+    )
+
+    start_index = (
+        current_page - 1
+    ) * per_page
+
+    end_index = (
+        start_index
+        + per_page
+    )
+
+    page_items = books[
+        start_index:end_index
+    ]
+
+    pagination = {
+        "current_page": current_page,
+        "total_pages": total_pages,
+        "total_items": total_items,
+        "per_page": per_page,
+        "has_previous": (
+            current_page > 1
+        ),
+        "has_next": (
+            current_page < total_pages
+        ),
+        "previous_page": (
+            current_page - 1
+        ),
+        "next_page": (
+            current_page + 1
+        ),
+        "start_item": (
+            start_index + 1
+            if total_items
+            else 0
+        ),
+        "end_item": min(
+            end_index,
+            total_items,
+        ),
+    }
+
+    return (
+        page_items,
+        pagination,
+    )
 # ============================================================
 # DISPLAY ALL BOOK RECORDS
 # ============================================================
@@ -605,6 +997,23 @@ def manage_books():
     ):
         status_filter = "all"
 
+    # SCRUM-1527:
+    # Sort Book Catalogue results.
+    sort_option = (
+        _normalise_book_search_text(
+            request.args.get(
+                "sort",
+                "title_asc",
+            )
+        )
+    )
+
+    if (
+        sort_option
+        not in VALID_BOOK_SORT_OPTIONS
+    ):
+        sort_option = "title_asc"
+
     all_books = []
     category_values = {}
 
@@ -622,6 +1031,38 @@ def manage_books():
             if _is_book_active(book)
             else "Inactive"
         )
+
+        # SCRUM-1529:
+        # Identify low or zero availability.
+        availability_details = (
+            _book_availability_details(
+                book
+            )
+        )
+
+        book["available_copy_count"] = (
+            availability_details[
+                "available_count"
+            ]
+        )
+
+        book["availability_level"] = (
+            availability_details[
+                "availability_level"
+            ]
+        )
+
+        book["availability_label"] = (
+            availability_details[
+                "availability_label"
+            ]
+        )
+
+        book[
+            "needs_availability_attention"
+        ] = availability_details[
+            "needs_attention"
+        ]
 
         category_name = str(
             book.get(
@@ -673,15 +1114,23 @@ def manage_books():
 
         books.append(book)
 
-    books.sort(
-        key=lambda book: (
-            _normalise_book_search_text(
-                book.get(
-                    "title",
-                    "",
-                )
-            )
-        )
+    # SCRUM-1527:
+    # Sort after filtering.
+    _sort_books(
+        books,
+        sort_option,
+    )
+
+    # SCRUM-1528:
+    # Store total before pagination.
+    total_result_count = len(books)
+
+    books, pagination = _paginate_books(
+        books,
+        request.args.get(
+            "page",
+            "1",
+        ),
     )
 
     category_options = sorted(
@@ -693,6 +1142,7 @@ def manage_books():
         search_query
         or category_filter != "all"
         or status_filter != "all"
+        or sort_option != "title_asc"
     )
 
     return render_template(
@@ -701,8 +1151,10 @@ def manage_books():
         search_query=search_query,
         category_filter=category_filter,
         status_filter=status_filter,
+        sort_option=sort_option,
         category_options=category_options,
-        result_count=len(books),
+        result_count=total_result_count,
+        pagination=pagination,
         has_active_search=bool(
             search_query
         ),
@@ -710,8 +1162,6 @@ def manage_books():
             has_active_criteria
         ),
     )
-
-
 # ============================================================
 # SCRUM-12, SCRUM-1180 AND SCRUM-1181:
 # ADD AND VALIDATE NEW BOOK
@@ -785,7 +1235,8 @@ def add_book():
 
         missing_fields = [
             label
-            for field_name, label in required_fields.items()
+            for field_name, label
+            in required_fields.items()
             if not form_data[field_name]
         ]
 
@@ -794,11 +1245,12 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=("Please fill in all required fields."),
+                    error=(
+                        "Please fill in all required fields."
+                    ),
                 ),
                 400,
             )
-
         # ----------------------------------------------------
         # SCRUM-1180: Text-length validation
         # ----------------------------------------------------

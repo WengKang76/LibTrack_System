@@ -975,3 +975,34 @@
         grid-column: auto;
     }
 }
+/* =========================================================
+   Sprint 3 Day 4: Book sorting controls
+   ========================================================= */
+
+.book-search-tools {
+    grid-template-columns:
+        minmax(260px, 2fr)
+        repeat(3, minmax(160px, 1fr));
+}
+
+@media (max-width: 1150px) {
+    .book-search-tools {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .book-search-field {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .book-search-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .book-search-field,
+    .book-search-actions {
+        grid-column: auto;
+    }
+}
