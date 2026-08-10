@@ -5,41 +5,64 @@
 {% endblock %}
 
 {% block content %}
+<div class="librarian-page-wrapper">
+    <div class="librarian-page-header">
+        <h1>Waive Penalty</h1>
+        <p>Review the penalty details and enter a valid reason before waiving the penalty.</p>
+    </div>
 
-<div class="penalty-header">
-    <h1>Penalty, Transactions & Exception Handling</h1>
-    <h2>SCRUM-682: Waive Penalties</h2>
-    <p>This page allows the librarian to waive an outstanding penalty with a valid reason.</p>
+    <div class="warning-card">
+        Warning: Waiving a penalty will change the penalty status and may affect the student's outstanding penalty record.
+        <ul class="warning-list">
+            <li>Please confirm the correct penalty record before continuing.</li>
+            <li>A valid waiver reason is required.</li>
+            <li>Paid penalties should not be waived.</li>
+        </ul>
+    </div>
+
+    {% if error %}
+        <div class="error-card">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="penalty-card">
+        <h3>Penalty Details</h3>
+
+        <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
+        <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
+        <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
+        <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
+        <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
+        <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount|float) }}</p>
+        <p><strong>Status:</strong> {{ penalty.status }}</p>
+    </div>
+
+    <div class="penalty-card">
+        <form
+            method="POST"
+            class="penalty-payment-form"
+            onsubmit="return confirm('Are you sure you want to waive this penalty? Please confirm the penalty ID and waiver reason before continuing.');"
+        >
+            <label>Waiver Reason</label>
+            <input
+                type="text"
+                name="waiver_reason"
+                placeholder="Example: Approved by librarian due to valid reason"
+                required
+            >
+
+            <label>Waived By</label>
+            <input type="text" name="waived_by" value="Librarian" required>
+
+            <div class="form-action-row">
+                <button type="submit" class="btn-warning">Waive Penalty</button>
+
+                <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
-
-{% if error %}
-<div class="penalty-alert penalty-warning">
-    {{ error }}
-</div>
-{% endif %}
-
-<div class="penalty-card">
-    <h3>Penalty Details</h3>
-
-    <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
-    <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
-    <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
-    <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
-    <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
-    <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
-    <p><strong>Status:</strong> {{ penalty.status }}</p>
-</div>
-
-<div class="penalty-card">
-    <form method="POST" class="penalty-payment-form">
-        <label>Waiver Reason</label>
-        <input type="text" name="waiver_reason" placeholder="Example: Approved by librarian due to valid reason" required>
-
-        <label>Waived By</label>
-        <input type="text" name="waived_by" value="Librarian" required>
-
-        <button type="submit">Waive Penalty</button>
-    </form>
-</div>
-
 {% endblock %}

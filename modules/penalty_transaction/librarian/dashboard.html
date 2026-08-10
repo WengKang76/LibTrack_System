@@ -1,77 +1,243 @@
 {% extends "base.html" %}
 
-{% block title %}Penalty & Transactions | LibTrack{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
-{% endblock %}
-
 {% block content %}
-<section class="dashboard-hero">
-    <div class="dashboard-hero-content">
-        <p class="dashboard-label">Librarian Workspace</p>
+<style>
+    .penalty-dashboard-wrapper {
+        max-width: 1160px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+
+    .dashboard-hero {
+        background: linear-gradient(135deg, #2563eb, #1e40af);
+        color: #ffffff;
+        border-radius: 24px;
+        padding: 34px 38px;
+        margin-bottom: 30px;
+        box-shadow: 0 14px 34px rgba(37, 99, 235, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-hero::after {
+        content: "";
+        position: absolute;
+        width: 230px;
+        height: 230px;
+        right: -60px;
+        top: -40px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 50%;
+    }
+
+    .dashboard-tag {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.20);
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 12px;
+    }
+
+    .dashboard-hero h1 {
+        font-size: 38px;
+        font-weight: 900;
+        margin: 0 0 10px 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .dashboard-hero p {
+        font-size: 17px;
+        margin: 0;
+        color: #dbeafe;
+        position: relative;
+        z-index: 1;
+    }
+
+    .dashboard-section-header {
+        margin-bottom: 18px;
+    }
+
+    .dashboard-section-header h2 {
+        font-size: 26px;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 6px 0;
+    }
+
+    .dashboard-section-header p {
+        color: #64748b;
+        margin: 0;
+        font-size: 15px;
+    }
+
+    .function-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .function-card {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 24px;
+        text-decoration: none;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+        transition: 0.2s ease;
+        min-height: 120px;
+    }
+
+    .function-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.13);
+        border-color: #bfdbfe;
+    }
+
+    .function-icon {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+        background: #eff6ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        flex-shrink: 0;
+    }
+
+    .function-info h3 {
+        color: #0f172a;
+        font-size: 21px;
+        font-weight: 900;
+        margin: 0 0 8px 0;
+    }
+
+    .function-info p {
+        color: #64748b;
+        font-size: 15px;
+        line-height: 1.45;
+        margin: 0;
+    }
+
+    .function-action {
+        margin-left: auto;
+        background: #2563eb;
+        color: #ffffff;
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .function-card:hover .function-action {
+        background: #1d4ed8;
+    }
+
+    .dashboard-note {
+        margin-top: 24px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px 18px;
+        color: #475569;
+        font-size: 15px;
+    }
+
+    .dashboard-note strong {
+        color: #0f172a;
+    }
+
+    @media (max-width: 900px) {
+        .function-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-hero {
+            padding: 28px;
+        }
+
+        .dashboard-hero h1 {
+            font-size: 31px;
+        }
+
+        .function-card {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .function-action {
+            margin-left: 0;
+        }
+    }
+</style>
+
+<div class="penalty-dashboard-wrapper">
+
+    <section class="dashboard-hero">
+        <span class="dashboard-tag">Librarian Workspace</span>
         <h1>Penalty &amp; Transactions</h1>
-        <p class="dashboard-description">
-            Review overdue books, penalties, payments, waivers, and exception-handling functions.
-        </p>
-    </div>
-</section>
+        <p>Manage overdue penalties, payment records, and penalty waivers.</p>
+    </section>
 
-<section class="dashboard-section">
-    <div class="section-heading">
-        <h2>Penalty &amp; Transaction Functions</h2>
-        <p>Select a function to continue.</p>
-    </div>
+    <section>
+        <div class="dashboard-section-header">
+            <h2>Penalty Functions</h2>
+            <p>Select one function to continue.</p>
+        </div>
 
-    <div class="dashboard-card-grid">
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">⏰</div>
-            <h3>Overdue Books</h3>
-            <p>Identify overdue borrowing transactions and calculate penalty amounts.</p>
-            <a href="{{ url_for('penalty_transaction.identify_overdue_books') }}">Open</a>
-        </article>
+        <div class="function-grid">
 
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">⚠️</div>
-            <h3>Outstanding Penalties</h3>
-            <p>View and search students' outstanding or unpaid penalties.</p>
-            <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}">Open</a>
-        </article>
+            <a href="{{ url_for('penalty_transaction.identify_overdue_books') }}" class="function-card">
+                <div class="function-icon">⏰</div>
+                <div class="function-info">
+                    <h3>Overdue Books</h3>
+                    <p>Identify overdue borrowing records and calculate penalties.</p>
+                </div>
+                <span class="function-action">Open</span>
+            </a>
 
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">💳</div>
-            <h3>Payment Records</h3>
-            <p>Review completed penalty payments and their transaction details.</p>
-            <a href="{{ url_for('penalty_transaction.view_payment_records') }}">Open</a>
-        </article>
+            <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="function-card">
+                <div class="function-icon">⚠️</div>
+                <div class="function-info">
+                    <h3>Penalty Records</h3>
+                    <p>View, search, and manage student penalty records.</p>
+                </div>
+                <span class="function-action">Open</span>
+            </a>
 
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">📋</div>
-            <h3>Waive Penalty</h3>
-            <p>Select an outstanding penalty and record an approved waiver reason.</p>
-            <a href="{{ url_for('penalty_transaction.librarian_choose_penalty_to_waive') }}">Open</a>
-        </article>
+            <a href="{{ url_for('penalty_transaction.view_payment_records') }}" class="function-card">
+                <div class="function-icon">💳</div>
+                <div class="function-info">
+                    <h3>Payment Records</h3>
+                    <p>Review completed penalty payments and receipts.</p>
+                </div>
+                <span class="function-action">Open</span>
+            </a>
 
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">↩️</div>
-            <h3>Return Exceptions</h3>
-            <p>Open borrowing and returning records to process return exceptions.</p>
-            <a href="/borrowing/">Open</a>
-        </article>
+            <a href="{{ url_for('penalty_transaction.librarian_choose_penalty_to_waive') }}" class="function-card">
+                <div class="function-icon">📋</div>
+                <div class="function-info">
+                    <h3>Waive Penalty</h3>
+                    <p>Select an outstanding penalty and record a waiver reason.</p>
+                </div>
+                <span class="function-action">Open</span>
+            </a>
 
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">📕</div>
-            <h3>Lost / Damaged Books</h3>
-            <p>Select a borrowing transaction and record a lost or damaged book exception.</p>
-            <a href="{{ url_for('penalty_transaction.librarian_choose_book_exception') }}">Open</a>
-        </article>
+        </div>
 
-        <article class="dashboard-card">
-            <div class="dashboard-card-icon">✅</div>
-            <h3>Borrow Approval Checks</h3>
-            <p>Open borrowing requests and check unpaid penalties before approval.</p>
-            <a href="/borrowing/">Open</a>
-        </article>
-    </div>
-</section>
+        <div class="dashboard-note">
+            <strong>Note:</strong> Only penalty-related actions needed by the librarian are shown on this page.
+        </div>
+    </section>
+
+</div>
 {% endblock %}
