@@ -657,6 +657,84 @@ def _record_identifier(record, *candidate_fields):
     return "Unknown"
 
 
+def _build_identifier_lookup(records, candidate_fields):
+    """Index related records by any supported identifier field."""
+    lookup = {}
+
+    for record in records:
+        for field_name in candidate_fields:
+            value = str(record.get(field_name, "")).strip()
+            if value and value not in lookup:
+                lookup[value] = record
+
+    return lookup
+
+
+def _display_report_date(value, empty_label="Unknown"):
+    parsed_date = _to_date(value)
+    if parsed_date is None:
+        return empty_label
+    return parsed_date.strftime("%d %b %Y")
+
+
+def _build_borrowing_related_lookups():
+    """Build safe student and book lookup tables for detailed reports."""
+    student_lookup = _build_identifier_lookup(
+        repository.get_all_users(),
+        ("document_id", "user_id", "student_id", "id"),
+    )
+    book_lookup = _build_identifier_lookup(
+        repository.get_all_books(),
+        ("document_id", "book_id", "id"),
+    )
+    return student_lookup, book_lookup
+
+
+def _detailed_borrowing_fields(
+    record,
+    student_lookup,
+    book_lookup,
+    current_date,
+):
+    """Return display fields required by SCRUM-1538."""
+    student_id = str(record.get("student_id", "")).strip()
+    book_id = str(record.get("book_id", "")).strip()
+
+    student = student_lookup.get(student_id, {})
+    book = book_lookup.get(book_id, {})
+
+    student_name = str(student.get("full_name", "")).strip() or "Unknown Student"
+    book_title = (
+        str(record.get("book_title", "")).strip()
+        or str(book.get("title", "")).strip()
+        or "Unknown Book"
+    )
+
+    due_date = _to_date(record.get("due_date"))
+    record_status = _normalise_status(record.get("status"))
+    is_overdue = bool(
+        due_date is not None
+        and due_date < current_date
+        and record_status in ACTIVE_BORROWING_STATUSES
+    )
+
+    overdue_days = (current_date - due_date).days if is_overdue else 0
+
+    return {
+        "student_name": student_name,
+        "book_title": book_title,
+        "borrow_date_display": _display_report_date(record.get("borrow_date")),
+        "due_date_display": _display_report_date(record.get("due_date")),
+        "return_date_display": _display_report_date(
+            record.get("return_date"),
+            empty_label="Not returned",
+        ),
+        "renewal_status": str(record.get("renewal_status", "None")).strip() or "None",
+        "is_overdue": is_overdue,
+        "overdue_days": overdue_days,
+    }
+
+
 def _operational_event_date(report_type, record):
     field_candidates = {
         "borrowing": (
@@ -773,6 +851,11 @@ def build_operational_report(
 
     current_date = today or date.today()
     report_records = []
+    student_lookup = {}
+    book_lookup = {}
+
+    if selected_type == "borrowing":
+        student_lookup, book_lookup = _build_borrowing_related_lookups()
 
     for record in _operational_source_records(selected_type):
         record_status = _normalise_status(record.get("status"))
@@ -797,35 +880,45 @@ def build_operational_report(
             if event_date is None or event_date > parsed_end_date:
                 continue
 
-        report_records.append(
-            {
-                "record_id": _operational_record_id(selected_type, record),
-                "event_date": (
-                    event_date.isoformat() if event_date is not None else ""
-                ),
-                "event_date_display": (
-                    event_date.strftime("%d %b %Y")
-                    if event_date is not None
-                    else "Unknown"
-                ),
-                "status": str(record.get("status", "Unknown")).strip()
-                or "Unknown",
-                "student_id": str(record.get("student_id", "Unknown")).strip()
-                or "Unknown",
-                "book_id": str(record.get("book_id", "Unknown")).strip()
-                or "Unknown",
-                "summary": _operational_summary(
-                    selected_type,
+        report_record = {
+            "record_id": _operational_record_id(selected_type, record),
+            "event_date": (
+                event_date.isoformat() if event_date is not None else ""
+            ),
+            "event_date_display": (
+                event_date.strftime("%d %b %Y")
+                if event_date is not None
+                else "Unknown"
+            ),
+            "status": str(record.get("status", "Unknown")).strip()
+            or "Unknown",
+            "student_id": str(record.get("student_id", "Unknown")).strip()
+            or "Unknown",
+            "book_id": str(record.get("book_id", "Unknown")).strip()
+            or "Unknown",
+            "summary": _operational_summary(
+                selected_type,
+                record,
+                current_date,
+            ),
+            "amount": (
+                float(_penalty_amount(record))
+                if selected_type == "penalty"
+                else None
+            ),
+        }
+
+        if selected_type == "borrowing":
+            report_record.update(
+                _detailed_borrowing_fields(
                     record,
+                    student_lookup,
+                    book_lookup,
                     current_date,
-                ),
-                "amount": (
-                    float(_penalty_amount(record))
-                    if selected_type == "penalty"
-                    else None
-                ),
-            }
-        )
+                )
+            )
+
+        report_records.append(report_record)
 
     report_records.sort(
         key=lambda item: (
@@ -840,10 +933,17 @@ def build_operational_report(
         status_label = record["status"]
         status_totals[status_label] = status_totals.get(status_label, 0) + 1
 
-    return {
+    result = {
         "report_type": selected_type,
         "report_title": OPERATIONAL_REPORT_TYPES[selected_type],
         "records": report_records,
         "total_records": len(report_records),
         "status_totals": status_totals,
     }
+
+    if selected_type == "borrowing":
+        result["overdue_count"] = sum(
+            1 for record in report_records if record.get("is_overdue")
+        )
+
+    return result

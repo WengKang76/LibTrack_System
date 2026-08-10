@@ -985,3 +985,27 @@ body {
         flex-direction: column;
     }
 }
+
+/* SCRUM-1538 detailed borrowing activity report */
+.report-table-detailed {
+    min-width: 1180px;
+}
+
+.report-cell-secondary {
+    color: #6b7890;
+    display: block;
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+}
+
+.report-overdue-row {
+    background: #fff8f6;
+}
+
+.report-overdue-indicator {
+    color: #b53d32;
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}

@@ -87,38 +87,80 @@ Operational Reports | LibTrack
 
     {% if report.records %}
         <div class="report-table-wrapper">
-            <table class="report-table">
-                <thead>
-                    <tr>
-                        <th>Record ID</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Student ID</th>
-                        <th>Book ID</th>
-                        <th>Details</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in report.records %}
+            {% if report.report_type == "borrowing" %}
+                <table class="report-table report-table-detailed">
+                    <thead>
                         <tr>
-                            <td>{{ record.record_id }}</td>
-                            <td>{{ record.event_date_display }}</td>
-                            <td><span class="report-status-pill">{{ record.status }}</span></td>
-                            <td>{{ record.student_id }}</td>
-                            <td>{{ record.book_id }}</td>
-                            <td>{{ record.summary }}</td>
-                            <td>
-                                {% if record.amount is not none %}
-                                    RM {{ '%.2f'|format(record.amount) }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
+                            <th>Transaction ID</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Borrow Date</th>
+                            <th>Due Date</th>
+                            <th>Return Date</th>
+                            <th>Renewal</th>
+                            <th>Status</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr {% if record.is_overdue %}class="report-overdue-row"{% endif %}>
+                                <td>{{ record.record_id }}</td>
+                                <td>
+                                    <strong>{{ record.student_name }}</strong>
+                                    <span class="report-cell-secondary">{{ record.student_id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.book_title }}</strong>
+                                    <span class="report-cell-secondary">{{ record.book_id }}</span>
+                                </td>
+                                <td>{{ record.borrow_date_display }}</td>
+                                <td>
+                                    {{ record.due_date_display }}
+                                    {% if record.is_overdue %}
+                                        <span class="report-overdue-indicator">{{ record.overdue_days }} day{% if record.overdue_days != 1 %}s{% endif %} overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.return_date_display }}</td>
+                                <td>{{ record.renewal_status }}</td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Record ID</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Student ID</th>
+                            <th>Book ID</th>
+                            <th>Details</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr>
+                                <td>{{ record.record_id }}</td>
+                                <td>{{ record.event_date_display }}</td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                                <td>{{ record.student_id }}</td>
+                                <td>{{ record.book_id }}</td>
+                                <td>{{ record.summary }}</td>
+                                <td>
+                                    {% if record.amount is not none %}
+                                        RM {{ '%.2f'|format(record.amount) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
     {% else %}
         <div class="report-empty-state">
