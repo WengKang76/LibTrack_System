@@ -1009,3 +1009,8 @@ body {
     font-weight: 700;
     margin-top: 0.25rem;
 }
+
+/* SCRUM-1539 overdue and penalty report */
+.report-table-overdue-penalty {
+    min-width: 1500px;
+}

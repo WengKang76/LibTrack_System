@@ -85,6 +85,15 @@ Operational Reports | LibTrack
         </div>
     {% endif %}
 
+    {% if report.report_type == "overdue" and report.penalty_status_totals %}
+        <div class="report-status-summary" aria-label="Penalty status totals">
+            {% for status, total in report.penalty_status_totals.items() %}
+                <span><strong>{{ total }}</strong> penalty {{ status }}</span>
+            {% endfor %}
+            <span><strong>RM {{ '%.2f'|format(report.total_penalty_amount) }}</strong> total penalty amount</span>
+        </div>
+    {% endif %}
+
     {% if report.records %}
         <div class="report-table-wrapper">
             {% if report.report_type == "borrowing" %}
@@ -123,6 +132,60 @@ Operational Reports | LibTrack
                                 <td>{{ record.return_date_display }}</td>
                                 <td>{{ record.renewal_status }}</td>
                                 <td><span class="report-status-pill">{{ record.status }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elif report.report_type == "overdue" %}
+                <table class="report-table report-table-overdue-penalty">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Due Date</th>
+                            <th>Overdue</th>
+                            <th>Transaction Status</th>
+                            <th>Penalty</th>
+                            <th>Penalty Status</th>
+                            <th>Payment</th>
+                            <th>Waiver</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr class="report-overdue-row">
+                                <td>{{ record.record_id }}</td>
+                                <td>
+                                    <strong>{{ record.student_name }}</strong>
+                                    <span class="report-cell-secondary">{{ record.student_id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.book_title }}</strong>
+                                    <span class="report-cell-secondary">{{ record.book_id }}</span>
+                                </td>
+                                <td>{{ record.due_date_display }}</td>
+                                <td>
+                                    <span class="report-overdue-indicator">{{ record.overdue_days }} day{% if record.overdue_days != 1 %}s{% endif %}</span>
+                                </td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                                <td>
+                                    <strong>{{ record.penalty_id }}</strong>
+                                    {% if record.penalty_amount is not none %}
+                                        <span class="report-cell-secondary">RM {{ '%.2f'|format(record.penalty_amount) }}</span>
+                                    {% else %}
+                                        <span class="report-cell-secondary">No penalty recorded</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="report-status-pill">{{ record.penalty_status }}</span></td>
+                                <td>
+                                    <strong>{{ record.payment_status }}</strong>
+                                    <span class="report-cell-secondary">{{ record.payment_method }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.waiver_status }}</strong>
+                                    <span class="report-cell-secondary">{{ record.waiver_reason }}</span>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

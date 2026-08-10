@@ -735,6 +735,114 @@ def _detailed_borrowing_fields(
     }
 
 
+def _build_penalty_transaction_lookup(penalties):
+    """Group penalty records by borrowing transaction for overdue reporting."""
+    lookup = {}
+
+    for penalty in penalties:
+        transaction_id = str(penalty.get("transaction_id", "")).strip()
+        if not transaction_id:
+            continue
+        lookup.setdefault(transaction_id, []).append(penalty)
+
+    return lookup
+
+
+def _select_overdue_penalty(penalties):
+    """Prefer a linked overdue penalty while remaining safe with legacy data."""
+    if not penalties:
+        return None
+
+    def penalty_priority(penalty):
+        text = " ".join(
+            [
+                str(penalty.get("penalty_type", "")),
+                str(penalty.get("penalty_reason", "")),
+            ]
+        ).lower()
+        is_overdue_penalty = "overdue" in text
+        status = _normalise_status(penalty.get("status"))
+        active_priority = 0 if status in OUTSTANDING_PENALTY_STATUSES else 1
+        return (0 if is_overdue_penalty else 1, active_priority)
+
+    return sorted(penalties, key=penalty_priority)[0]
+
+
+def _derived_payment_status(penalty):
+    explicit_status = str(penalty.get("payment_status", "")).strip()
+    if explicit_status:
+        return explicit_status
+
+    status = _normalise_status(penalty.get("status"))
+    if status == "paid":
+        return "Paid"
+    if status == "waived":
+        return "Not Applicable"
+    if status in OUTSTANDING_PENALTY_STATUSES:
+        return "Unpaid"
+    if status == "cancelled":
+        return "Cancelled"
+    return "Not Recorded"
+
+
+def _overdue_penalty_fields(
+    record,
+    student_lookup,
+    book_lookup,
+    penalty_lookup,
+    current_date,
+):
+    """Return joined overdue, student, book and penalty details for SCRUM-1539."""
+    details = _detailed_borrowing_fields(
+        record,
+        student_lookup,
+        book_lookup,
+        current_date,
+    )
+
+    transaction_id = _operational_record_id("overdue", record)
+    penalty = _select_overdue_penalty(penalty_lookup.get(transaction_id, []))
+
+    if penalty is None:
+        details.update(
+            {
+                "penalty_id": "Not recorded",
+                "penalty_amount": None,
+                "penalty_status": "Not Recorded",
+                "payment_status": "Not Recorded",
+                "payment_method": "Not recorded",
+                "waiver_status": "Not Waived",
+                "waiver_reason": "Not recorded",
+            }
+        )
+        return details
+
+    penalty_status = str(penalty.get("status", "Unknown")).strip() or "Unknown"
+    waiver_reason = str(penalty.get("waiver_reason", "")).strip()
+    is_waived = _normalise_status(penalty_status) == "waived" or bool(waiver_reason)
+
+    details.update(
+        {
+            "penalty_id": _record_identifier(
+                penalty,
+                "penalty_id",
+                "document_id",
+                "id",
+            ),
+            "penalty_amount": float(_penalty_amount(penalty)),
+            "penalty_status": penalty_status,
+            "payment_status": _derived_payment_status(penalty),
+            "payment_method": str(
+                penalty.get("payment_method", "Not recorded")
+            ).strip()
+            or "Not recorded",
+            "waiver_status": "Waived" if is_waived else "Not Waived",
+            "waiver_reason": waiver_reason or "Not recorded",
+        }
+    )
+    return details
+
+
 def _operational_event_date(report_type, record):
     field_candidates = {
         "borrowing": (
@@ -853,9 +961,15 @@ def build_operational_report(
     report_records = []
     student_lookup = {}
     book_lookup = {}
+    penalty_lookup = {}
 
-    if selected_type == "borrowing":
+    if selected_type in {"borrowing", "overdue"}:
         student_lookup, book_lookup = _build_borrowing_related_lookups()
+
+    if selected_type == "overdue":
+        penalty_lookup = _build_penalty_transaction_lookup(
+            repository.get_all_penalties()
+        )
 
     for record in _operational_source_records(selected_type):
         record_status = _normalise_status(record.get("status"))
@@ -917,6 +1031,16 @@ def build_operational_report(
                     current_date,
                 )
             )
+        elif selected_type == "overdue":
+            report_record.update(
+                _overdue_penalty_fields(
+                    record,
+                    student_lookup,
+                    book_lookup,
+                    penalty_lookup,
+                    current_date,
+                )
+            )
 
         report_records.append(report_record)
 
@@ -945,5 +1069,17 @@ def build_operational_report(
         result["overdue_count"] = sum(
             1 for record in report_records if record.get("is_overdue")
         )
+    elif selected_type == "overdue":
+        result["total_penalty_amount"] = sum(
+            record.get("penalty_amount") or 0.0
+            for record in report_records
+        )
+        penalty_status_totals = {}
+        for record in report_records:
+            penalty_status = record.get("penalty_status", "Not Recorded")
+            penalty_status_totals[penalty_status] = (
+                penalty_status_totals.get(penalty_status, 0) + 1
+            )
+        result["penalty_status_totals"] = penalty_status_totals
 
     return result
