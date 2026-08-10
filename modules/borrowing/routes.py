@@ -77,8 +77,6 @@ def borrowing_home():
 
     requests = request_pagination["records"]
 
-    transactions = get_all_borrow_transactions()
-
     transaction_keyword = request.args.get(
         "transaction_keyword",
         "",

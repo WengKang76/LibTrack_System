@@ -1,4 +1,8 @@
 # Author: Tan Wei Khye
+"""
+Test cases for Scrum-1680:
+
+"""
 
 from unittest.mock import patch
 
@@ -8,6 +12,12 @@ from modules.borrowing.services import (
 
 
 def test_renewal_available_when_no_reservation():
+    """
+    Given the student has a borrowed book with no active reservation
+    When the system checks the book's renewal availability
+    Then the system should allow the student to renew the book
+    """
+
     transaction = {
         "id": "T001",
         "book_id": "BOOK001",
@@ -28,6 +38,12 @@ def test_renewal_available_when_no_reservation():
 
 
 def test_renewal_unavailable_when_book_is_reserved():
+    """
+    Given the student has a borrowed book that has an active pending reservation
+    When the system checks the book's renewal availability
+    Then the system should prevent renewal and display "Renewal unavailable: Book is reserved by another student."
+    """
+
     transaction = {
         "id": "T002",
         "book_id": "BOOK002",
@@ -48,6 +64,12 @@ def test_renewal_unavailable_when_book_is_reserved():
 
 
 def test_renewal_unavailable_when_request_is_already_pending():
+    """
+    Given the student has a borrowed book with an existing pending renewal request
+    When the system checks the book's renewal availability
+    Then the system should prevent another renewal request and display "Renewal request is already pending."
+    """
+
     transaction = {
         "id": "T003",
         "book_id": "BOOK003",

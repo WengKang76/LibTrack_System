@@ -114,7 +114,13 @@ def get_filtered_pending_requests(
 
 
 def get_all_borrow_transactions():
-    return get_borrow_transactions()
+    transactions = get_borrow_transactions()
+
+    return [
+        transaction
+        for transaction in transactions
+        if transaction.get("status") != "Closed"
+    ]
 
 
 def get_filtered_borrow_transactions(
@@ -124,7 +130,7 @@ def get_filtered_borrow_transactions(
     sort_order: str = "asc",
 ):
 
-    transactions = get_borrow_transactions()
+    transactions = get_all_borrow_transactions()
 
     keyword = keyword.strip().lower()
 
