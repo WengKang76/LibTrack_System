@@ -737,6 +737,131 @@ def _detailed_borrowing_fields(
     }
 
 
+def _build_reservation_related_lookups():
+    """Build student, book, and borrowing-request lookups for reservations."""
+    student_lookup = _build_identifier_lookup(
+        repository.get_all_users(),
+        ("document_id", "user_id", "student_id", "id"),
+    )
+    book_lookup = _build_identifier_lookup(
+        repository.get_all_books(),
+        ("document_id", "book_id", "id"),
+    )
+
+    borrow_requests = repository.get_all_borrow_requests()
+    request_lookup = _build_identifier_lookup(
+        borrow_requests,
+        ("document_id", "request_id", "id"),
+    )
+    request_by_reservation = {}
+    for borrow_request in borrow_requests:
+        reservation_id = str(
+            borrow_request.get("reservation_id", "")
+        ).strip()
+        if reservation_id and reservation_id not in request_by_reservation:
+            request_by_reservation[reservation_id] = borrow_request
+
+    return (
+        student_lookup,
+        book_lookup,
+        request_lookup,
+        request_by_reservation,
+    )
+
+
+def _reservation_activity_fields(
+    record,
+    student_lookup,
+    book_lookup,
+    request_lookup,
+    request_by_reservation,
+):
+    """Return detailed reservation and linked borrowing-request fields."""
+    reservation_id = _operational_record_id("reservation", record)
+    student_id = str(record.get("student_id", "")).strip()
+    book_id = str(record.get("book_id", "")).strip()
+
+    student = student_lookup.get(student_id, {})
+    book = book_lookup.get(book_id, {})
+
+    student_name = (
+        str(student.get("full_name", "")).strip()
+        or str(student.get("name", "")).strip()
+        or "Unknown Student"
+    )
+    book_title = (
+        str(record.get("book_title", "")).strip()
+        or str(book.get("title", "")).strip()
+        or "Unknown Book"
+    )
+
+    borrowing_request_id = str(
+        record.get("borrowing_request_id", "")
+    ).strip()
+    borrow_request = None
+    if borrowing_request_id:
+        borrow_request = request_lookup.get(borrowing_request_id)
+    if borrow_request is None:
+        borrow_request = request_by_reservation.get(reservation_id)
+
+    if borrow_request is not None:
+        borrowing_request_id = _record_identifier(
+            borrow_request,
+            "request_id",
+            "document_id",
+            "id",
+        )
+        borrowing_request_status = (
+            str(borrow_request.get("status", "Unknown")).strip() or "Unknown"
+        )
+    elif borrowing_request_id:
+        borrowing_request_status = "Not Found"
+    else:
+        borrowing_request_id = "Not submitted"
+        borrowing_request_status = "Not submitted"
+
+    return {
+        "student_name": student_name,
+        "book_title": book_title,
+        "reservation_date_display": _display_report_date(
+            record.get("reservation_date") or record.get("created_at")
+        ),
+        "borrowing_request_id": borrowing_request_id,
+        "borrowing_request_status": borrowing_request_status,
+    }
+
+
+def _reservation_demand_summary(records):
+    """Return reservation counts by book, highest demand first."""
+    demand = {}
+
+    for record in records:
+        book_id = str(record.get("book_id", "Unknown")).strip() or "Unknown"
+        book_title = (
+            str(record.get("book_title", "Unknown Book")).strip()
+            or "Unknown Book"
+        )
+        key = (book_id, book_title)
+        demand[key] = demand.get(key, 0) + 1
+
+    ranked = [
+        {
+            "book_id": book_id,
+            "book_title": book_title,
+            "reservation_count": count,
+        }
+        for (book_id, book_title), count in demand.items()
+    ]
+    ranked.sort(
+        key=lambda item: (
+            -item["reservation_count"],
+            item["book_title"].lower(),
+            item["book_id"],
+        )
+    )
+    return ranked
+
+
 def _build_penalty_transaction_lookup(penalties):
     """Group penalty records by borrowing transaction for overdue reporting."""
     lookup = {}
@@ -937,6 +1062,7 @@ def build_operational_report(
     start_date=None,
     end_date=None,
     status=None,
+    book_title=None,
     today=None,
 ):
     """Generate a read-only operational report using validated filters."""
@@ -959,14 +1085,26 @@ def build_operational_report(
     if selected_status and selected_status not in allowed_statuses:
         raise ValueError("Please select a valid status for this report type.")
 
+    selected_book_title = str(book_title or "").strip().lower()
+
     current_date = today or date.today()
     report_records = []
     student_lookup = {}
     book_lookup = {}
     penalty_lookup = {}
+    reservation_request_lookup = {}
+    reservation_request_by_reservation = {}
 
     if selected_type in {"borrowing", "overdue"}:
         student_lookup, book_lookup = _build_borrowing_related_lookups()
+
+    if selected_type == "reservation":
+        (
+            student_lookup,
+            book_lookup,
+            reservation_request_lookup,
+            reservation_request_by_reservation,
+        ) = _build_reservation_related_lookups()
 
     if selected_type == "overdue":
         penalty_lookup = _build_penalty_transaction_lookup(
@@ -1033,6 +1171,22 @@ def build_operational_report(
                     current_date,
                 )
             )
+        elif selected_type == "reservation":
+            report_record.update(
+                _reservation_activity_fields(
+                    record,
+                    student_lookup,
+                    book_lookup,
+                    reservation_request_lookup,
+                    reservation_request_by_reservation,
+                )
+            )
+            if (
+                selected_book_title
+                and selected_book_title
+                not in report_record["book_title"].lower()
+            ):
+                continue
         elif selected_type == "overdue":
             report_record.update(
                 _overdue_penalty_fields(
@@ -1067,7 +1221,10 @@ def build_operational_report(
         "status_totals": status_totals,
     }
 
-    if selected_type == "borrowing":
+    if selected_type == "reservation":
+        result["book_demand"] = _reservation_demand_summary(report_records)
+        result["most_requested_books"] = result["book_demand"][:5]
+    elif selected_type == "borrowing":
         result["overdue_count"] = sum(
             1 for record in report_records if record.get("is_overdue")
         )
@@ -1103,11 +1260,14 @@ REPORT_EXPORT_COLUMNS = {
     ),
     "reservation": (
         ("Reservation ID", "record_id"),
-        ("Reservation Date", "event_date_display"),
-        ("Reservation Status", "status"),
+        ("Student Name", "student_name"),
         ("Student ID", "student_id"),
+        ("Book Title", "book_title"),
         ("Book ID", "book_id"),
-        ("Details", "summary"),
+        ("Reservation Date", "reservation_date_display"),
+        ("Reservation Status", "status"),
+        ("Borrow Request ID", "borrowing_request_id"),
+        ("Borrow Request Status", "borrowing_request_status"),
     ),
     "penalty": (
         ("Penalty ID", "record_id"),

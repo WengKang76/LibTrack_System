@@ -1014,3 +1014,37 @@ body {
 .report-table-overdue-penalty {
     min-width: 1500px;
 }
+
+
+/* SCRUM-1541 reservation activity and demand report */
+.report-filter-hint {
+    display: block;
+    margin-top: 0.3rem;
+    color: #667085;
+    font-size: 0.78rem;
+}
+
+.reservation-demand-summary {
+    margin: 1rem 0;
+}
+
+.reservation-demand-summary h3 {
+    margin-bottom: 0.6rem;
+}
+
+.reservation-demand-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.reservation-demand-list span {
+    border: 1px solid #e4e7ec;
+    border-radius: 0.65rem;
+    padding: 0.6rem 0.8rem;
+    background: #fff;
+}
+
+.reservation-demand-list strong {
+    display: block;
+}

@@ -55,6 +55,18 @@ Operational Reports | LibTrack
             </select>
         </label>
 
+        <label>
+            Book title
+            <input
+                type="search"
+                name="book_title"
+                value="{{ filters.book_title }}"
+                placeholder="Reservation report only"
+                aria-describedby="book-title-filter-hint"
+            >
+            <small id="book-title-filter-hint" class="report-filter-hint">Used when Reservation Activities is selected.</small>
+        </label>
+
         <div class="report-filter-actions">
             <button class="report-primary-button" type="submit">Generate Report</button>
             <a class="report-secondary-button" href="{{ url_for('dashboard_report.operational_reports') }}">Reset</a>
@@ -62,7 +74,7 @@ Operational Reports | LibTrack
                 <a
                     class="report-secondary-button"
                     id="export-report-csv"
-                    href="{{ url_for('dashboard_report.export_operational_report', report_type=filters.report_type, start_date=filters.start_date, end_date=filters.end_date, status=filters.status) }}"
+                    href="{{ url_for('dashboard_report.export_operational_report', report_type=filters.report_type, start_date=filters.start_date, end_date=filters.end_date, status=filters.status, book_title=filters.book_title) }}"
                 >Export CSV</a>
             {% endif %}
         </div>
@@ -89,6 +101,20 @@ Operational Reports | LibTrack
             {% for status, total in report.status_totals.items() %}
                 <span><strong>{{ total }}</strong> {{ status }}</span>
             {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if report.report_type == "reservation" and report.most_requested_books %}
+        <div class="reservation-demand-summary" aria-label="Most requested books">
+            <h3>Most Requested Books</h3>
+            <div class="reservation-demand-list">
+                {% for item in report.most_requested_books %}
+                    <span>
+                        <strong>{{ item.book_title }}</strong>
+                        {{ item.reservation_count }} reservation{% if item.reservation_count != 1 %}s{% endif %}
+                    </span>
+                {% endfor %}
+            </div>
         </div>
     {% endif %}
 
@@ -139,6 +165,40 @@ Operational Reports | LibTrack
                                 <td>{{ record.return_date_display }}</td>
                                 <td>{{ record.renewal_status }}</td>
                                 <td><span class="report-status-pill">{{ record.status }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elif report.report_type == "reservation" %}
+                <table class="report-table report-table-reservation">
+                    <thead>
+                        <tr>
+                            <th>Reservation ID</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Reservation Date</th>
+                            <th>Status</th>
+                            <th>Related Borrow Request</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr>
+                                <td>{{ record.record_id }}</td>
+                                <td>
+                                    <strong>{{ record.student_name }}</strong>
+                                    <span class="report-cell-secondary">{{ record.student_id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.book_title }}</strong>
+                                    <span class="report-cell-secondary">{{ record.book_id }}</span>
+                                </td>
+                                <td>{{ record.reservation_date_display }}</td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                                <td>
+                                    <strong>{{ record.borrowing_request_id }}</strong>
+                                    <span class="report-cell-secondary">{{ record.borrowing_request_status }}</span>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
