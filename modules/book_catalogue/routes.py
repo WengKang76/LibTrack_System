@@ -1428,6 +1428,45 @@ def librarian_book_details(book_id):
 
     if book is None:
         return "Book record not found.", 404
+        # SCRUM-1531:
+    # Preserve Book Catalogue list state.
+    return_q = request.args.get(
+        "return_q",
+        "",
+    ).strip()
+
+    return_category = request.args.get(
+        "return_category",
+        "all",
+    ).strip()
+
+    return_status = request.args.get(
+        "return_status",
+        "all",
+    ).strip()
+
+    return_sort = request.args.get(
+        "return_sort",
+        "title_asc",
+    ).strip()
+
+    return_page = (
+        _normalise_page_number(
+            request.args.get(
+                "return_page",
+                "1",
+            )
+        )
+    )
+
+    catalogue_return_url = url_for(
+        "book_catalogue.manage_books",
+        q=return_q,
+        category=return_category,
+        status=return_status,
+        sort=return_sort,
+        page=return_page,
+    )
 
     # SCRUM-1524:
     # Search using a complete or partial Copy ID.
@@ -1508,6 +1547,14 @@ def librarian_book_details(book_id):
         ),
         has_active_copy_criteria=(
             has_active_copy_criteria
+        ),
+                return_q=return_q,
+        return_category=return_category,
+        return_status=return_status,
+        return_sort=return_sort,
+        return_page=return_page,
+        catalogue_return_url=(
+            catalogue_return_url
         ),
     )
 
@@ -1607,15 +1654,37 @@ def activate_book(book_id):
 @librarian_required
 def update_copy_status(book_id, copy_id):
     book = get_book_by_id(book_id)
+
     if book is None:
         return "Book record not found.", 404
 
-    copy_record = _get_book_copy_by_id(book_id, copy_id)
+    copy_record = _get_book_copy_by_id(
+        book_id,
+        copy_id,
+    )
+
     if copy_record is None:
         return "Physical book copy not found.", 404
 
     if request.method == "POST":
-        selected_status = request.form.get("status", "").strip()
+        selected_status = request.form.get(
+            "status",
+            "",
+        ).strip()
+
+        status_reason = request.form.get(
+            "reason",
+            "",
+        ).strip()
+
+        confirmation_value = (
+            request.form.get(
+                "confirm_status_change",
+                "",
+            ).strip()
+        )
+
+        # Validate selected status.
         if selected_status not in COPY_STATUSES:
             return (
                 render_template(
@@ -1623,23 +1692,97 @@ def update_copy_status(book_id, copy_id):
                     book=book,
                     copy_record=copy_record,
                     copy_statuses=COPY_STATUSES,
-                    error="Please select a valid copy status.",
+                    selected_status=selected_status,
+                    status_reason=status_reason,
+                    error=(
+                        "Please select a valid "
+                        "copy status."
+                    ),
                 ),
                 400,
             )
 
+        # ----------------------------------------------------
+        # SCRUM-1530:
+        # Damaged and Lost require reason + confirmation.
+        # ----------------------------------------------------
+
+        if selected_status in {
+            "Damaged",
+            "Lost",
+        }:
+            if not status_reason:
+                return (
+                    render_template(
+                        "update_copy_status.html",
+                        book=book,
+                        copy_record=copy_record,
+                        copy_statuses=COPY_STATUSES,
+                        selected_status=selected_status,
+                        status_reason=status_reason,
+                        error=(
+                            "Please provide a reason "
+                            f"for marking this copy as "
+                            f"{selected_status}."
+                        ),
+                    ),
+                    400,
+                )
+
+            if (
+                confirmation_value
+                != "confirmed"
+            ):
+                return (
+                    render_template(
+                        "update_copy_status.html",
+                        book=book,
+                        copy_record=copy_record,
+                        copy_statuses=COPY_STATUSES,
+                        selected_status=selected_status,
+                        status_reason=status_reason,
+                        error=(
+                            "Please confirm the "
+                            f"{selected_status.lower()} "
+                            "status change."
+                        ),
+                    ),
+                    400,
+                )
+
         current_time = _current_timestamp()
+
         copy_updates = {
             "status": selected_status,
             "updated_at": current_time,
         }
 
-        if selected_status in {"Available", "Borrowed", "Reserved"}:
+        if selected_status in {
+            "Available",
+            "Borrowed",
+            "Reserved",
+        }:
             copy_updates["condition"] = "Good"
+            copy_updates["status_reason"] = ""
+            copy_updates["status_reason_type"] = ""
+
         elif selected_status == "Damaged":
             copy_updates["condition"] = "Damaged"
+            copy_updates["status_reason"] = (
+                status_reason
+            )
+            copy_updates["status_reason_type"] = (
+                "Damage"
+            )
+
         elif selected_status == "Lost":
             copy_updates["condition"] = "Lost"
+            copy_updates["status_reason"] = (
+                status_reason
+            )
+            copy_updates["status_reason_type"] = (
+                "Loss"
+            )
 
         (
             db.collection(COLLECTION_BOOKS)
@@ -1648,23 +1791,42 @@ def update_copy_status(book_id, copy_id):
             .document(copy_id)
             .update(copy_updates)
         )
-        _sync_book_inventory_from_copies(book_id)
+
+        _sync_book_inventory_from_copies(
+            book_id
+        )
 
         flash(
-            f"{copy_id} status was updated to {selected_status} successfully.",
+            (
+                f"{copy_id} status was updated "
+                f"to {selected_status} successfully."
+            ),
             "success",
         )
+
         return redirect(
-            url_for("book_catalogue.librarian_book_details", book_id=book_id)
+            url_for(
+                "book_catalogue.librarian_book_details",
+                book_id=book_id,
+            )
         )
 
+    # GET request:
+    # Show the update-status form.
     return render_template(
         "update_copy_status.html",
         book=book,
         copy_record=copy_record,
         copy_statuses=COPY_STATUSES,
+        selected_status=copy_record.get(
+            "status",
+            "",
+        ),
+        status_reason=copy_record.get(
+            "status_reason",
+            "",
+        ),
     )
-
 
 # ============================================================
 # SCRUM-688 AND SCRUM-1185:

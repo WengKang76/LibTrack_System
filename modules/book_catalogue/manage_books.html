@@ -313,7 +313,7 @@
                           )
                       }}
                      "
-                    >
+            >
                     <td>
                         {{
                             (
@@ -364,7 +364,7 @@
                             '-'
                         ) or '-' }}
                     </td>
-                    <td>
+<td>
     <div class="availability-display">
         <span
             class="
@@ -403,14 +403,18 @@
         {% endif %}
     </div>
 </td>
-
                     <td>
                         <div class="action-buttons">
                             <a
                                 href="{{ url_for(
                                     'book_catalogue.librarian_book_details',
-                                    book_id=book['book_id']
-                                ) }}"
+                                     book_id=book['book_id'],
+                                    return_q=search_query,
+                                    return_category=category_filter,
+                                    return_status=status_filter,
+                                    return_sort=sort_option,
+                                    return_page=pagination.current_page
+                            ) }}"
                                 class="
                                     button
                                     button-small
@@ -420,7 +424,6 @@
                                 View Details
                             </a>
 
-                            
                             <a
                                 href="{{ url_for(
                                     'book_catalogue.add_book_copies',

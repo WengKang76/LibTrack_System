@@ -124,16 +124,46 @@
                     name="status"
                     required
                 >
+                <div class="form-group">
+    <label for="status-reason">
+        Reason for Damaged or Lost Status
+    </label>
+
+    <textarea
+        id="status-reason"
+        name="reason"
+        rows="4"
+        maxlength="500"
+        placeholder="Enter the reason when marking this copy as Damaged or Lost."
+    >{{ status_reason or '' }}</textarea>
+
+    <p class="form-help-text">
+        A reason is required when the selected
+        status is Damaged or Lost.
+    </p>
+</div>
+
+<div class="status-confirmation">
+    <label>
+        <input
+            type="checkbox"
+            name="confirm_status_change"
+            value="confirmed"
+        >
+        I confirm that the selected copy status
+        is correct.
+    </label>
+</div>
 
                     {% for status in copy_statuses %}
 
                     <option
                         value="{{ status }}"
-                        {% if (
-                            status
-                            == copy_record.get('status')
-                        ) %}
-                        selected
+                        {% if
+                            (selected_status or copy_record.get('status'))
+                            == status
+                        %}
+                            selected
                         {% endif %}
                     >
                         {{ status }}
