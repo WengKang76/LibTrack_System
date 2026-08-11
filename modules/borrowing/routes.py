@@ -118,10 +118,7 @@ def borrowing_home():
         sort_order=sort_order,
     )
 
-    print(
-        f"Pending requests: "
-        f"{time.perf_counter() - start:.3f} seconds"
-    )
+    print(f"Pending requests: " f"{time.perf_counter() - start:.3f} seconds")
 
     start = time.perf_counter()
 
@@ -132,10 +129,7 @@ def borrowing_home():
         sort_order=transaction_order,
     )
 
-    print(
-    f"Borrow transactions: "
-    f"{time.perf_counter() - start:.3f} seconds"
-)
+    print(f"Borrow transactions: " f"{time.perf_counter() - start:.3f} seconds")
 
     transaction_pagination = paginate_records(
         transaction_results,
@@ -160,6 +154,7 @@ def borrowing_home():
         request_pagination=request_pagination,
         transaction_pagination=transaction_pagination,
     )
+
 
 @borrowing_bp.route("/transactions/table")
 @librarian_required
@@ -218,6 +213,7 @@ def transaction_table():
         transaction_order=transaction_order,
         transaction_pagination=transaction_pagination,
     )
+
 
 @borrowing_bp.route("/approve/<request_id>", methods=["POST"])
 @librarian_required

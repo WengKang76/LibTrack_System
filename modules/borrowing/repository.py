@@ -139,31 +139,15 @@ def get_borrow_transactions():
 
         # Get book information from cache or Firestore
         if book_id not in book_cache:
-            book_doc = (
-                db.collection(COLLECTION_BOOKS)
-                .document(book_id)
-                .get()
-            )
+            book_doc = db.collection(COLLECTION_BOOKS).document(book_id).get()
 
-            book_cache[book_id] = (
-                book_doc.to_dict()
-                if book_doc.exists
-                else {}
-            )
+            book_cache[book_id] = book_doc.to_dict() if book_doc.exists else {}
 
         # Get student information from cache or Firestore
         if student_id not in user_cache:
-            user_doc = (
-                db.collection(COLLECTION_USERS)
-                .document(student_id)
-                .get()
-            )
+            user_doc = db.collection(COLLECTION_USERS).document(student_id).get()
 
-            user_cache[student_id] = (
-                user_doc.to_dict()
-                if user_doc.exists
-                else {}
-            )
+            user_cache[student_id] = user_doc.to_dict() if user_doc.exists else {}
 
         book = book_cache[book_id]
         user = user_cache[student_id]

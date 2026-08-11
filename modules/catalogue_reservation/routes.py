@@ -412,6 +412,56 @@ def _normalise_current_borrowing(document):
     return borrowing
 
 
+def get_due_date_notifications(borrowed_books):
+    """Create grouped dashboard notifications for due and overdue books."""
+    overdue_books = []
+    due_soon_books = []
+
+    for borrowing in borrowed_books:
+        remaining_days = borrowing.get("remaining_days")
+
+        if remaining_days is None:
+            continue
+
+        book_title = borrowing.get(
+            "book_title",
+            "Untitled Book",
+        )
+
+        if remaining_days < 0:
+            overdue_books.append(book_title)
+
+        elif remaining_days <= 3:
+            due_soon_books.append(
+                {
+                    "title": book_title,
+                    "remaining_days": remaining_days,
+                }
+            )
+
+    notifications = []
+
+    if overdue_books:
+        notifications.append(
+            {
+                "type": "overdue",
+                "count": len(overdue_books),
+                "books": overdue_books,
+            }
+        )
+
+    if due_soon_books:
+        notifications.append(
+            {
+                "type": "due-soon",
+                "count": len(due_soon_books),
+                "books": due_soon_books,
+            }
+        )
+
+    return notifications
+
+
 def _matches_search(book, search_keyword):
     if not search_keyword:
         return True
@@ -1143,6 +1193,34 @@ def continue_approved_reservation(reservation_id):
             "Failed to continue an approved reservation into borrowing.",
         )
         return redirect(url_for("catalogue_reservation.view_my_reservations"))
+
+
+def get_student_due_notifications(student_id):
+    """Return due-date notifications for the student's active borrowings."""
+    borrowed_books = []
+
+    try:
+        documents = (
+            db.collection(BORROW_TRANSACTIONS_COLLECTION)
+            .where("student_id", "==", student_id)
+            .stream()
+        )
+
+        for document in documents:
+            borrowing = _normalise_current_borrowing(document)
+
+            if borrowing is not None:
+                borrowed_books.append(borrowing)
+
+    except Exception:
+        _flash_database_error(
+            "student_dashboard",
+            "Failed to load borrowing notifications.",
+        )
+
+        return []
+
+    return get_due_date_notifications(borrowed_books)
 
 
 # SCRUM-675 and SCRUM-677: View currently borrowed books and remaining period
