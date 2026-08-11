@@ -1,6 +1,16 @@
 """Routes for the student and librarian dashboards."""
 
-from flask import Blueprint, current_app, flash, render_template, request, session
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from modules.authentication.decorators import (
     librarian_required,
@@ -10,6 +20,8 @@ from modules.dashboard_report.services import (
     build_librarian_dashboard_statistics,
     build_librarian_pending_actions,
     build_operational_report,
+    build_operational_report_csv,
+    build_operational_report_filename,
     build_student_attention_alerts,
     build_student_dashboard_summary,
     empty_librarian_pending_actions,
@@ -156,3 +168,42 @@ def operational_reports():
         status_options=get_operational_report_statuses(selected_type),
         report_data_available=report_data_available,
     )
+
+
+@dashboard_bp.route("/librarian/reports/export")
+@librarian_required
+def export_operational_report():
+    """Export the same validated filters currently used by the report page."""
+    filters = {
+        "report_type": request.args.get("report_type", "borrowing").strip(),
+        "start_date": request.args.get("start_date", "").strip(),
+        "end_date": request.args.get("end_date", "").strip(),
+        "status": request.args.get("status", "").strip(),
+    }
+
+    try:
+        report = build_operational_report(**filters)
+        csv_content = build_operational_report_csv(report)
+        filename = build_operational_report_filename(report["report_type"])
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(
+            url_for("dashboard_report.operational_reports", **filters)
+        )
+    except Exception:
+        current_app.logger.exception("Failed to export an operational report.")
+        flash(
+            "We could not export the requested report right now. "
+            "Please try again later.",
+            "error",
+        )
+        return redirect(
+            url_for("dashboard_report.operational_reports", **filters)
+        )
+
+    response = Response(csv_content, mimetype="text/csv")
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="{filename}"'
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response

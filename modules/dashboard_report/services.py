@@ -2,6 +2,8 @@
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
+import csv
+from io import StringIO
 
 from modules.dashboard_report import repository
 
@@ -1083,3 +1085,100 @@ def build_operational_report(
         result["penalty_status_totals"] = penalty_status_totals
 
     return result
+
+
+# SCRUM-1540: Export the currently filtered operational report to CSV.
+REPORT_EXPORT_COLUMNS = {
+    "borrowing": (
+        ("Transaction ID", "record_id"),
+        ("Student Name", "student_name"),
+        ("Student ID", "student_id"),
+        ("Book Title", "book_title"),
+        ("Book ID", "book_id"),
+        ("Borrow Date", "borrow_date_display"),
+        ("Due Date", "due_date_display"),
+        ("Return Date", "return_date_display"),
+        ("Renewal Status", "renewal_status"),
+        ("Transaction Status", "status"),
+    ),
+    "reservation": (
+        ("Reservation ID", "record_id"),
+        ("Reservation Date", "event_date_display"),
+        ("Reservation Status", "status"),
+        ("Student ID", "student_id"),
+        ("Book ID", "book_id"),
+        ("Details", "summary"),
+    ),
+    "penalty": (
+        ("Penalty ID", "record_id"),
+        ("Penalty Date", "event_date_display"),
+        ("Penalty Status", "status"),
+        ("Student ID", "student_id"),
+        ("Book ID", "book_id"),
+        ("Details", "summary"),
+        ("Amount (RM)", "amount"),
+    ),
+    "overdue": (
+        ("Transaction ID", "record_id"),
+        ("Student Name", "student_name"),
+        ("Student ID", "student_id"),
+        ("Book Title", "book_title"),
+        ("Book ID", "book_id"),
+        ("Due Date", "due_date_display"),
+        ("Overdue Days", "overdue_days"),
+        ("Transaction Status", "status"),
+        ("Penalty ID", "penalty_id"),
+        ("Penalty Amount (RM)", "penalty_amount"),
+        ("Penalty Status", "penalty_status"),
+        ("Payment Status", "payment_status"),
+        ("Payment Method", "payment_method"),
+        ("Waiver Status", "waiver_status"),
+        ("Waiver Reason", "waiver_reason"),
+    ),
+}
+
+
+def _csv_safe_value(value):
+    """Return a CSV-safe value and prevent spreadsheet formula execution."""
+    if value is None:
+        return ""
+
+    if isinstance(value, float):
+        return f"{value:.2f}"
+
+    text = str(value)
+    if text.startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
+
+
+def build_operational_report_csv(report):
+    """Serialize a generated report using an explicit non-sensitive schema."""
+    report_type = str(report.get("report_type", "")).strip().lower()
+    columns = REPORT_EXPORT_COLUMNS.get(report_type)
+    if columns is None:
+        raise ValueError("Please select a supported report type for export.")
+
+    output = StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow([heading for heading, _field in columns])
+
+    for record in report.get("records", []):
+        writer.writerow(
+            [
+                _csv_safe_value(record.get(field_name))
+                for _heading, field_name in columns
+            ]
+        )
+
+    return output.getvalue()
+
+
+def build_operational_report_filename(report_type, export_date=None):
+    """Create a predictable filename without student or sensitive values."""
+    selected_type = str(report_type or "").strip().lower()
+    if selected_type not in REPORT_EXPORT_COLUMNS:
+        raise ValueError("Please select a supported report type for export.")
+
+    current_date = export_date or date.today()
+    return f"{selected_type}_report_{current_date.isoformat()}.csv"

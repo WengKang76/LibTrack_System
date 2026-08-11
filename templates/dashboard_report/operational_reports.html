@@ -58,6 +58,13 @@ Operational Reports | LibTrack
         <div class="report-filter-actions">
             <button class="report-primary-button" type="submit">Generate Report</button>
             <a class="report-secondary-button" href="{{ url_for('dashboard_report.operational_reports') }}">Reset</a>
+            {% if report_data_available %}
+                <a
+                    class="report-secondary-button"
+                    id="export-report-csv"
+                    href="{{ url_for('dashboard_report.export_operational_report', report_type=filters.report_type, start_date=filters.start_date, end_date=filters.end_date, status=filters.status) }}"
+                >Export CSV</a>
+            {% endif %}
         </div>
     </form>
 </section>
