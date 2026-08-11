@@ -140,6 +140,7 @@ def operational_reports():
         "start_date": request.args.get("start_date", "").strip(),
         "end_date": request.args.get("end_date", "").strip(),
         "status": request.args.get("status", "").strip(),
+        "book_title": request.args.get("book_title", "").strip(),
     }
     result = empty_operational_report_result(filters["report_type"])
     report_data_available = True
@@ -180,6 +181,8 @@ def export_operational_report():
         "end_date": request.args.get("end_date", "").strip(),
         "status": request.args.get("status", "").strip(),
     }
+    if filters["report_type"] == "reservation":
+        filters["book_title"] = request.args.get("book_title", "").strip()
 
     try:
         report = build_operational_report(**filters)

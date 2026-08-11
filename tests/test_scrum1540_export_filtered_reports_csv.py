@@ -118,11 +118,14 @@ def test_csv_export_handles_empty_report_with_headers_only():
     assert len(rows) == 1
     assert rows[0] == [
         "Reservation ID",
+        "Student Name",
+        "Student ID",
+        "Book Title",
+        "Book ID",
         "Reservation Date",
         "Reservation Status",
-        "Student ID",
-        "Book ID",
-        "Details",
+        "Borrow Request ID",
+        "Borrow Request Status",
     ]
 
 
