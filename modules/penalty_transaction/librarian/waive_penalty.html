@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% set penalty_nav_role = "librarian" %}
+{% include "components/penalty_navigation.html" %}
+{% include "components/penalty_action_confirmation.html" %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
@@ -40,10 +43,10 @@
 
     <div class="penalty-card">
         <form
-            method="POST"
-            class="penalty-payment-form"
-            onsubmit="return confirm('Are you sure you want to waive this penalty? Please confirm the penalty ID and waiver reason before continuing.');"
-        >
+    method="POST"
+    class="penalty-payment-form"
+    onsubmit="return confirmPenaltyAction('Waive Penalty', '{{ penalty.penalty_id }}');"
+>
             <label>Waiver Reason</label>
             <input
                 type="text"
@@ -55,13 +58,15 @@
             <label>Waived By</label>
             <input type="text" name="waived_by" value="Librarian" required>
 
-            <div class="form-action-row">
-                <button type="submit" class="btn-warning">Waive Penalty</button>
+            <div class="penalty-page-actions">
+    <button type="submit" class="penalty-btn-warning">
+        Waive Penalty
+    </button>
 
-                <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="btn-secondary">
-                    Cancel
-                </a>
-            </div>
+    <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="penalty-btn-secondary">
+        Cancel
+    </a>
+</div>
         </form>
     </div>
 </div>

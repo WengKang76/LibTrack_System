@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% set penalty_nav_role = "librarian" %}
+{% include "components/penalty_navigation.html" %}
+{% include "components/penalty_action_confirmation.html" %}
 
 {% block content %}
 <style>
@@ -268,10 +271,10 @@
             <div class="card-title">Exception Information</div>
 
             <form
-                method="POST"
-                class="exception-form"
-                onsubmit="return confirm('Are you sure you want to record this lost or damaged book exception?');"
-            >
+    method="POST"
+    class="exception-form"
+    onsubmit="return confirmPenaltyAction('Record Lost or Damaged Book Exception', '{{ transaction.transaction_id }}');"
+>
                 <div>
                     <label>Exception Type</label>
                     <select name="exception_type" required>
@@ -300,15 +303,15 @@
                     Please make sure the exception type and description are correct before submitting.
                 </div>
 
-                <div class="button-row">
-                    <button type="submit" class="btn-danger">
-                        Record Exception
-                    </button>
+                <div class="penalty-page-actions">
+    <button type="submit" class="penalty-btn-danger">
+        Record Exception
+    </button>
 
-                    <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="btn-secondary">
-                        Cancel
-                    </a>
-                </div>
+    <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="penalty-btn-secondary">
+        Cancel
+    </a>
+</div>
             </form>
         </div>
     </div>

@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% set penalty_nav_role = "librarian" %}
+{% include "components/penalty_navigation.html" %}
+{% include "components/penalty_action_confirmation.html" %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
@@ -40,10 +43,10 @@
 
     <div class="penalty-card">
         <form
-            method="POST"
-            class="penalty-payment-form"
-            onsubmit="return confirm('Are you sure you want to reject this return and create a penalty record?');"
-        >
+    method="POST"
+    class="penalty-payment-form"
+    onsubmit="return confirmPenaltyAction('Reject Return and Create Penalty', '{{ transaction.transaction_id }}');"
+>
             <label>Rejection Reason</label>
             <input
                 type="text"
@@ -64,13 +67,15 @@
             <label>Rejected By</label>
             <input type="text" name="rejected_by" value="Librarian" required>
 
-            <div class="form-action-row">
-                <button type="submit" class="btn-danger">Reject Return and Create Penalty</button>
+            <div class="penalty-page-actions">
+    <button type="submit" class="penalty-btn-danger">
+        Reject Return and Create Penalty
+    </button>
 
-                <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="btn-secondary">
-                    Cancel
-                </a>
-            </div>
+    <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="penalty-btn-secondary">
+        Cancel
+    </a>
+</div>
         </form>
     </div>
 </div>

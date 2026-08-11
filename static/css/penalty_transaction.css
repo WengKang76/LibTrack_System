@@ -567,4 +567,133 @@
         font-size: 30px;
     }
 }
+
+/* =========================================================
+   Sprint 3 - S3-07 and S3-10
+   Action Confirmation + Consistent Navigation Design
+   ========================================================= */
+
+.penalty-nav-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.penalty-nav-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #334155;
+    margin-bottom: 10px;
+}
+
+.penalty-nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.penalty-nav-link {
+    display: inline-block;
+    padding: 9px 14px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+}
+
+.penalty-nav-link:hover {
+    background: #e2e8f0;
+}
+
+.penalty-nav-link.primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.penalty-nav-link.primary:hover {
+    background: #1d4ed8;
+}
+
+.confirm-warning-box {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 14px;
+    padding: 15px 18px;
+    margin-bottom: 18px;
+    font-weight: 700;
+}
+
+.confirm-warning-box ul {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.confirm-warning-box li {
+    margin-bottom: 5px;
+}
+
+.penalty-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.penalty-btn-primary,
+.penalty-btn-warning,
+.penalty-btn-danger,
+.penalty-btn-secondary {
+    display: inline-block;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.penalty-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.penalty-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.penalty-btn-warning {
+    background: #f59e0b;
+    color: #ffffff;
+}
+
+.penalty-btn-warning:hover {
+    background: #d97706;
+}
+
+.penalty-btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.penalty-btn-danger:hover {
+    background: #b91c1c;
+}
+
+.penalty-btn-secondary {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+}
+
+.penalty-btn-secondary:hover {
+    background: #e2e8f0;
+}
 }
