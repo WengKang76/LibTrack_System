@@ -466,11 +466,11 @@ body {
     background: #eff6ff;
 }
 
-.button {
+.dashboard-card .button {
     display: inline-block;
     margin-top: 8px;
     background-color: #2563eb;
-    color: white;
+    color: #ffffff;
     padding: 10px 15px;
     border-radius: 8px;
     text-decoration: none;
@@ -478,10 +478,12 @@ body {
     font-weight: 600;
 }
 
-.button:hover {
+.dashboard-card .button:hover,
+.dashboard-card .button:focus-visible {
     background-color: #1d4ed8;
+    color: #ffffff;
+    text-decoration: none;
 }
-
 .alert {
     padding: 12px 15px;
     border-radius: 10px;
