@@ -9,6 +9,7 @@ from modules.catalogue_reservation.routes import (
     catalogue_bp,
     get_student_due_notifications,
 )
+from modules.dashboard_report.routes import dashboard_bp
 from modules.penalty_transaction.routes import penalty_bp
 from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
@@ -48,6 +49,7 @@ app.register_blueprint(user_management_bp)
 app.register_blueprint(catalogue_bp)
 app.register_blueprint(penalty_bp)
 app.register_blueprint(borrowing_bp)
+app.register_blueprint(dashboard_bp)
 
 
 @app.route("/")
@@ -64,21 +66,6 @@ def home():
         "index.html",
         notifications=notifications,
     )
-
-
-@app.route("/")
-def role_selection():
-    return render_template("role_selection.html")
-
-
-@app.route("/librarian")
-def librarian_dashboard():
-    return render_template("librarian_dashboard.html")
-
-
-@app.route("/student")
-def student_dashboard():
-    return render_template("student_dashboard.html")
 
 
 # Health-check endpoint for CI/CD and deployment checks.
