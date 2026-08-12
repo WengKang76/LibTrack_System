@@ -24,6 +24,112 @@
     </div>
 </section>
 
+{% if notifications %}
+
+<section class="dashboard-notifications">
+
+    {% for notification in notifications %}
+
+        <div class="dashboard-notification {{ notification.type }}">
+
+            <div class="notification-icon">
+
+                {% if notification.type == "overdue" %}
+                    🚨
+                {% else %}
+                    ⚠️
+                {% endif %}
+
+            </div>
+
+
+            <div class="notification-content">
+
+                {% if notification.type == "overdue" %}
+
+                    <strong>
+                        Overdue Books
+                    </strong>
+
+                    <p>
+                        You have <strong>{{ notification.count }} overdue {% if notification.count == 1 %}book{% else %}books{% endif %}</strong>. Please return them and review your penalties.
+                    </p>
+
+
+                    <ul>
+
+                        {% for book in notification.books %}
+
+                            <li>
+                                {{ book }}
+                            </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+
+                {% else %}
+
+                    <strong>
+                        Books Due Soon
+                    </strong>
+
+                    <p>
+                        You have
+                        <strong>
+                            {{ notification.count }}
+                            {% if notification.count == 1 %}
+                                book due soon
+                            {% else %}
+                                books due soon
+                            {% endif %}
+                        </strong>.
+                        Please return or renew them before their due dates.
+                    </p>
+
+
+                    <ul>
+
+                        {% for book in notification.books %}
+
+                            <li>
+                                {{ book.title }}
+
+                                {% if book.remaining_days == 0 %}
+                                    <strong>
+                                    — due today
+                                    </strong>>
+                                {% elif book.remaining_days == 1 %}
+                                    <strong>
+                                    — due tomorrow
+                                    </strong>
+                                {% else %}
+                                    <strong>
+                                    — due in
+                                    {{ book.remaining_days }}
+                                    days
+                                    </strong>
+                                {% endif %}
+
+                            </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    {% endfor %}
+
+</section>
+
+{% endif %}
+
 <section class="dashboard-section">
     <div class="section-heading">
         <h2>LibTrack Services</h2>

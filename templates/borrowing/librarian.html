@@ -30,18 +30,132 @@ Borrowing & Returning
     </div>
 </div>
 
+<form 
+    method="GET" 
+    action="{{ url_for('borrowing.borrowing_home') }}" 
+    class="filter-bar"
+    id="requestFilterForm"
+    >
+
+    <input
+        type="text"
+        name="request_keyword"
+        placeholder="Search by Request ID, Student Name, Book Title"
+        value="{{ request_keyword }}"
+        oninput="debounceSubmit()"
+        >
+
+    <select 
+        name="request_status"
+        onchange="document.getElementById('requestFilterForm').submit()"
+        >
+
+        <option value="All"
+            {% if request_status == "All" %}selected{% endif %}>
+            All Status
+        </option>
+
+        <option value="Pending"
+            {% if request_status == "Pending" %}selected{% endif %}>
+            Pending
+        </option>
+
+        <option value="Approved"
+            {% if request_status == "Approved" %}selected{% endif %}>
+            Approved
+        </option>
+
+    </select>
+
+    <a
+        href="{{ url_for('borrowing.borrowing_home') }}"
+        class="btn btn-secondary">
+
+        Reset
+
+    </a>
+
+</form>
+
 <div class="table-container">
+
+    {% set next_order = "desc" if request_order == "asc" else "asc" %}
 <table class="data-table">
 
     <thead>
 
         <tr>
-            <th>Request ID</th>
-            <th>Student</th>
-            <th>Book</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
+
+        <th>
+        Request ID
+
+        <a class="sort-icon"
+        href="{{ url_for(
+                'borrowing.borrowing_home',
+                request_sort='id',
+                request_order=next_order,
+                request_keyword=request_keyword,
+                request_status=request_status
+        ) }}">
+            ⇅
+        </a>
+
+    </th>
+
+
+        <th>
+            Student
+
+            <a class="sort-icon"
+                href="{{ url_for(
+                    'borrowing.borrowing_home',
+                    request_sort='student',
+                    request_order=next_order,
+                    request_keyword=request_keyword,
+                    request_status=request_status
+                ) }}">
+                    ⇅
+            </a>
+        </th>
+
+
+        <th>
+            Book
+
+            <a class="sort-icon"
+                href="{{ url_for(
+                    'borrowing.borrowing_home',
+                    request_sort='book',
+                    request_order=next_order,
+                    request_keyword=request_keyword,
+                    request_status=request_status
+                ) }}">
+                    ⇅
+            </a>
+
+        </th>
+
+
+        <th>
+            Status
+
+            <a class="sort-icon"
+                href="{{ url_for(
+                    'borrowing.borrowing_home',
+                    request_sort='status',
+                    request_order=next_order,
+                    request_keyword=request_keyword,
+                    request_status=request_status
+                ) }}">
+                    ⇅
+            </a>
+
+        </th>
+
+        <th>Eligibility</th>
+        <th>Action</th>
+
+    </tr>
 
     </thead>
 
@@ -69,26 +183,52 @@ Borrowing & Returning
 
             <td>
 
-            {% if request.status == "Pending" %}
+            {% if request.approval_error %}
 
-                <form
-                    method="POST"
-                    action="{{ url_for('borrowing.approve_request',
-                                    request_id=request.id) }}">
-
-                    <button class="btn btn-success">
-
-                        Approve
-
-                    </button>
-
-                </form>
+                <span class="badge invalid">
+                    ❌ {{ request.approval_error }}
+                </span>
 
             {% else %}
 
-                -
+                <span class="badge valid">
+                    ✅ Ready to Approve
+                </span>
 
             {% endif %}
+
+            </td>
+
+            <td>
+
+            {% if request.status == "Pending" and not request.approval_error %}
+
+            <form
+                method="POST"
+                action="{{ url_for('borrowing.approve_request',
+                                request_id=request.id) }}">
+
+                <button class="btn btn-success">
+
+                    Approve
+
+                </button>
+
+            </form>
+
+        {% elif request.approval_error %}
+
+            <button class="btn btn-secondary" disabled>
+
+                Cannot Approve
+
+            </button>
+
+        {% else %}
+
+            -
+
+        {% endif %}
 
             </td>
 
@@ -101,12 +241,193 @@ Borrowing & Returning
 </table>
 </div>
 
+<div class="pagination-container">
+
+
+    <div class="entries-control">
+
+        Show
+
+        <select
+            onchange="changeRequestPerPage(this.value)">
+
+            <option value="10"
+            {% if request_pagination.per_page == 10 %}
+                selected
+            {% endif %}>
+                10
+            </option>
+
+
+            <option value="25"
+            {% if request_pagination.per_page == 25 %}
+                selected
+            {% endif %}>
+                25
+            </option>
+
+
+            <option value="50"
+            {% if request_pagination.per_page == 50 %}
+                selected
+            {% endif %}>
+                50
+            </option>
+
+        </select>
+
+        borrow requests
+
+    </div>
+
+
+
+    <div class="page-navigation">
+
+
+        {% if request_pagination.page > 1 %}
+
+        <a
+        href="{{ url_for(
+            'borrowing.borrowing_home',
+
+            request_page=request_pagination.page - 1,
+            request_per_page=request_pagination.per_page,
+
+            request_keyword=request_keyword,
+            request_status=request_status,
+            request_sort=request_sort,
+            request_order=request_order,
+
+            transaction_keyword=transaction_keyword,
+            transaction_status=transaction_status,
+            transaction_sort=transaction_sort,
+            transaction_order=transaction_order
+        ) }}">
+
+            Previous
+
+        </a>
+
+        {% endif %}
+
+
+
+        <span>
+
+            Page
+            {{ request_pagination.page }}
+            of
+            {{ request_pagination.total_pages }}
+
+        </span>
+
+
+
+        {% if request_pagination.page < request_pagination.total_pages %}
+
+        <a
+        href="{{ url_for(
+            'borrowing.borrowing_home',
+
+            request_page=request_pagination.page + 1,
+            request_per_page=request_pagination.per_page,
+
+            request_keyword=request_keyword,
+            request_status=request_status,
+            request_sort=request_sort,
+            request_order=request_order,
+
+            transaction_keyword=transaction_keyword,
+            transaction_status=transaction_status,
+            transaction_sort=transaction_sort,
+            transaction_order=transaction_order
+        ) }}">
+
+            Next
+
+        </a>
+
+        {% endif %}
+
+
+    </div>
+
+</div>
+
 
     
 
 <h2>Borrow Transactions</h2>
 
 {% if transactions %}
+
+<form
+    method="GET"
+    action="{{ url_for('borrowing.borrowing_home') }}"
+    class="filter-bar"
+    id="transactionFilterForm">
+
+
+    <input
+        type="text"
+        name="transaction_keyword"
+        placeholder="Search by Transaction ID, Student Name, Book Title"
+        value="{{ transaction_keyword }}"
+        oninput="debounceTransactionSearch()">
+
+
+
+    <select
+        name="transaction_status"
+        onchange="document.getElementById('transactionFilterForm').submit()">
+
+
+        <option value="All"
+        {% if transaction_status == "All" %}
+            selected
+        {% endif %}>
+            All Status
+        </option>
+
+
+        <option value="Borrowed"
+        {% if transaction_status == "Borrowed" %}
+            selected
+        {% endif %}>
+            Borrowed
+        </option>
+
+
+        <option value="Return Pending"
+        {% if transaction_status == "Return Pending" %}
+            selected
+        {% endif %}>
+            Return Pending
+        </option>
+
+
+        <option value="Returned"
+        {% if transaction_status == "Returned" %}
+            selected
+        {% endif %}>
+            Returned
+        </option>
+
+
+    </select>
+
+
+    <a
+        href="{{ url_for('borrowing.borrowing_home') }}"
+        class="btn btn-secondary">
+
+        Reset
+
+    </a>
+
+
+</form>
 
 <div class="table-container">
 <table class="data-table">
@@ -115,13 +436,133 @@ Borrowing & Returning
 
         <tr>
 
-            <th>Transaction ID</th>
-            <th>Student</th>
-            <th>Book</th>
-            <th>Borrow</th>
-            <th>Due</th>
+            <th>
+                Transaction ID
+
+                <a class="sort-icon"
+                href="{{ url_for(
+                        'borrowing.borrowing_home',
+                        transaction_sort='id',
+                        transaction_order='desc' if transaction_sort == 'id' and transaction_order == 'asc' else 'asc',
+
+                        transaction_keyword=transaction_keyword,
+                        transaction_status=transaction_status,
+
+                        request_keyword=request_keyword,
+                        request_status=request_status,
+                        request_sort=request_sort,
+                        request_order=request_order
+                ) }}">
+                    ⇅
+                </a>
+
+            </th>
+            <th>
+                Student
+
+                <a class="sort-icon"
+                href="{{ url_for(
+                        'borrowing.borrowing_home',
+                        transaction_sort='student',
+                        transaction_order='desc' if transaction_sort == 'student' and transaction_order == 'asc' else 'asc',
+
+                        transaction_keyword=transaction_keyword,
+                        transaction_status=transaction_status,
+
+                        request_keyword=request_keyword,
+                        request_status=request_status,
+                        request_sort=request_sort,
+                        request_order=request_order
+                ) }}">
+                    ⇅
+                </a>
+
+            </th>
+            <th>
+                Book
+
+                <a class="sort-icon"
+                href="{{ url_for(
+                        'borrowing.borrowing_home',
+                        transaction_sort='book',
+                        transaction_order='desc' if transaction_sort == 'book' and transaction_order == 'asc' else 'asc',
+
+                        transaction_keyword=transaction_keyword,
+                        transaction_status=transaction_status,
+
+                        request_keyword=request_keyword,
+                        request_status=request_status,
+                        request_sort=request_sort,
+                        request_order=request_order
+                ) }}">
+                    ⇅
+                </a>
+
+            </th>
+            <th>
+                Borrow
+
+                <a class="sort-icon"
+                href="{{ url_for(
+                        'borrowing.borrowing_home',
+                        transaction_sort='borrow_date',
+                        transaction_order='desc' if transaction_sort == 'borrow_date' and transaction_order == 'asc' else 'asc',
+
+                        transaction_keyword=transaction_keyword,
+                        transaction_status=transaction_status,
+
+                        request_keyword=request_keyword,
+                        request_status=request_status,
+                        request_sort=request_sort,
+                        request_order=request_order
+                ) }}">
+                    ⇅
+                </a>
+
+            </th>
+            <th>
+                Due
+
+                <a class="sort-icon"
+                href="{{ url_for(
+                        'borrowing.borrowing_home',
+                        transaction_sort='due_date',
+                        transaction_order='desc' if transaction_sort == 'due_date' and transaction_order == 'asc' else 'asc',
+
+                        transaction_keyword=transaction_keyword,
+                        transaction_status=transaction_status,
+
+                        request_keyword=request_keyword,
+                        request_status=request_status,
+                        request_sort=request_sort,
+                        request_order=request_order
+                ) }}">
+                    ⇅
+                </a>
+
+            </th>
             <th>Return</th>
-            <th>Status</th>
+            <th>
+                Status
+
+                <a class="sort-icon"
+                href="{{ url_for(
+                        'borrowing.borrowing_home',
+                        transaction_sort='status',
+                        transaction_order='desc' if transaction_sort == 'status' and transaction_order == 'asc' else 'asc',
+
+                        transaction_keyword=transaction_keyword,
+                        transaction_status=transaction_status,
+
+                        request_keyword=request_keyword,
+                        request_status=request_status,
+                        request_sort=request_sort,
+                        request_order=request_order
+                ) }}">
+                    ⇅
+                </a>
+
+            </th>
             <th>Renewal</th>
             <th>Actions</th>
 
@@ -313,6 +754,158 @@ Borrowing & Returning
 </table>
 </div>
 
+<div class="pagination-container">
+
+
+    <div class="entries-control">
+
+        Show
+
+        <select
+            onchange="changeTransactionPerPage(this.value)">
+
+            <option value="10"
+            {% if transaction_pagination.per_page == 10 %}
+                selected
+            {% endif %}>
+                10
+            </option>
+
+
+            <option value="25"
+            {% if transaction_pagination.per_page == 25 %}
+                selected
+            {% endif %}>
+                25
+            </option>
+
+
+            <option value="50"
+            {% if transaction_pagination.per_page == 50 %}
+                selected
+            {% endif %}>
+                50
+            </option>
+
+
+        </select>
+
+        Transactions
+
+    </div>
+
+
+
+    <div class="page-navigation">
+
+
+        {% if transaction_pagination.page > 1 %}
+
+        <a href="{{ url_for(
+            'borrowing.borrowing_home',
+
+            transaction_page=
+            transaction_pagination.page - 1,
+
+            transaction_per_page=
+            transaction_pagination.per_page,
+
+
+            transaction_keyword=
+            transaction_keyword,
+
+            transaction_status=
+            transaction_status,
+
+            transaction_sort=
+            transaction_sort,
+
+            transaction_order=
+            transaction_order,
+
+
+            request_keyword=
+            request_keyword,
+
+            request_status=
+            request_status,
+
+            request_sort=
+            request_sort,
+
+            request_order=
+            request_order
+        ) }}">
+
+            Previous
+
+        </a>
+
+        {% endif %}
+
+
+
+        <span>
+
+            Page
+            {{ transaction_pagination.page }}
+            of
+            {{ transaction_pagination.total_pages }}
+
+        </span>
+
+
+
+        {% if transaction_pagination.page < transaction_pagination.total_pages %}
+
+        <a href="{{ url_for(
+            'borrowing.borrowing_home',
+
+            transaction_page=
+            transaction_pagination.page + 1,
+
+            transaction_per_page=
+            transaction_pagination.per_page,
+
+
+            transaction_keyword=
+            transaction_keyword,
+
+            transaction_status=
+            transaction_status,
+
+            transaction_sort=
+            transaction_sort,
+
+            transaction_order=
+            transaction_order,
+
+
+            request_keyword=
+            request_keyword,
+
+            request_status=
+            request_status,
+
+            request_sort=
+            request_sort,
+
+            request_order=
+            request_order
+        ) }}">
+
+            Next
+
+        </a>
+
+        {% endif %}
+
+
+    </div>
+
+
+</div>
+
 {% else %}
 
 <p>No active borrowing transactions.</p>
@@ -326,6 +919,52 @@ Borrowing & Returning
 {% block extra_js %}
 
 <script>
+function changeRequestPerPage(value) {
+
+    const url = new URL(
+        window.location.href
+    );
+
+
+    url.searchParams.set(
+        "request_per_page",
+        value
+    );
+
+
+    url.searchParams.set(
+        "request_page",
+        1
+    );
+
+
+    window.location.href = url;
+
+}
+
+function changeTransactionPerPage(value) {
+
+    const url = new URL(
+        window.location.href
+    );
+
+
+    url.searchParams.set(
+        "transaction_per_page",
+        value
+    );
+
+
+    url.searchParams.set(
+        "transaction_page",
+        1
+    );
+
+
+    window.location.href = url;
+
+}
+
 function confirmApproveRenewal() {
     return confirm(
         "Are you sure you want to approve this renewal request?"
@@ -336,6 +975,45 @@ function confirmRejectRenewal() {
     return confirm(
         "Are you sure you want to reject this renewal request?"
     );
+}
+
+let searchTimer;
+
+function debounceSubmit() {
+
+    clearTimeout(searchTimer);
+
+    searchTimer = setTimeout(function () {
+
+        const keyword = document.querySelector(
+            'input[name="request_keyword"]'
+        ).value.trim();
+
+        if (keyword.length === 0 || keyword.length >= 2) {
+            document.getElementById("requestFilterForm").submit();
+        }
+
+    }, 500);
+
+}
+
+let transactionSearchTimer;
+
+
+function debounceTransactionSearch() {
+
+    clearTimeout(transactionSearchTimer);
+
+
+    transactionSearchTimer = setTimeout(function () {
+
+        document
+            .getElementById("transactionFilterForm")
+            .submit();
+
+
+    }, 500);
+
 }
 </script>
 
