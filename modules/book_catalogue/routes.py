@@ -1027,24 +1027,24 @@ def manage_books():
         book["book_id"] = document.id
 
         book["catalogue_status"] = (
-            "Active"
-            if _is_book_active(book)
-            else "Inactive"
-        )
+    "Active"
+    if _is_book_active(book)
+    else "Inactive"
+)
 
-        # SCRUM-1529:
-        # Identify low or zero availability.
+# SCRUM-1529:
+# Identify low or zero availability.
         availability_details = (
-            _book_availability_details(
-                book
-            )
-        )
+    _book_availability_details(
+        book
+    )
+)
 
         book["available_copy_count"] = (
-            availability_details[
-                "available_count"
-            ]
-        )
+    availability_details[
+        "available_count"
+    ]
+)
 
         book["availability_level"] = (
             availability_details[

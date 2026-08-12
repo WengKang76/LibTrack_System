@@ -272,17 +272,6 @@
         book records
     </div>
 {% endif %}
-{% if pagination.total_items > 0 %}
-    <div class="pagination-summary">
-        Showing
-        <strong>{{ pagination.start_item }}</strong>
-        to
-        <strong>{{ pagination.end_item }}</strong>
-        of
-        <strong>{{ pagination.total_items }}</strong>
-        book records
-    </div>
-{% endif %}
 {% if books %}
 
 <div class="table-container">
@@ -383,7 +372,7 @@
                     0
                 )
             }}
-            available
+            Available
         </span>
 
         {% if
