@@ -1,63 +1,426 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
+{% set penalty_nav_role = "student" %}
+{% include "components/penalty_navigation.html" %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+<style>
+    .payment-wrapper {
+        max-width: 900px;
+        margin: 35px auto;
+        padding: 20px;
+    }
+
+    .payment-header {
+        margin-bottom: 24px;
+    }
+
+    .payment-header h1 {
+        font-size: 34px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .payment-header p {
+        color: #64748b;
+        font-size: 15px;
+    }
+
+    .payment-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 22px;
+        align-items: start;
+    }
+
+    .payment-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 18px;
+    }
+
+    .payment-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .payment-row:last-child {
+        border-bottom: none;
+    }
+
+    .payment-label {
+        color: #475569;
+        font-weight: 700;
+    }
+
+    .payment-value {
+        color: #0f172a;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .amount-value {
+        color: #2563eb;
+        font-size: 22px;
+        font-weight: 900;
+    }
+
+    .payment-form {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .payment-form label {
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 4px;
+    }
+
+    .payment-form input,
+    .payment-form select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 15px;
+        outline: none;
+        box-sizing: border-box;
+        background: #ffffff;
+    }
+
+    .payment-form input:focus,
+    .payment-form select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .method-section {
+        display: none;
+        background: #f8fafc;
+        padding: 16px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        margin-top: 5px;
+    }
+
+    .method-section-title {
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+    }
+
+    .cash-box {
+        display: none;
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid #bfdbfe;
+        font-weight: 600;
+    }
+
+    .summary-box {
+        display: none;
+        margin-top: 8px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 14px;
+        padding: 18px;
+    }
+
+    .summary-box h3 {
+        margin-top: 0;
+        color: #166534;
+        font-size: 18px;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 13px 16px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        font-weight: 700;
+        border: 1px solid #fecaca;
+    }
+
+    .button-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 6px;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline {
+        padding: 11px 18px;
+        border-radius: 10px;
+        font-weight: 800;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-secondary {
+        background: #16a34a;
+        color: #ffffff;
+    }
+
+    .btn-secondary:hover {
+        background: #15803d;
+    }
+
+    .btn-outline {
+        background: #f1f5f9;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+    }
+
+    .btn-outline:hover {
+        background: #e2e8f0;
+    }
+
+    @media (max-width: 850px) {
+        .payment-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-row {
+            flex-direction: column;
+        }
+
+        .payment-value {
+            text-align: left;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
+<div class="payment-wrapper">
+    <div class="payment-header">
+        <h1>Pay Penalty</h1>
+        <p>Please review your penalty details and select a payment method.</p>
+    </div>
 
-<div class="penalty-header">
-    <h1>Penalty, Transactions & Exception Handling</h1>
-    <h2>SCRUM-703: Pay Penalty with Credit Card</h2>
-    <p>This page allows users to pay outstanding penalties using a credit card.</p>
+    {% if error %}
+        <div class="alert-error">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="payment-grid">
+        <div class="payment-card">
+            <div class="card-title">Penalty Details</div>
+
+            <div class="payment-row">
+                <span class="payment-label">Penalty ID</span>
+                <span class="payment-value">{{ penalty.get("penalty_id", "-") }}</span>
+            </div>
+
+            <div class="payment-row">
+                <span class="payment-label">Student ID</span>
+                <span class="payment-value">{{ penalty.get("student_id", student_id) }}</span>
+            </div>
+
+            <div class="payment-row">
+                <span class="payment-label">Book Title</span>
+                <span class="payment-value">{{ penalty.get("book_title", "-") }}</span>
+            </div>
+
+            <div class="payment-row">
+                <span class="payment-label">Penalty Reason</span>
+                <span class="payment-value">
+                    {{ penalty.get("penalty_reason", penalty.get("penalty_type", "-")) }}
+                </span>
+            </div>
+
+            <div class="payment-row">
+                <span class="payment-label">Penalty Amount</span>
+                <span class="payment-value amount-value">
+                    RM {{ "%.2f"|format(penalty.get("penalty_amount", penalty.get("amount", 0))|float) }}
+                </span>
+            </div>
+        </div>
+
+        <div class="payment-card">
+            <div class="card-title">Payment Information</div>
+
+            <form method="POST" class="payment-form" id="paymentForm">
+                <input type="hidden" name="student_id" value="{{ student_id }}">
+
+                <div>
+                    <label>Payment Amount</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="payment_amount"
+                        id="paymentAmount"
+                        value="{{ penalty.get('penalty_amount', penalty.get('amount', 0)) }}"
+                        readonly
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label>Payment Method</label>
+                    <select name="payment_method" id="paymentMethod" required>
+                        <option value="">-- Select Payment Method --</option>
+                        <option value="Visa">Visa</option>
+                        <option value="Debit Card">Debit Card</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Cash">Cash</option>
+                    </select>
+                </div>
+
+                <div id="cardFields" class="method-section">
+                    <div class="method-section-title">Card Payment Details</div>
+
+                    <label>Card Holder Name</label>
+                    <input type="text" name="card_holder" id="cardHolder" placeholder="Enter card holder name">
+
+                    <label>Card Number</label>
+                    <input type="text" name="card_number" id="cardNumber" placeholder="Enter card number">
+
+                    <label>Expiry Date</label>
+                    <input type="text" name="expiry_date" id="expiryDate" placeholder="MM/YY">
+
+                    <label>CVV</label>
+                    <input type="password" name="cvv" id="cvv" placeholder="Enter CVV">
+                </div>
+
+                <div id="paypalFields" class="method-section">
+                    <div class="method-section-title">PayPal Payment Details</div>
+
+                    <label>PayPal Email</label>
+                    <input type="email" name="paypal_email" id="paypalEmail" placeholder="Enter PayPal email">
+                </div>
+
+                <div id="cashInstruction" class="cash-box">
+                    Cash payment will be recorded and confirmed by the librarian.
+                </div>
+
+                <div id="confirmationSummary" class="summary-box">
+                    <h3>Payment Confirmation Summary</h3>
+
+                    <div class="payment-row">
+                        <span class="payment-label">Penalty ID</span>
+                        <span class="payment-value">{{ penalty.get("penalty_id", "-") }}</span>
+                    </div>
+
+                    <div class="payment-row">
+                        <span class="payment-label">Student ID</span>
+                        <span class="payment-value">{{ penalty.get("student_id", student_id) }}</span>
+                    </div>
+
+                    <div class="payment-row">
+                        <span class="payment-label">Payment Amount</span>
+                        <span class="payment-value">
+                            RM {{ "%.2f"|format(penalty.get("penalty_amount", penalty.get("amount", 0))|float) }}
+                        </span>
+                    </div>
+
+                    <div class="payment-row">
+                        <span class="payment-label">Selected Method</span>
+                        <span class="payment-value" id="summaryPaymentMethod">-</span>
+                    </div>
+
+                    <p>Please confirm that the payment details are correct before submitting.</p>
+                </div>
+
+                <div class="button-row">
+                    <button type="button" class="btn-primary" onclick="showConfirmationSummary()">
+                        Preview Payment Summary
+                    </button>
+
+                    <button type="submit" class="btn-secondary">
+                        Confirm and Pay
+                    </button>
+
+                    <a href="{{ url_for('penalty_transaction.student_penalty_records') }}" class="btn-outline">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
-{% if error %}
-<div class="penalty-alert penalty-warning">
-    {{ error }}
-</div>
-{% endif %}
+<script>
+    const paymentMethod = document.getElementById("paymentMethod");
+    const cardFields = document.getElementById("cardFields");
+    const paypalFields = document.getElementById("paypalFields");
+    const cashInstruction = document.getElementById("cashInstruction");
+    const confirmationSummary = document.getElementById("confirmationSummary");
+    const summaryPaymentMethod = document.getElementById("summaryPaymentMethod");
 
-<div class="penalty-card">
-    <h3>Penalty Details</h3>
+    function resetPaymentFields() {
+        cardFields.style.display = "none";
+        paypalFields.style.display = "none";
+        cashInstruction.style.display = "none";
+        confirmationSummary.style.display = "none";
 
-    <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
-    <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
-    <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
-    <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
-    <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
-    <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
-    <p><strong>Status:</strong> {{ penalty.status }}</p>
-</div>
+        document.getElementById("cardHolder").required = false;
+        document.getElementById("cardNumber").required = false;
+        document.getElementById("expiryDate").required = false;
+        document.getElementById("cvv").required = false;
+        document.getElementById("paypalEmail").required = false;
+    }
 
-<div class="penalty-card">
-    <form method="POST" class="penalty-payment-form">
-        <input type="hidden" name="student_id" value="{{ student_id }}">
+    paymentMethod.addEventListener("change", function () {
+        resetPaymentFields();
 
-        <label>Payment Amount</label>
-        <input
-            type="number"
-            step="0.01"
-            name="payment_amount"
-            value="{{ penalty.penalty_amount }}"
-            readonly
-            required
-        >
+        if (paymentMethod.value === "Visa" || paymentMethod.value === "Debit Card") {
+            cardFields.style.display = "block";
 
-        <label>Credit Card Number</label>
-        <input type="text" name="card_number" placeholder="Example: 4111 1111 1111 1111" required>
+            document.getElementById("cardHolder").required = true;
+            document.getElementById("cardNumber").required = true;
+            document.getElementById("expiryDate").required = true;
+            document.getElementById("cvv").required = true;
+        }
 
-        <label>Card Holder Name</label>
-        <input type="text" name="card_holder" placeholder="Example: Tan Guan Hong" required>
+        if (paymentMethod.value === "PayPal") {
+            paypalFields.style.display = "block";
+            document.getElementById("paypalEmail").required = true;
+        }
 
-        <label>Expiry Date</label>
-        <input type="text" name="expiry_date" placeholder="MM/YY" required>
+        if (paymentMethod.value === "Cash") {
+            cashInstruction.style.display = "block";
+        }
+    });
 
-        <label>CVV</label>
-        <input type="password" name="cvv" placeholder="123" required>
+    function showConfirmationSummary() {
+        if (paymentMethod.value === "") {
+            alert("Please select a payment method first.");
+            return;
+        }
 
-        <button type="submit">Pay with Credit Card</button>
-    </form>
-</div>
-
+        confirmationSummary.style.display = "block";
+        summaryPaymentMethod.innerText = paymentMethod.value;
+    }
+</script>
 {% endblock %}

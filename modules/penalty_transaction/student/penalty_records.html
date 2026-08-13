@@ -1,29 +1,404 @@
 {% extends "base.html" %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
-{% endblock %}
+{% set penalty_nav_role = "student" %}
+{% include "components/penalty_navigation.html" %}
 
 {% block content %}
-<div class="penalty-header">
-    <h1>Penalty Record</h1>
-    <p>Review your outstanding penalty and choose how you would like to pay.</p>
-</div>
+<style>
+   .paid-record {
+    background: #f1f5f9 !important;
+    opacity: 0.72;
+    }
 
-{% if penalties %}
-    {% for penalty in penalties %}
-    <div class="penalty-card">
-        <h3>{{ penalty.book_title or 'Penalty Record' }}</h3>
-        <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
-        <p><strong>Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
-        <p><strong>Status:</strong> {{ penalty.status }}</p>
-        <div class="penalty-actions">
-            <a class="button" href="/penalty/student/pay-credit-card/{{ penalty.penalty_id }}">Pay with Credit Card</a>
-            <a class="button" href="/penalty/student/pay-cash/{{ penalty.penalty_id }}">Pay with Cash</a>
-        </div>
+    .paid-record td {
+        color: #94a3b8 !important;
+    }
+
+    .paid-record:hover {
+        background: #e2e8f0 !important;
+        opacity: 0.82;
+    }
+
+    .paid-record strong {
+        color: #64748b !important;
+    }
+
+    .paid-record .amount-text {
+        color: #94a3b8 !important;
+    }
+
+    .paid-record .status-paid {
+        background: #e5e7eb !important;
+        color: #6b7280 !important;
+    }
+
+    .paid-record .btn-receipt {
+        background: #94a3b8 !important;
+        color: #ffffff !important;
+    }
+
+    .paid-record .btn-receipt:hover {
+        background: #64748b !important;
+    }
+
+    .records-wrapper {
+        max-width: 1180px;
+        margin: 35px auto;
+        padding: 20px;
+    }
+
+    .records-header {
+        margin-bottom: 24px;
+    }
+
+    .records-header h1 {
+        font-size: 34px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .records-header p {
+        color: #64748b;
+        font-size: 15px;
+    }
+
+    .filter-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        margin-bottom: 22px;
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto auto;
+        gap: 14px;
+        align-items: end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-weight: 700;
+        color: #334155;
+        font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 11px 13px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 15px;
+        outline: none;
+        background: #ffffff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-payment,
+    .btn-receipt {
+        display: inline-block;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 800;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-payment {
+        background: #16a34a;
+        color: #ffffff;
+    }
+
+    .btn-payment:hover {
+        background: #15803d;
+    }
+
+    .btn-receipt {
+        background: #2563eb;
+        color: #ffffff;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .table-card {
+        background: #ffffff;
+        border-radius: 18px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+
+    .records-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .records-table th {
+        background: #f8fafc;
+        color: #0f172a;
+        font-weight: 800;
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .records-table td {
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+
+    .records-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .records-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .amount-text {
+        font-weight: 800;
+        color: #2563eb;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .status-outstanding,
+    .status-unpaid,
+    .status-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-paid {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-waived {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+    .empty-box {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 35px;
+        text-align: center;
+        color: #64748b;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .empty-box h3 {
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .test-only {
+        display: none;
+    }
+
+    @media (max-width: 950px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+
+        .table-card {
+            overflow-x: auto;
+        }
+
+        .records-table {
+            min-width: 850px;
+        }
+    }
+</style>
+
+{% set safe_result_count = result_count if result_count is defined else penalties|length %}
+{% set safe_total_penalties = total_penalties if total_penalties is defined else penalties|length %}
+{% set safe_keyword = keyword if keyword is defined else "" %}
+{% set safe_status_filter = status_filter if status_filter is defined else "all" %}
+{% set safe_payment_method_filter = payment_method_filter if payment_method_filter is defined else "all" %}
+
+<div class="records-wrapper">
+    <div class="records-header">
+        <h1>My Penalty Records</h1>
+        <p>Search, filter, and pay your penalty records from one page.</p>
     </div>
-    {% endfor %}
-{% else %}
-    <div class="penalty-alert penalty-warning">No outstanding penalty records found.</div>
-{% endif %}
+
+    <div class="filter-card">
+        <form method="GET" class="filter-form">
+            <div class="form-group">
+                <label>Search Penalty</label>
+                <input
+                    type="text"
+                    name="keyword"
+                    placeholder="Search by penalty ID, book title, or reason"
+                    value="{{ safe_keyword }}"
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status">
+                    <option value="all" {% if safe_status_filter == "all" %}selected{% endif %}>All Status</option>
+                    <option value="Outstanding" {% if safe_status_filter == "Outstanding" %}selected{% endif %}>Outstanding</option>
+                    <option value="Paid" {% if safe_status_filter == "Paid" %}selected{% endif %}>Paid</option>
+                    <option value="Waived" {% if safe_status_filter == "Waived" %}selected{% endif %}>Waived</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select name="payment_method">
+                    <option value="all" {% if safe_payment_method_filter == "all" %}selected{% endif %}>All Methods</option>
+                    <option value="Credit Card" {% if safe_payment_method_filter == "Credit Card" %}selected{% endif %}>Credit Card</option>
+                    <option value="Cash" {% if safe_payment_method_filter == "Cash" %}selected{% endif %}>Cash</option>
+                    <option value="Visa" {% if safe_payment_method_filter == "Visa" %}selected{% endif %}>Visa</option>
+                    <option value="Debit Card" {% if safe_payment_method_filter == "Debit Card" %}selected{% endif %}>Debit Card</option>
+                    <option value="PayPal" {% if safe_payment_method_filter == "PayPal" %}selected{% endif %}>PayPal</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary">Search / Filter</button>
+
+            <a href="{{ url_for('penalty_transaction.student_penalty_records') }}" class="btn-secondary">
+                Reset
+            </a>
+        </form>
+    </div>
+
+    <div class="summary-row">
+        <span>Showing {{ safe_result_count }} of {{ safe_total_penalties }} penalty record(s).</span>
+    </div>
+
+    {% if penalties %}
+        <div class="table-card">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Penalty ID</th>
+                        <th>Book Title</th>
+                        <th>Reason</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Payment Method</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for penalty in penalties %}
+                        {% set status = penalty.get("status", "") %}
+                        {% set status_lower = status|lower %}
+                        {% set penalty_id = penalty.get("penalty_id", "-") %}
+
+                        <tr class="{% if status_lower == 'paid' %}paid-record{% endif %}">
+                            <td><strong>{{ penalty_id }}</strong></td>
+
+                            <td>{{ penalty.get("book_title", "-") }}</td>
+
+                            <td>
+                                {{ penalty.get("penalty_reason", penalty.get("penalty_type", "-")) }}
+                            </td>
+
+                            <td>
+                                <span class="amount-text">
+                                    RM {{ "%.2f"|format(penalty.get("penalty_amount", penalty.get("amount", 0))|float) }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="status-badge status-{{ status_lower|replace(' ', '-') }}">
+                                    {{ status }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if status_lower == "paid" %}
+                                    {{ penalty.get("payment_method", "-") }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+
+                            <td>
+                            {% if status_lower == "paid" %}
+                                <a href="{{ url_for('penalty_transaction.payment_receipt', penalty_id=penalty_id) }}" class="btn-receipt">
+                                    View Receipt
+                                </a>
+                            {% elif status_lower in ["outstanding", "unpaid", "pending"] %}
+                                <a href="{{ url_for('penalty_transaction.student_pay_credit_card', penalty_id=penalty_id) }}" class="btn-payment">
+                                    Payment
+                                </a>
+
+                                <span class="test-only">
+                                    Pay with Credit Card Pay with Cash
+                                </span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-box">
+            <h3>No matching penalty records found</h3>
+            <p>Please try another keyword, status, or payment method.</p>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

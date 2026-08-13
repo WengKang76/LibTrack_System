@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}
+Operational Reports | LibTrack
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-hero report-hero">
+    <div class="dashboard-hero-content">
+        <p class="dashboard-label">Dashboard &amp; Report Module</p>
+        <h1>Operational Reports</h1>
+        <p class="dashboard-description">
+            Review read-only borrowing, reservation, overdue, and penalty activities using validated filters.
+        </p>
+    </div>
+</section>
+
+<section class="dashboard-section" aria-labelledby="report-filter-heading">
+    <div class="section-heading">
+        <h2 id="report-filter-heading">Report Filters</h2>
+        <p>Select a report type and narrow the results by date or status.</p>
+    </div>
+
+    <form class="report-filter-form" method="GET" action="{{ url_for('dashboard_report.operational_reports') }}">
+        <label>
+            Report type
+            <select name="report_type" id="report-type" required>
+                {% for option in report_types %}
+                    <option value="{{ option.value }}" {% if filters.report_type == option.value %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Start date
+            <input type="date" name="start_date" value="{{ filters.start_date }}">
+        </label>
+
+        <label>
+            End date
+            <input type="date" name="end_date" value="{{ filters.end_date }}">
+        </label>
+
+        <label>
+            Status
+            <select name="status" id="report-status">
+                <option value="">All statuses</option>
+                {% for option in status_options %}
+                    <option value="{{ option.value }}" {% if filters.status|lower == option.value %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Book title
+            <input
+                type="search"
+                name="book_title"
+                value="{{ filters.book_title }}"
+                placeholder="Reservation report only"
+                aria-describedby="book-title-filter-hint"
+            >
+            <small id="book-title-filter-hint" class="report-filter-hint">Used when Reservation Activities is selected.</small>
+        </label>
+
+        <div class="report-filter-actions">
+            <button class="report-primary-button" type="submit">Generate Report</button>
+            <a class="report-secondary-button" href="{{ url_for('dashboard_report.operational_reports') }}">Reset</a>
+            {% if report_data_available %}
+                <a
+                    class="report-secondary-button"
+                    id="export-report-csv"
+                    href="{{ url_for('dashboard_report.export_operational_report', report_type=filters.report_type, start_date=filters.start_date, end_date=filters.end_date, status=filters.status, book_title=filters.book_title) }}"
+                >Export CSV</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+
+<section class="dashboard-section" aria-labelledby="report-results-heading">
+    <div class="section-heading dashboard-heading-row">
+        <div>
+            <h2 id="report-results-heading">{{ report.report_title }}</h2>
+            <p>
+                {% if report_data_available %}
+                    {{ report.total_records }} matching record{% if report.total_records != 1 %}s{% endif %} found.
+                {% else %}
+                    No report data is shown until the filter issue is resolved.
+                {% endif %}
+            </p>
+        </div>
+        <span class="pending-total-badge">Read only</span>
+    </div>
+
+    {% if report.status_totals %}
+        <div class="report-status-summary" aria-label="Report status totals">
+            {% for status, total in report.status_totals.items() %}
+                <span><strong>{{ total }}</strong> {{ status }}</span>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if report.report_type == "reservation" and report.most_requested_books %}
+        <div class="reservation-demand-summary" aria-label="Most requested books">
+            <h3>Most Requested Books</h3>
+            <div class="reservation-demand-list">
+                {% for item in report.most_requested_books %}
+                    <span>
+                        <strong>{{ item.book_title }}</strong>
+                        {{ item.reservation_count }} reservation{% if item.reservation_count != 1 %}s{% endif %}
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if report.report_type == "overdue" and report.penalty_status_totals %}
+        <div class="report-status-summary" aria-label="Penalty status totals">
+            {% for status, total in report.penalty_status_totals.items() %}
+                <span><strong>{{ total }}</strong> penalty {{ status }}</span>
+            {% endfor %}
+            <span><strong>RM {{ '%.2f'|format(report.total_penalty_amount) }}</strong> total penalty amount</span>
+        </div>
+    {% endif %}
+
+    {% if report.records %}
+        <div class="report-table-wrapper">
+            {% if report.report_type == "borrowing" %}
+                <table class="report-table report-table-detailed">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Borrow Date</th>
+                            <th>Due Date</th>
+                            <th>Return Date</th>
+                            <th>Renewal</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr {% if record.is_overdue %}class="report-overdue-row"{% endif %}>
+                                <td>{{ record.record_id }}</td>
+                                <td>
+                                    <strong>{{ record.student_name }}</strong>
+                                    <span class="report-cell-secondary">{{ record.student_id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.book_title }}</strong>
+                                    <span class="report-cell-secondary">{{ record.book_id }}</span>
+                                </td>
+                                <td>{{ record.borrow_date_display }}</td>
+                                <td>
+                                    {{ record.due_date_display }}
+                                    {% if record.is_overdue %}
+                                        <span class="report-overdue-indicator">{{ record.overdue_days }} day{% if record.overdue_days != 1 %}s{% endif %} overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.return_date_display }}</td>
+                                <td>{{ record.renewal_status }}</td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elif report.report_type == "reservation" %}
+                <table class="report-table report-table-reservation">
+                    <thead>
+                        <tr>
+                            <th>Reservation ID</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Reservation Date</th>
+                            <th>Status</th>
+                            <th>Related Borrow Request</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr>
+                                <td>{{ record.record_id }}</td>
+                                <td>
+                                    <strong>{{ record.student_name }}</strong>
+                                    <span class="report-cell-secondary">{{ record.student_id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.book_title }}</strong>
+                                    <span class="report-cell-secondary">{{ record.book_id }}</span>
+                                </td>
+                                <td>{{ record.reservation_date_display }}</td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                                <td>
+                                    <strong>{{ record.borrowing_request_id }}</strong>
+                                    <span class="report-cell-secondary">{{ record.borrowing_request_status }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elif report.report_type == "overdue" %}
+                <table class="report-table report-table-overdue-penalty">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Due Date</th>
+                            <th>Overdue</th>
+                            <th>Transaction Status</th>
+                            <th>Penalty</th>
+                            <th>Penalty Status</th>
+                            <th>Payment</th>
+                            <th>Waiver</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr class="report-overdue-row">
+                                <td>{{ record.record_id }}</td>
+                                <td>
+                                    <strong>{{ record.student_name }}</strong>
+                                    <span class="report-cell-secondary">{{ record.student_id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.book_title }}</strong>
+                                    <span class="report-cell-secondary">{{ record.book_id }}</span>
+                                </td>
+                                <td>{{ record.due_date_display }}</td>
+                                <td>
+                                    <span class="report-overdue-indicator">{{ record.overdue_days }} day{% if record.overdue_days != 1 %}s{% endif %}</span>
+                                </td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                                <td>
+                                    <strong>{{ record.penalty_id }}</strong>
+                                    {% if record.penalty_amount is not none %}
+                                        <span class="report-cell-secondary">RM {{ '%.2f'|format(record.penalty_amount) }}</span>
+                                    {% else %}
+                                        <span class="report-cell-secondary">No penalty recorded</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="report-status-pill">{{ record.penalty_status }}</span></td>
+                                <td>
+                                    <strong>{{ record.payment_status }}</strong>
+                                    <span class="report-cell-secondary">{{ record.payment_method }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ record.waiver_status }}</strong>
+                                    <span class="report-cell-secondary">{{ record.waiver_reason }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Record ID</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Student ID</th>
+                            <th>Book ID</th>
+                            <th>Details</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in report.records %}
+                            <tr>
+                                <td>{{ record.record_id }}</td>
+                                <td>{{ record.event_date_display }}</td>
+                                <td><span class="report-status-pill">{{ record.status }}</span></td>
+                                <td>{{ record.student_id }}</td>
+                                <td>{{ record.book_id }}</td>
+                                <td>{{ record.summary }}</td>
+                                <td>
+                                    {% if record.amount is not none %}
+                                        RM {{ '%.2f'|format(record.amount) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="report-empty-state">
+            <span>📄</span>
+            <h3>No matching records</h3>
+            <p>Adjust the selected report type, date range, or status and try again.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

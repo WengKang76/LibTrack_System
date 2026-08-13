@@ -1,0 +1,11 @@
+<script>
+    function confirmPenaltyAction(actionName, recordId) {
+        const message =
+            "Please confirm this action.\n\n" +
+            "Action: " + actionName + "\n" +
+            "Record: " + recordId + "\n\n" +
+            "This action may update the penalty record. Do you want to continue?";
+
+        return confirm(message);
+    }
+</script>

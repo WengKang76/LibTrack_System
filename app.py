@@ -1,11 +1,15 @@
 import os
 
-from flask import Flask, render_template
+from flask import Flask, render_template, session
 
 from modules.authentication.routes import authentication_bp
 from modules.book_catalogue.routes import book_bp
 from modules.borrowing.routes import borrowing_bp
-from modules.catalogue_reservation.routes import catalogue_bp
+from modules.catalogue_reservation.routes import (
+    catalogue_bp,
+    get_student_due_notifications,
+)
+from modules.dashboard_report.routes import dashboard_bp
 from modules.penalty_transaction.routes import penalty_bp
 from modules.student_catalogue.routes import student_catalogue_bp
 from modules.user_management.routes import user_management_bp
@@ -45,26 +49,23 @@ app.register_blueprint(user_management_bp)
 app.register_blueprint(catalogue_bp)
 app.register_blueprint(penalty_bp)
 app.register_blueprint(borrowing_bp)
+app.register_blueprint(dashboard_bp)
 
 
+@app.route("/")
 @app.route("/")
 def home():
-    return render_template("index.html")
+    notifications = []
 
+    student_id = session.get("user_id")
 
-@app.route("/")
-def role_selection():
-    return render_template("role_selection.html")
+    if student_id and session.get("role", "").lower() != "librarian":
+        notifications = get_student_due_notifications(student_id)
 
-
-@app.route("/librarian")
-def librarian_dashboard():
-    return render_template("librarian_dashboard.html")
-
-
-@app.route("/student")
-def student_dashboard():
-    return render_template("student_dashboard.html")
+    return render_template(
+        "index.html",
+        notifications=notifications,
+    )
 
 
 # Health-check endpoint for CI/CD and deployment checks.
