@@ -19,84 +19,112 @@
         ) }}"
     >
 
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/navigation.css'
+        ) }}"
+    >
+
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
-    <div class="app-shell">
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="brand-icon">📚</div>
-                <div>
-                    <h2>LibTrack</h2>
-                    <p>Library Management System</p>
+{% set current_role = session.get('role', '') | lower %}
+{% set is_authenticated = session.get('user_id') %}
+
+<body class="{% if current_role == 'librarian' %}role-librarian{% elif current_role == 'student' %}role-student{% else %}role-guest{% endif %}">
+
+    {% if current_role == 'librarian' %}
+        <div class="app-shell librarian-shell">
+            <aside class="sidebar librarian-sidebar">
+                <div class="sidebar-brand">
+                    <div class="brand-icon">📚</div>
+                    <div>
+                        <h2>LibTrack</h2>
+                        <p>Library Management System</p>
+                    </div>
                 </div>
-            </div>
 
-            <nav class="sidebar-nav">
-                {% if session.get('role', '') | lower == 'librarian' %}
-                    <a href="/librarian">Dashboard</a>
-                {% elif session.get('role', '') | lower == 'student' %}
-                    <a href="/student">Dashboard</a>
-                {% else %}
-                    <a href="/">Dashboard</a>
-                {% endif %}
+                <div class="sidebar-user librarian-sidebar-user">
+                    <strong>{{ session.get('full_name', 'Librarian') }}</strong>
+                    <span>Librarian</span>
+                </div>
 
-                {% if session.get('user_id') %}
-                    <div class="sidebar-user">
-                        <strong>{{ session.get('full_name', 'User') }}</strong>
-                        <span>{{ session.get('role', '') | title }}</span>
-                    </div>
+                <nav class="sidebar-nav" aria-label="Librarian navigation">
+                    <a href="/librarian" {% if request.path == '/librarian' %}class="active"{% endif %}>Dashboard</a>
+                    <a href="/books/" {% if request.path.startswith('/books') %}class="active"{% endif %}>Book Catalogue Management</a>
+                    <a href="/users/" {% if request.path.startswith('/users') %}class="active"{% endif %}>User Management</a>
+                    <a href="/borrowing/" {% if request.path.startswith('/borrowing') %}class="active"{% endif %}>Borrowing &amp; Returning</a>
+                    <a href="/penalty/librarian" {% if request.path.startswith('/penalty/librarian') %}class="active"{% endif %}>Penalty &amp; Transactions</a>
+                    <a href="/librarian/reports" {% if request.path.startswith('/librarian/reports') %}class="active"{% endif %}>Operational Reports</a>
+                </nav>
 
-                    <form method="POST" action="/auth/logout" class="sidebar-logout-form">
-                        <button type="submit" class="sidebar-logout-button">Logout</button>
-                    </form>
+                <form method="POST" action="/auth/logout" class="sidebar-logout-form librarian-sidebar-logout">
+                    <button type="submit" class="sidebar-logout-button">Logout</button>
+                </form>
+            </aside>
 
-                    {% if session.get('role', '') | lower == 'librarian' %}
-                        <a href="/books/">Book Catalogue Management</a>
-                        <a href="/users/">User Management</a>
-                        <a href="/borrowing/">Borrowing &amp; Returning</a>
-                        <a href="/penalty/librarian">Penalty &amp; Transactions</a>
-                    {% else %}
-                        <a href="/catalogue/">Browse &amp; Reserve Books</a>
-                        <a href="/catalogue/my-reservations">My Reservations</a>
-                        <a href="/catalogue/my-borrowed-books">My Borrowed Books</a>
-                        <a href="/penalty/student">Penalty &amp; Transactions</a>
+            <main class="page-container librarian-page-container">
+    {% else %}
+        <div class="student-shell">
+            <header class="student-topbar">
+                <div class="student-topbar-inner">
+                    <a href="{% if current_role == 'student' %}/student{% else %}/{% endif %}" class="student-topbar-brand">
+                        <span class="student-topbar-brand-icon">📚</span>
+                        <span>
+                            <strong>LibTrack</strong>
+                            <small>Library Management System</small>
+                        </span>
+                    </a>
+
+                    <nav class="student-topbar-nav" aria-label="{% if current_role == 'student' %}Student{% else %}Public{% endif %} navigation">
+                        {% if current_role == 'student' %}
+                            <a href="/student" {% if request.path == '/student' %}class="active"{% endif %}>Dashboard</a>
+                            <a href="/catalogue/" {% if request.path.startswith('/catalogue') and not request.path.startswith('/catalogue/my-reservations') and not request.path.startswith('/catalogue/my-borrowed-books') %}class="active"{% endif %}>Browse Books</a>
+                            <a href="/catalogue/my-reservations" {% if request.path.startswith('/catalogue/my-reservations') %}class="active"{% endif %}>Reservations</a>
+                            <a href="/catalogue/my-borrowed-books" {% if request.path.startswith('/catalogue/my-borrowed-books') %}class="active"{% endif %}>Borrowed Books</a>
+                            <a href="/penalty/student" {% if request.path.startswith('/penalty/student') %}class="active"{% endif %}>Penalties</a>
+                        {% else %}
+                            <a href="/" {% if request.path == '/' %}class="active"{% endif %}>Home</a>
+                            <a href="/student/catalogue/" {% if request.path.startswith('/student/catalogue') %}class="active"{% endif %}>Book Catalogue</a>
+                            <a href="/auth/login" {% if request.path.startswith('/auth/login') %}class="active"{% endif %}>Login</a>
+                            <a href="/auth/register" {% if request.path.startswith('/auth/register') %}class="active"{% endif %}>Register</a>
+                        {% endif %}
+                    </nav>
+
+                    {% if current_role == 'student' and is_authenticated %}
+                        <div class="student-topbar-account">
+                            <div class="student-topbar-user">
+                                <strong>{{ session.get('full_name', 'Student') }}</strong>
+                                <span>Student</span>
+                            </div>
+
+                            <form method="POST" action="/auth/logout" class="student-topbar-logout-form">
+                                <button type="submit" class="student-topbar-logout-button">Logout</button>
+                            </form>
+                        </div>
                     {% endif %}
-                {% else %}
-                    <a href="/auth/login">Login</a>
-                    <a href="/auth/register">Student Registration</a>
-                    <a href="/student/catalogue/">Student Book Catalogue</a>
-                    <a href="/catalogue/">Catalogue Browsing</a>
-                {% endif %}
-            </nav>
-        </aside>
+                </div>
+            </header>
 
-        <main class="page-container">
+            <main class="page-container student-page-container">
+    {% endif %}
 
-        {% with messages =
-            get_flashed_messages(
-                with_categories=true
-            )
-        %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert {{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
 
-            {% if messages %}
+                {% block content %}{% endblock %}
 
-                {% for category, message in messages %}
-
-                    <div class="alert {{ category }}">
-                        {{ message }}
-                    </div>
-
-                {% endfor %}
-
-            {% endif %}
-
-        {% endwith %}
-
-            {% block content %}{% endblock %}
-        </main>
-    </div>
+            </main>
+        </div>
 
 {% block extra_js %}{% endblock %}
 
