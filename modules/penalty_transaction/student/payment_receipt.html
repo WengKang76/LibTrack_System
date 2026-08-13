@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% set penalty_nav_role = "student" %}
+{% include "components/penalty_navigation.html" %}
+
+{% block content %}
+<style>
+    .receipt-wrapper {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .receipt-header {
+        margin-bottom: 24px;
+    }
+
+    .receipt-header h1 {
+        font-size: 34px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 8px;
+    }
+
+    .receipt-header p {
+        color: #64748b;
+        font-size: 15px;
+    }
+
+    .receipt-card {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 28px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+        border: 1px solid #e5e7eb;
+    }
+
+    .receipt-success {
+        background: #dcfce7;
+        color: #166534;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 22px;
+        font-weight: 600;
+    }
+
+    .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 13px 0;
+        border-bottom: 1px solid #e5e7eb;
+        gap: 20px;
+    }
+
+    .receipt-row:last-child {
+        border-bottom: none;
+    }
+
+    .receipt-label {
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .receipt-value {
+        color: #0f172a;
+        font-weight: 500;
+        text-align: right;
+    }
+
+    .receipt-amount {
+        font-size: 22px;
+        font-weight: 800;
+        color: #2563eb;
+    }
+
+    .status-paid {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .receipt-actions {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        display: inline-block;
+        padding: 11px 18px;
+        background: #2563eb;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-secondary {
+        display: inline-block;
+        padding: 11px 18px;
+        background: #f1f5f9;
+        color: #0f172a;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 700;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    @media (max-width: 600px) {
+        .receipt-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .receipt-value {
+            text-align: left;
+        }
+    }
+</style>
+
+<div class="receipt-wrapper">
+    <div class="receipt-header">
+        <h1>Payment Receipt</h1>
+        <p>Your penalty payment has been completed successfully.</p>
+    </div>
+
+    <div class="receipt-card">
+        <div class="receipt-success">
+            Payment completed successfully.
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Penalty ID</span>
+            <span class="receipt-value">{{ receipt.penalty_id }}</span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Student ID</span>
+            <span class="receipt-value">{{ receipt.student_id }}</span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Book Title</span>
+            <span class="receipt-value">{{ receipt.book_title }}</span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Penalty Reason</span>
+            <span class="receipt-value">{{ receipt.penalty_reason }}</span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Payment Amount</span>
+            <span class="receipt-value receipt-amount">
+                RM {{ "%.2f"|format(receipt.payment_amount|float) }}
+            </span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Payment Method</span>
+            <span class="receipt-value">{{ receipt.payment_method }}</span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Payment Status</span>
+            <span class="receipt-value">
+                <span class="status-paid">{{ receipt.payment_status }}</span>
+            </span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Payment Date</span>
+            <span class="receipt-value">{{ receipt.payment_date }}</span>
+        </div>
+
+        <div class="receipt-row">
+            <span class="receipt-label">Paid By</span>
+            <span class="receipt-value">{{ receipt.paid_by }}</span>
+        </div>
+
+        <div class="receipt-actions">
+            <a href="{{ url_for('penalty_transaction.student_penalty_records') }}" class="btn-primary">
+                Back to Penalty Records
+            </a>
+
+            <a href="/" class="btn-secondary">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

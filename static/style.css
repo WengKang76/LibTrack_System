@@ -554,6 +554,28 @@ body {
     }
 }
 
+.penalty-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.penalty-table th,
+.penalty-table td {
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.penalty-table th {
+    background: #f3f4f6;
+    font-weight: 700;
+}
+
+.penalty-table tr:nth-child(even) {
+    background: #f9fafb;
+}
+=======
 /* Student Notifications for overdue */
 .dashboard-notifications {
     display: flex;
@@ -1101,3 +1123,4 @@ body {
 .reservation-demand-list strong {
     display: block;
 }
+
