@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -34,7 +34,13 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="/">Dashboard</a>
+                {% if session.get('role', '') | lower == 'librarian' %}
+                    <a href="/librarian">Dashboard</a>
+                {% elif session.get('role', '') | lower == 'student' %}
+                    <a href="/student">Dashboard</a>
+                {% else %}
+                    <a href="/">Dashboard</a>
+                {% endif %}
 
                 {% if session.get('user_id') %}
                     <div class="sidebar-user">
@@ -91,6 +97,9 @@
             {% block content %}{% endblock %}
         </main>
     </div>
+
+{% block extra_js %}{% endblock %}
+
 </body>
 
 </html>

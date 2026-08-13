@@ -123,22 +123,34 @@ def delete_borrow_transaction(transaction_id: str):
 
 
 def get_borrow_transactions():
-
     db = get_db()
     docs = db.collection(COLLECTION_BORROW_TRANSACTIONS).stream()
 
     transactions = []
 
-    for doc in docs:
+    book_cache = {}
+    user_cache = {}
 
+    for doc in docs:
         data = doc.to_dict()
 
-        book_doc = db.collection(COLLECTION_BOOKS).document(data["book_id"]).get()
+        book_id = data["book_id"]
+        student_id = data["student_id"]
 
-        user_doc = db.collection(COLLECTION_USERS).document(data["student_id"]).get()
+        # Get book information from cache or Firestore
+        if book_id not in book_cache:
+            book_doc = db.collection(COLLECTION_BOOKS).document(book_id).get()
 
-        book = book_doc.to_dict() if book_doc.exists else {}
-        user = user_doc.to_dict() if user_doc.exists else {}
+            book_cache[book_id] = book_doc.to_dict() if book_doc.exists else {}
+
+        # Get student information from cache or Firestore
+        if student_id not in user_cache:
+            user_doc = db.collection(COLLECTION_USERS).document(student_id).get()
+
+            user_cache[student_id] = user_doc.to_dict() if user_doc.exists else {}
+
+        book = book_cache[book_id]
+        user = user_cache[student_id]
 
         data["id"] = doc.id
         data["book"] = book.get("title", "Unknown")

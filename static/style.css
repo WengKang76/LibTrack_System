@@ -466,11 +466,11 @@ body {
     background: #eff6ff;
 }
 
-.button {
+.dashboard-card .button {
     display: inline-block;
     margin-top: 8px;
     background-color: #2563eb;
-    color: white;
+    color: #ffffff;
     padding: 10px 15px;
     border-radius: 8px;
     text-decoration: none;
@@ -478,10 +478,12 @@ body {
     font-weight: 600;
 }
 
-.button:hover {
+.dashboard-card .button:hover,
+.dashboard-card .button:focus-visible {
     background-color: #1d4ed8;
+    color: #ffffff;
+    text-decoration: none;
 }
-
 .alert {
     padding: 12px 15px;
     border-radius: 10px;
@@ -573,3 +575,552 @@ body {
 .penalty-table tr:nth-child(even) {
     background: #f9fafb;
 }
+=======
+/* Student Notifications for overdue */
+.dashboard-notifications {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.dashboard-notification {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid;
+}
+
+.dashboard-notification ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+}
+
+.dashboard-notification li {
+    margin-bottom: 4px;
+}
+
+.dashboard-notification.due-soon {
+    background: #fff8e1;
+    border-color: #f0c36d;
+}
+
+.dashboard-notification.overdue {
+    background: #fff0f0;
+    border-color: #e57373;
+}
+
+.notification-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.notification-content > strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.notification-content p {
+    display: inline;
+    margin-bottom: 0;
+}
+/* Sprint 3 dashboard summary improvements. */
+.student-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-link:hover,
+.stat-link:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
+    outline: none;
+}
+
+.stat-pill.needs-attention {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.stat-pill.needs-attention strong {
+    color: #b45309;
+}
+
+@media (max-width: 900px) {
+    .student-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .student-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* SCRUM-1534: student attention-required alerts. */
+.attention-section {
+    display: grid;
+    gap: 14px;
+}
+
+.attention-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.attention-count {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 999px;
+    color: #9a3412;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 11px;
+    white-space: nowrap;
+}
+
+.attention-list {
+    display: grid;
+    gap: 12px;
+}
+
+.attention-card {
+    align-items: center;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-left-width: 5px;
+    border-radius: 14px;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+    padding: 17px 18px;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+}
+
+.attention-danger {
+    border-left-color: #dc2626;
+}
+
+.attention-warning {
+    border-left-color: #f59e0b;
+}
+
+.attention-success {
+    border-left-color: #16a34a;
+}
+
+.attention-card-content h3 {
+    margin: 4px 0 5px;
+    font-size: 17px;
+}
+
+.attention-card-content p {
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.attention-category {
+    color: #475569;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.attention-action {
+    background: #eff6ff;
+    border-radius: 9px;
+    color: #1d4ed8;
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 13px;
+    text-decoration: none;
+}
+
+.attention-action:hover,
+.attention-action:focus-visible {
+    background: #dbeafe;
+    outline: none;
+}
+
+.attention-empty {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    color: #166534;
+    padding: 17px 18px;
+}
+
+.attention-unavailable {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+}
+
+@media (max-width: 700px) {
+    .attention-heading-row,
+    .attention-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .attention-count {
+        align-self: flex-start;
+    }
+
+    .attention-action {
+        text-align: center;
+    }
+}
+
+
+/* SCRUM-1535: live librarian dashboard statistics. */
+.librarian-statistics-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.librarian-stat-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 15px;
+    box-shadow: 0 7px 18px rgba(15, 23, 42, 0.06);
+    display: grid;
+    gap: 5px;
+    min-height: 120px;
+    padding: 17px;
+}
+
+.librarian-stat-card strong {
+    color: #1d4ed8;
+    font-size: 24px;
+    overflow-wrap: anywhere;
+}
+
+.librarian-stat-card > span:last-child {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.librarian-stat-icon {
+    font-size: 21px;
+}
+
+.librarian-stat-attention {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.librarian-stat-attention strong {
+    color: #b45309;
+}
+
+@media (max-width: 950px) {
+    .librarian-statistics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .librarian-statistics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* SCRUM-1536: Librarian pending-action summary */
+.dashboard-heading-row {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.pending-total-badge {
+    background: #e8eefc;
+    border-radius: 999px;
+    color: #243b70;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.5rem 0.85rem;
+    white-space: nowrap;
+}
+
+.pending-action-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.pending-action-card {
+    background: #ffffff;
+    border: 1px solid #e4e9f2;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(32, 52, 89, 0.07);
+    color: #26334d;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-height: 150px;
+    padding: 1.1rem;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pending-action-card:hover,
+.pending-action-card:focus-visible {
+    box-shadow: 0 10px 26px rgba(32, 52, 89, 0.13);
+    transform: translateY(-2px);
+}
+
+.pending-action-card strong {
+    color: #1c2a49;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.pending-action-card span:not(.pending-action-icon) {
+    font-weight: 700;
+}
+
+.pending-action-card small {
+    color: #68758c;
+    margin-top: auto;
+}
+
+.pending-action-icon {
+    font-size: 1.4rem;
+}
+
+.pending-action-warning {
+    border-color: #f2c66d;
+    background: #fffaf0;
+}
+
+.pending-action-danger {
+    border-color: #ef9a9a;
+    background: #fff5f5;
+}
+
+@media (max-width: 640px) {
+    .dashboard-heading-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pending-total-badge {
+        align-self: flex-start;
+    }
+}
+
+/* SCRUM-1537: Filtered operational reports */
+.report-filter-form {
+    align-items: end;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.report-filter-form label {
+    color: #34415b;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    font-weight: 700;
+    gap: 0.4rem;
+}
+
+.report-filter-form input,
+.report-filter-form select {
+    background: #ffffff;
+    border: 1px solid #ccd5e5;
+    border-radius: 9px;
+    color: #24324b;
+    font: inherit;
+    min-height: 42px;
+    padding: 0.65rem 0.75rem;
+}
+
+.report-filter-actions {
+    display: flex;
+    gap: 0.65rem;
+}
+
+.report-primary-button,
+.report-secondary-button {
+    align-items: center;
+    border-radius: 9px;
+    display: inline-flex;
+    font-weight: 700;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0.65rem 0.9rem;
+    text-decoration: none;
+}
+
+.report-primary-button {
+    background: #243f7a;
+    border: 1px solid #243f7a;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.report-secondary-button {
+    background: #ffffff;
+    border: 1px solid #ccd5e5;
+    color: #34415b;
+}
+
+.report-status-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.report-status-summary span {
+    background: #edf2fc;
+    border-radius: 999px;
+    color: #31466f;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.75rem;
+}
+
+.report-table-wrapper {
+    overflow-x: auto;
+}
+
+.report-table {
+    border-collapse: collapse;
+    min-width: 900px;
+    width: 100%;
+}
+
+.report-table th,
+.report-table td {
+    border-bottom: 1px solid #e6ebf3;
+    padding: 0.85rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.report-table th {
+    background: #f4f7fc;
+    color: #31405d;
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.report-status-pill {
+    background: #e8eefc;
+    border-radius: 999px;
+    color: #2d4577;
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.55rem;
+    white-space: nowrap;
+}
+
+.report-empty-state {
+    background: #f7f9fd;
+    border: 1px dashed #cbd5e7;
+    border-radius: 12px;
+    color: #59677f;
+    padding: 2rem;
+    text-align: center;
+}
+
+.report-empty-state span {
+    font-size: 2rem;
+}
+
+.report-empty-state h3 {
+    color: #2b3955;
+    margin: 0.6rem 0 0.35rem;
+}
+
+@media (max-width: 640px) {
+    .report-filter-actions {
+        flex-direction: column;
+    }
+}
+
+/* SCRUM-1538 detailed borrowing activity report */
+.report-table-detailed {
+    min-width: 1180px;
+}
+
+.report-cell-secondary {
+    color: #6b7890;
+    display: block;
+    font-size: 0.78rem;
+    margin-top: 0.2rem;
+}
+
+.report-overdue-row {
+    background: #fff8f6;
+}
+
+.report-overdue-indicator {
+    color: #b53d32;
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+/* SCRUM-1539 overdue and penalty report */
+.report-table-overdue-penalty {
+    min-width: 1500px;
+}
+
+
+/* SCRUM-1541 reservation activity and demand report */
+.report-filter-hint {
+    display: block;
+    margin-top: 0.3rem;
+    color: #667085;
+    font-size: 0.78rem;
+}
+
+.reservation-demand-summary {
+    margin: 1rem 0;
+}
+
+.reservation-demand-summary h3 {
+    margin-bottom: 0.6rem;
+}
+
+.reservation-demand-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.reservation-demand-list span {
+    border: 1px solid #e4e7ec;
+    border-radius: 0.65rem;
+    padding: 0.6rem 0.8rem;
+    background: #fff;
+}
+
+.reservation-demand-list strong {
+    display: block;
+}
+
