@@ -7,8 +7,35 @@ import modules.book_catalogue.routes as book_routes
 pytestmark = pytest.mark.usefixtures("login_as_librarian")
 
 
+
+
+def _status_update_data(status):
+    data = {
+        "status": status,
+    }
+
+    if status in {
+        "Damaged",
+        "Lost",
+    }:
+        data["reason"] = (
+            "Status updated during "
+            "librarian inspection."
+        )
+
+        data[
+            "confirm_status_change"
+        ] = "confirmed"
+
+    return data
+
+
 class FakeDocumentSnapshot:
-    def __init__(self, document_id, data):
+    def __init__(
+        self,
+        document_id,
+        data,
+    ):
         self.id = document_id
         self._data = data
         self.exists = data is not None
@@ -247,7 +274,9 @@ def test_scrum_695_accepts_each_valid_status(
 
     response = client.post(
         ("/books/copies/status/" "BOOK001/COPY-BOOK001-001"),
-        data={"status": new_status},
+        data=_status_update_data(
+            new_status
+    ),
     )
 
     assert response.status_code == 302
@@ -273,7 +302,9 @@ def test_scrum_695_updates_only_selected_copy(
 
     response = client.post(
         ("/books/copies/status/" "BOOK001/COPY-BOOK001-001"),
-        data={"status": "Damaged"},
+           data=_status_update_data(
+            "Damaged"
+        ),
     )
 
     assert response.status_code == 302
@@ -316,7 +347,9 @@ def test_scrum_695_redirects_to_book_details(
 
     response = client.post(
         ("/books/copies/status/" "BOOK001/COPY-BOOK001-001"),
-        data={"status": "Lost"},
+            data=_status_update_data(
+            "Lost"
+    ),
     )
 
     assert response.status_code == 302
@@ -332,7 +365,9 @@ def test_scrum_695_displays_success_message(
 
     response = client.post(
         ("/books/copies/status/" "BOOK001/COPY-BOOK001-001"),
-        data={"status": "Damaged"},
+            data=_status_update_data(
+            "Damaged"
+        ),
         follow_redirects=True,
     )
 
@@ -419,7 +454,9 @@ def test_scrum_695_summary_changes_after_status_update(
 
     update_response = client.post(
         ("/books/copies/status/" "BOOK001/COPY-BOOK001-001"),
-        data={"status": "Damaged"},
+            data=_status_update_data(
+        "Damaged"
+        ),
     )
 
     assert update_response.status_code == 302

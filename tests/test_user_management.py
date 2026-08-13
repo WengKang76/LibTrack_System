@@ -148,7 +148,9 @@ def test_scrum_511_manage_users_page_loads(
 
     assert response.status_code == 200
     assert b"User Management" in response.data
-    assert b"Demonstration data" in response.data
+    assert b"Search Students" in response.data
+    assert b"Account Status" in response.data
+    assert b"Sort By" in response.data
 
 
 def test_scrum_511_displays_only_student_users(
@@ -233,7 +235,10 @@ def test_scrum_511_empty_database_displays_message(
     response = client.get("/users/")
 
     assert response.status_code == 200
-    assert b"No user records found" in response.data
+    assert (
+    b"No Student accounts found"
+    in response.data
+)
 
 
 # ============================================================

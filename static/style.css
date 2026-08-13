@@ -484,6 +484,7 @@ body {
     color: #ffffff;
     text-decoration: none;
 }
+
 .alert {
     padding: 12px 15px;
     border-radius: 10px;
@@ -575,7 +576,7 @@ body {
 .penalty-table tr:nth-child(even) {
     background: #f9fafb;
 }
-=======
+
 /* Student Notifications for overdue */
 .dashboard-notifications {
     display: flex;

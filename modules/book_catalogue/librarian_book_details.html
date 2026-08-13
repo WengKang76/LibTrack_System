@@ -69,6 +69,35 @@
                 ) }}"
                 class="inline-action-form"
             >
+            <input
+    type="hidden"
+    name="return_q"
+    value="{{ return_q }}"
+>
+
+<input
+    type="hidden"
+    name="return_category"
+    value="{{ return_category }}"
+>
+
+<input
+    type="hidden"
+    name="return_status"
+    value="{{ return_status }}"
+>
+
+<input
+    type="hidden"
+    name="return_sort"
+    value="{{ return_sort }}"
+>
+
+<input
+    type="hidden"
+    name="return_page"
+    value="{{ return_page }}"
+>
                 <button
                     type="submit"
                     class="button button-restore"
@@ -80,9 +109,7 @@
             {% endif %}
 
             <a
-                href="{{ url_for(
-                    'book_catalogue.manage_books'
-                ) }}"
+                href="{{ catalogue_return_url }}"
                 class="button button-secondary"
             >
                 Back to Catalogue
@@ -301,30 +328,198 @@
 
     <section class="details-section">
 
-        <div class="section-heading">
+    <div class="section-heading">
 
-            <div>
-                <h2>Individual Physical Copies</h2>
+        <div>
+            <h2>Individual Physical Copies</h2>
 
-                <p>
-                    Each physical copy has its own unique
-                    copy ID.
-                </p>
-            </div>
-
-            <a
-                href="{{ url_for(
-                    'book_catalogue.add_book_copies',
-                    book_id=book.book_id
-                ) }}"
-                class="button button-small"
-            >
-                Add More Copies
-            </a>
-
+            <p>
+                Each physical copy has its own unique
+                copy ID.
+            </p>
         </div>
 
-        {% if copies %}
+        <a
+            href="{{ url_for(
+                'book_catalogue.add_book_copies',
+                book_id=book.book_id
+            ) }}"
+            class="button button-small"
+        >
+            Add More Copies
+        </a>
+
+    </div>
+
+    <form
+    class="copy-search-tools"
+    method="GET"
+    action="{{ url_for(
+        'book_catalogue.librarian_book_details',
+        book_id=book.book_id
+    ) }}"
+>
+<input
+    type="hidden"
+    name="return_q"
+    value="{{ return_q }}"
+>
+
+<input
+    type="hidden"
+    name="return_category"
+    value="{{ return_category }}"
+>
+
+<input
+    type="hidden"
+    name="return_status"
+    value="{{ return_status }}"
+>
+
+<input
+    type="hidden"
+    name="return_sort"
+    value="{{ return_sort }}"
+>
+
+<input
+    type="hidden"
+    name="return_page"
+    value="{{ return_page }}"
+>
+    <div class="copy-search-field">
+        <label for="copy-search">
+            Search by Copy ID
+        </label>
+
+        <input
+            id="copy-search"
+            type="search"
+            name="copy_q"
+            value="{{ copy_search_query }}"
+            placeholder="Enter a complete or partial Copy ID"
+            autocomplete="off"
+        >
+    </div>
+
+    <div class="copy-filter-field">
+        <label for="copy-status-filter">
+            Copy Status
+        </label>
+
+        <select
+            id="copy-status-filter"
+            name="copy_status"
+        >
+            <option
+                value="all"
+                {% if copy_status_filter == 'all' %}
+                    selected
+                {% endif %}
+            >
+                All Statuses
+            </option>
+
+            <option
+                value="available"
+                {% if copy_status_filter == 'available' %}
+                    selected
+                {% endif %}
+            >
+                Available
+            </option>
+
+            <option
+                value="borrowed"
+                {% if copy_status_filter == 'borrowed' %}
+                    selected
+                {% endif %}
+            >
+                Borrowed
+            </option>
+
+            <option
+                value="reserved"
+                {% if copy_status_filter == 'reserved' %}
+                    selected
+                {% endif %}
+            >
+                Reserved
+            </option>
+
+            <option
+                value="damaged"
+                {% if copy_status_filter == 'damaged' %}
+                    selected
+                {% endif %}
+            >
+                Damaged
+            </option>
+
+            <option
+                value="lost"
+                {% if copy_status_filter == 'lost' %}
+                    selected
+                {% endif %}
+            >
+                Lost
+            </option>
+        </select>
+    </div>
+
+    <div class="copy-search-actions">
+        <button
+            type="submit"
+            class="button"
+        >
+            Apply
+        </button>
+
+        {% if has_active_copy_criteria %}
+            <a
+                href="{{ url_for(
+                    'book_catalogue.librarian_book_details',
+                    book_id=book.book_id
+                ) }}"
+                class="
+                    button
+                    button-secondary
+                "
+            >
+                Clear
+            </a>
+        {% endif %}
+    </div>
+</form>
+
+   <div class="copy-result-summary">
+    Showing
+    <strong>
+        {{ copy_result_count }}
+    </strong>
+    of
+    <strong>
+        {{ total_copy_count }}
+    </strong>
+    physical copies
+
+    {% if has_active_copy_search %}
+        for Copy ID
+        <strong>
+            “{{ copy_search_query }}”
+        </strong>
+    {% endif %}
+
+    {% if copy_status_filter != 'all' %}
+        with status
+        <strong>
+            {{ copy_status_filter | title }}
+        </strong>
+    {% endif %}
+</div>
+
+    {% if copies %}
 
         <div class="table-container">
 
@@ -345,123 +540,152 @@
 
                     {% for copy in copies %}
 
-                    <tr>
+                        <tr>
 
-                        <td>
-                            <strong>
-                                {{ copy.get('copy_id', '-') }}
-                            </strong>
-                        </td>
+                            <td>
+                                <strong>
+                                    {{
+                                        copy.get(
+                                            'copy_id',
+                                            '-'
+                                        )
+                                    }}
+                                </strong>
+                            </td>
 
-                        <td>
-                            {{ copy.get('copy_number', '-') }}
-                        </td>
+                            <td>
+                                {{
+                                    copy.get(
+                                        'copy_number',
+                                        '-'
+                                    )
+                                }}
+                            </td>
 
-                        <td>
-                            <span
-                                class="copy-status status-{{
+                            <td>
+                                <span
+                                    class="copy-status status-{{
+                                        copy.get(
+                                            'status',
+                                            'unknown'
+                                        ) | lower
+                                    }}"
+                                >
+                                    {{
+                                        copy.get(
+                                            'status',
+                                            '-'
+                                        )
+                                    }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{
+                                    copy.get(
+                                        'condition',
+                                        '-'
+                                    )
+                                }}
+                            </td>
+
+                            <td>
+                                {{
+                                    copy.get(
+                                        'created_at',
+                                        '-'
+                                    )
+                                }}
+                            </td>
+
+                            <td>
+                                {% set copy_document_id =
+                                    copy.get('document_id')
+                                    or copy.get('copy_id')
+                                %}
+
+                                {% set current_copy_status =
                                     copy.get(
                                         'status',
-                                        'unknown'
+                                        ''
                                     ) | lower
-                                }}"
-                            >
-                                {{ copy.get('status', '-') }}
-                            </span>
-                        </td>
+                                %}
 
-                        <td>
-                            {{ copy.get('condition', '-') }}
-                        </td>
+                                <div class="copy-action-buttons">
 
-                        <td>
-                            {{ copy.get('created_at', '-') }}
-                        </td>
+                                    <a
+                                        href="{{ url_for(
+                                            'book_catalogue.update_copy_status',
+                                            book_id=book.book_id,
+                                            copy_id=copy_document_id
+                                        ) }}"
+                                        class="
+                                            button
+                                            button-small
+                                            button-status
+                                        "
+                                    >
+                                        Update Status
+                                    </a>
 
-                        <td>
-                            {% set copy_document_id =
-                                copy.get('document_id')
-                                or copy.get('copy_id')
-                            %}
+                                    {% if current_copy_status == 'damaged' %}
 
-                            {% set current_copy_status =
-                                copy.get('status', '') | lower
-                            %}
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'book_catalogue.restore_damaged_copy',
+                                                book_id=book.book_id,
+                                                copy_id=copy_document_id
+                                            ) }}"
+                                            class="inline-action-form"
+                                        >
+                                        <input
+    type="hidden"
+    name="return_q"
+    value="{{ return_q }}"
+>
 
-                            <div class="copy-action-buttons">
+<input
+    type="hidden"
+    name="return_category"
+    value="{{ return_category }}"
+>
 
-    <a
-        href="{{ url_for(
-            'book_catalogue.update_copy_status',
-            book_id=book.book_id,
-            copy_id=copy_document_id
-        ) }}"
-        class="button button-small button-status"
-    >
-        Update Status
-    </a>
+<input
+    type="hidden"
+    name="return_status"
+    value="{{ return_status }}"
+>
 
-    {% if current_copy_status == 'damaged' %}
+<input
+    type="hidden"
+    name="return_sort"
+    value="{{ return_sort }}"
+>
 
-        <form
-            method="POST"
-            action="{{ url_for(
-                'book_catalogue.restore_damaged_copy',
-                book_id=book.book_id,
-                copy_id=copy_document_id
-            ) }}"
-            class="inline-action-form"
-        >
-            <button
-                type="submit"
-                class="button button-small button-restore"
-            >
-                Restore Damaged Copy
-            </button>
-        </form>
+<input
+    type="hidden"
+    name="return_page"
+    value="{{ return_page }}"
+>
+                                            <button
+                                                type="submit"
+                                                class="
+                                                    button
+                                                    button-small
+                                                    button-restore
+                                                "
+                                            >
+                                                Restore Damaged Copy
+                                            </button>
+                                        </form>
 
-    {% endif %}
+                                    {% endif %}
 
-    {% if current_copy_status not in [
-        'borrowed',
-        'reserved'
-    ] %}
+                                </div>
+                            </td>
 
-        <form
-            method="POST"
-            action="{{ url_for(
-                'book_catalogue.delete_book_copy',
-                book_id=book.book_id,
-                copy_id=copy_document_id
-            ) }}"
-            class="inline-action-form"
-            onsubmit="
-                return confirm(
-                    'Are you sure you want to permanently delete this physical copy?'
-                );
-            "
-        >
-            <button
-                type="submit"
-                class="button button-small button-danger"
-            >
-                Delete Copy
-            </button>
-        </form>
-
-    {% else %}
-
-        <span class="transaction-warning">
-            Cannot delete while
-            {{ current_copy_status }}
-        </span>
-
-    {% endif %}
-
-</div>
-                        </td>
-
-                    </tr>
+                        </tr>
 
                     {% endfor %}
 
@@ -471,32 +695,64 @@
 
         </div>
 
-        {% else %}
+    {% else %}
 
         <div class="empty-copy-message">
 
-            <h3>No physical-copy records found</h3>
+           {% if has_active_copy_criteria %}
 
-            <p>
-                Add a physical copy to begin managing this
-                book's individual copies.
-            </p>
+                <h3>
+                    No matching physical copies found
+                </h3>
 
-            <a
-                href="{{ url_for(
-                    'book_catalogue.add_book_copies',
-                    book_id=book.book_id
-                ) }}"
-                class="button"
-            >
-                Add First Copy
-            </a>
+                <p>
+                    No physical copies match the selected
+                    search or status criteria.
+                </p>
+
+                <a
+                    href="{{ url_for(
+    'book_catalogue.librarian_book_details',
+    book_id=book.book_id,
+    return_q=return_q,
+    return_category=return_category,
+    return_status=return_status,
+    return_sort=return_sort,
+    return_page=return_page
+) }}"
+                    class="button"
+                >
+                    Clear Search and Filter
+                </a>
+
+            {% else %}
+
+                <h3>
+                    No physical-copy records found
+                </h3>
+
+                <p>
+                    Add a physical copy to begin managing
+                    this book's individual copies.
+                </p>
+
+                <a
+                    href="{{ url_for(
+                        'book_catalogue.add_book_copies',
+                        book_id=book.book_id
+                    ) }}"
+                    class="button"
+                >
+                    Add First Copy
+                </a>
+
+            {% endif %}
 
         </div>
 
-        {% endif %}
+    {% endif %}
 
-    </section>
+</section>
 
 </div>
 

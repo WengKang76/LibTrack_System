@@ -115,37 +115,64 @@
 
             <div class="form-group">
 
-                <label for="status">
-                    New Copy Status
-                </label>
+    <label for="status">
+        New Copy Status
+    </label>
 
-                <select
-                    id="status"
-                    name="status"
-                    required
-                >
+    <select
+        id="status"
+        name="status"
+        required
+    >
+        {% for status in copy_statuses %}
 
-                    {% for status in copy_statuses %}
+            <option
+                value="{{ status }}"
+                {% if
+                    (selected_status or copy_record.get('status'))
+                    == status
+                %}
+                    selected
+                {% endif %}
+            >
+                {{ status }}
+            </option>
 
-                    <option
-                        value="{{ status }}"
-                        {% if (
-                            status
-                            == copy_record.get('status')
-                        ) %}
-                        selected
-                        {% endif %}
-                    >
-                        {{ status }}
-                    </option>
+        {% endfor %}
+    </select>
 
-                    {% endfor %}
+</div>
 
-                </select>
+<div class="form-group">
+    <label for="status-reason">
+        Reason for Damaged or Lost Status
+    </label>
 
-            </div>
+    <textarea
+        id="status-reason"
+        name="reason"
+        rows="4"
+        maxlength="500"
+        placeholder="Enter the reason when marking this copy as Damaged or Lost."
+    >{{ status_reason or '' }}</textarea>
 
-            <div class="copy-status-help">
+    <p class="form-help-text">
+        A reason is required when the selected
+        status is Damaged or Lost.
+    </p>
+</div>
+
+<div class="status-confirmation">
+    <label>
+        <input
+            type="checkbox"
+            name="confirm_status_change"
+            value="confirmed"
+        >
+        I confirm that the selected copy status
+        is correct.
+    </label>
+</div>
 
                 <p>
                     <strong>Available:</strong>

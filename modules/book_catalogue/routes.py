@@ -166,6 +166,7 @@ def _get_book_copies(book_id):
     """Return every physical copy that belongs to a book."""
     copies_documents = (
         db.collection(COLLECTION_BOOKS).document(book_id).collection("copies").stream()
+
     )
 
     copies = []
@@ -176,6 +177,381 @@ def _get_book_copies(book_id):
 
     copies.sort(key=lambda copy_record: int(copy_record.get("copy_number", 0)))
     return copies
+# ============================================================
+# SCRUM-1526: FILTER INDIVIDUAL BOOK COPIES
+# ============================================================
+
+VALID_COPY_STATUS_FILTERS = {
+    "all",
+    "available",
+    "borrowed",
+    "reserved",
+    "damaged",
+    "lost",
+}
+
+
+def _copy_matches_status_filter(
+    copy_record,
+    status_filter,
+):
+    """
+    Return True when the physical copy matches
+    the selected copy-status filter.
+    """
+
+    if status_filter == "all":
+        return True
+
+    copy_status = (
+        _normalise_copy_search_text(
+            copy_record.get(
+                "status",
+                "",
+            )
+        )
+    )
+
+    return copy_status == status_filter
+# ============================================================
+# SCRUM-1524: SEARCH INDIVIDUAL BOOK COPIES
+# ============================================================
+
+def _normalise_copy_search_text(value):
+    return str(
+        value or ""
+    ).strip().casefold()
+
+
+def _copy_identifier(copy_record):
+    """
+    Return the physical copy's unique identifier.
+    """
+
+    return str(
+        copy_record.get("copy_id")
+        or copy_record.get("document_id")
+        or ""
+    ).strip()
+
+
+def _copy_matches_search(
+    copy_record,
+    search_query,
+):
+    """
+    Return True when the complete or partial
+    Copy ID matches the search keyword.
+
+    Matching is case-insensitive.
+    """
+
+    normalised_query = (
+        _normalise_copy_search_text(
+            search_query
+        )
+    )
+
+    if not normalised_query:
+        return True
+
+    copy_id = _normalise_copy_search_text(
+        _copy_identifier(
+            copy_record
+        )
+    )
+
+    return normalised_query in copy_id
+
+def _parse_book_year(value):
+    try:
+        return int(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return None
+
+
+def _parse_book_datetime(value):
+    if isinstance(value, datetime):
+        return value
+
+    text_value = str(
+        value or ""
+    ).strip()
+
+    if not text_value:
+        return None
+
+    supported_formats = (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
+    )
+
+    for date_format in supported_formats:
+        try:
+            return datetime.strptime(
+                text_value,
+                date_format,
+            )
+        except ValueError:
+            continue
+
+    return None
+
+
+def _book_available_copy_count(book):
+    try:
+        return int(
+            book.get(
+                "available_copies",
+                0,
+            )
+            or 0
+        )
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 0
+    # ============================================================
+# SCRUM-1529: LOW AND ZERO BOOK AVAILABILITY
+# ============================================================
+
+LOW_AVAILABILITY_THRESHOLD = 2
+
+
+def _book_availability_details(book):
+    """
+    Classify a book according to its number of
+    currently available physical copies.
+    """
+
+    available_count = max(
+        0,
+        _book_available_copy_count(
+            book
+        ),
+    )
+
+    if available_count == 0:
+        availability_level = "zero"
+        availability_label = (
+            "No Copies Available"
+        )
+        needs_attention = True
+
+    elif (
+        available_count
+        <= LOW_AVAILABILITY_THRESHOLD
+    ):
+        availability_level = "low"
+        availability_label = (
+            "Low Availability"
+        )
+        needs_attention = True
+
+    else:
+        availability_level = "normal"
+        availability_label = "Available"
+        needs_attention = False
+
+    return {
+        "available_count": available_count,
+        "availability_level": (
+            availability_level
+        ),
+        "availability_label": (
+            availability_label
+        ),
+        "needs_attention": needs_attention,
+    }
+
+
+def _sort_books(
+    books,
+    sort_option,
+):
+    def title_key(book):
+        return (
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+            _normalise_book_search_text(
+                book.get(
+                    "author",
+                    "",
+                )
+            ),
+        )
+
+    def author_key(book):
+        return (
+            _normalise_book_search_text(
+                book.get(
+                    "author",
+                    "",
+                )
+            ),
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    def year_key(
+        book,
+        newest=False,
+    ):
+        year = _parse_book_year(
+            book.get(
+                "publication_year"
+            )
+        )
+
+        is_missing = year is None
+        safe_year = (
+            year
+            if year is not None
+            else 0
+        )
+
+        return (
+            is_missing,
+            -safe_year
+            if newest
+            else safe_year,
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    def date_added_key(
+        book,
+        newest=False,
+    ):
+        created_at = _parse_book_datetime(
+            book.get(
+                "created_at"
+            )
+        )
+
+        is_missing = created_at is None
+
+        if created_at is None:
+            safe_timestamp = 0.0
+        else:
+            safe_timestamp = (
+                created_at.timestamp()
+            )
+
+        return (
+            is_missing,
+            -safe_timestamp
+            if newest
+            else safe_timestamp,
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    def available_count_key(
+        book,
+        highest=False,
+    ):
+        available_count = (
+            _book_available_copy_count(
+                book
+            )
+        )
+
+        return (
+            -available_count
+            if highest
+            else available_count,
+            _normalise_book_search_text(
+                book.get(
+                    "title",
+                    "",
+                )
+            ),
+        )
+
+    if sort_option == "title_desc":
+        books.sort(
+            key=title_key,
+            reverse=True,
+        )
+
+    elif sort_option == "author_asc":
+        books.sort(
+            key=author_key,
+        )
+
+    elif sort_option == "author_desc":
+        books.sort(
+            key=author_key,
+            reverse=True,
+        )
+
+    elif sort_option == "publication_year_newest":
+        books.sort(
+            key=lambda book: year_key(
+                book,
+                newest=True,
+            )
+        )
+
+    elif sort_option == "publication_year_oldest":
+        books.sort(
+            key=year_key,
+        )
+
+    elif sort_option == "date_added_newest":
+        books.sort(
+            key=lambda book: date_added_key(
+                book,
+                newest=True,
+            )
+        )
+
+    elif sort_option == "date_added_oldest":
+        books.sort(
+            key=date_added_key,
+        )
+
+    elif sort_option == "available_copies_highest":
+        books.sort(
+            key=lambda book: available_count_key(
+                book,
+                highest=True,
+            )
+        )
+
+    elif sort_option == "available_copies_lowest":
+        books.sort(
+            key=available_count_key,
+        )
+
+    else:
+        books.sort(
+            key=title_key,
+        )
+
+    return books
 
 
 def _get_book_copy_by_id(book_id, copy_id):
@@ -376,27 +752,416 @@ def _is_book_active(book):
     catalogue_status = str(book.get("catalogue_status", "Active")).lower()
     return catalogue_status not in {"inactive", "unavailable"}
 
+# ============================================================
+# SCRUM-1523: SEARCH BOOK RECORDS
+# ============================================================
 
+def _normalise_book_search_text(value):
+    return str(
+        value or ""
+    ).strip().casefold()
+
+
+def _book_matches_search(
+    book,
+    search_query,
+):
+    """
+    Return True when the search keyword matches
+    any searchable book information.
+
+    Search is partial and case-insensitive.
+    """
+
+    normalised_query = (
+        _normalise_book_search_text(
+            search_query
+        )
+    )
+
+    if not normalised_query:
+        return True
+
+    searchable_values = (
+        book.get("title", ""),
+        book.get("author", ""),
+        book.get("isbn", ""),
+        book.get("category", ""),
+        book.get("publisher", ""),
+        book.get("publication_year", ""),
+    )
+
+    return any(
+        normalised_query
+        in _normalise_book_search_text(
+            value
+        )
+        for value in searchable_values
+    )
+# ============================================================
+# SCRUM-1525: FILTER BOOK RECORDS
+# ============================================================
+
+VALID_BOOK_STATUS_FILTERS = {
+    "all",
+    "active",
+    "inactive",
+}
+VALID_BOOK_SORT_OPTIONS = {
+    "title_asc",
+    "title_desc",
+    "author_asc",
+    "author_desc",
+    "publication_year_newest",
+    "publication_year_oldest",
+    "date_added_newest",
+    "date_added_oldest",
+    "available_copies_highest",
+    "available_copies_lowest",
+}
+
+
+def _book_matches_filters(
+    book,
+    category_filter,
+    status_filter,
+):
+    """
+    Return True when the book matches the selected
+    category and catalogue-status filters.
+    """
+
+    book_category = (
+        _normalise_book_search_text(
+            book.get(
+                "category",
+                "",
+            )
+        )
+    )
+
+    book_status = (
+        _normalise_book_search_text(
+            book.get(
+                "catalogue_status",
+                "inactive",
+            )
+        )
+    )
+
+    if (
+        category_filter != "all"
+        and book_category
+        != category_filter
+    ):
+        return False
+
+    if (
+        status_filter != "all"
+        and book_status
+        != status_filter
+    ):
+        return False
+
+    return True
+# ============================================================
+# SCRUM-1528: PAGINATE BOOK MANAGEMENT RESULTS
+# ============================================================
+
+BOOKS_PER_PAGE = 10
+
+
+def _normalise_page_number(value):
+    try:
+        page_number = int(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 1
+
+    if page_number < 1:
+        return 1
+
+    return page_number
+
+
+def _paginate_books(
+    books,
+    requested_page,
+    per_page=BOOKS_PER_PAGE,
+):
+    total_items = len(books)
+
+    total_pages = max(
+        1,
+        (
+            total_items
+            + per_page
+            - 1
+        )
+        // per_page,
+    )
+
+    current_page = min(
+        _normalise_page_number(
+            requested_page
+        ),
+        total_pages,
+    )
+
+    start_index = (
+        current_page - 1
+    ) * per_page
+
+    end_index = (
+        start_index
+        + per_page
+    )
+
+    page_items = books[
+        start_index:end_index
+    ]
+
+    pagination = {
+        "current_page": current_page,
+        "total_pages": total_pages,
+        "total_items": total_items,
+        "per_page": per_page,
+        "has_previous": (
+            current_page > 1
+        ),
+        "has_next": (
+            current_page < total_pages
+        ),
+        "previous_page": (
+            current_page - 1
+        ),
+        "next_page": (
+            current_page + 1
+        ),
+        "start_item": (
+            start_index + 1
+            if total_items
+            else 0
+        ),
+        "end_item": min(
+            end_index,
+            total_items,
+        ),
+    }
+
+    return (
+        page_items,
+        pagination,
+    )
 # ============================================================
 # DISPLAY ALL BOOK RECORDS
 # ============================================================
-
-
-@book_bp.route("/", methods=["GET"])
+@book_bp.route(
+    "/",
+    methods=["GET"],
+)
 @librarian_required
 def manage_books():
+    # SCRUM-1523:
+    # Search by book information.
+    search_query = request.args.get(
+        "q",
+        "",
+    ).strip()
+
+    # SCRUM-1525:
+    # Filter by category and catalogue status.
+    category_filter = (
+        _normalise_book_search_text(
+            request.args.get(
+                "category",
+                "all",
+            )
+        )
+    )
+
+    status_filter = (
+        _normalise_book_search_text(
+            request.args.get(
+                "status",
+                "all",
+            )
+        )
+    )
+
+    if (
+        status_filter
+        not in VALID_BOOK_STATUS_FILTERS
+    ):
+        status_filter = "all"
+
+    # SCRUM-1527:
+    # Sort Book Catalogue results.
+    sort_option = (
+        _normalise_book_search_text(
+            request.args.get(
+                "sort",
+                "title_asc",
+            )
+        )
+    )
+
+    if (
+        sort_option
+        not in VALID_BOOK_SORT_OPTIONS
+    ):
+        sort_option = "title_asc"
+
+    all_books = []
+    category_values = {}
+
+    for document in (
+        db.collection(
+            COLLECTION_BOOKS
+        ).stream()
+    ):
+        book = document.to_dict() or {}
+
+        book["book_id"] = document.id
+
+        book["catalogue_status"] = (
+    "Active"
+    if _is_book_active(book)
+    else "Inactive"
+)
+
+# SCRUM-1529:
+# Identify low or zero availability.
+        availability_details = (
+    _book_availability_details(
+        book
+    )
+)
+
+        book["available_copy_count"] = (
+    availability_details[
+        "available_count"
+    ]
+)
+
+        book["availability_level"] = (
+            availability_details[
+                "availability_level"
+            ]
+        )
+
+        book["availability_label"] = (
+            availability_details[
+                "availability_label"
+            ]
+        )
+
+        book[
+            "needs_availability_attention"
+        ] = availability_details[
+            "needs_attention"
+        ]
+
+        category_name = str(
+            book.get(
+                "category",
+                "",
+            )
+            or ""
+        ).strip()
+
+        if category_name:
+            normalised_category = (
+                _normalise_book_search_text(
+                    category_name
+                )
+            )
+
+            category_values[
+                normalised_category
+            ] = category_name
+
+        all_books.append(book)
+
+    valid_categories = set(
+        category_values.keys()
+    )
+
+    if (
+        category_filter != "all"
+        and category_filter
+        not in valid_categories
+    ):
+        category_filter = "all"
+
     books = []
 
-    for document in db.collection(COLLECTION_BOOKS).stream():
-        book = document.to_dict() or {}
-        book["book_id"] = document.id
-        book["catalogue_status"] = "Active" if _is_book_active(book) else "Inactive"
+    for book in all_books:
+        if not _book_matches_search(
+            book,
+            search_query,
+        ):
+            continue
+
+        if not _book_matches_filters(
+            book,
+            category_filter,
+            status_filter,
+        ):
+            continue
+
         books.append(book)
 
-    books.sort(key=lambda book: str(book.get("title", "")).lower())
-    return render_template("manage_books.html", books=books)
+    # SCRUM-1527:
+    # Sort after filtering.
+    _sort_books(
+        books,
+        sort_option,
+    )
 
+    # SCRUM-1528:
+    # Store total before pagination.
+    total_result_count = len(books)
 
+    books, pagination = _paginate_books(
+        books,
+        request.args.get(
+            "page",
+            "1",
+        ),
+    )
+
+    category_options = sorted(
+        category_values.values(),
+        key=_normalise_book_search_text,
+    )
+
+    has_active_criteria = bool(
+        search_query
+        or category_filter != "all"
+        or status_filter != "all"
+        or sort_option != "title_asc"
+    )
+
+    return render_template(
+        "manage_books.html",
+        books=books,
+        search_query=search_query,
+        category_filter=category_filter,
+        status_filter=status_filter,
+        sort_option=sort_option,
+        category_options=category_options,
+        result_count=total_result_count,
+        pagination=pagination,
+        has_active_search=bool(
+            search_query
+        ),
+        has_active_criteria=(
+            has_active_criteria
+        ),
+    )
 # ============================================================
 # SCRUM-12, SCRUM-1180 AND SCRUM-1181:
 # ADD AND VALIDATE NEW BOOK
@@ -470,7 +1235,8 @@ def add_book():
 
         missing_fields = [
             label
-            for field_name, label in required_fields.items()
+            for field_name, label
+            in required_fields.items()
             if not form_data[field_name]
         ]
 
@@ -479,11 +1245,12 @@ def add_book():
                 render_template(
                     "add_book.html",
                     form_data=form_data,
-                    error=("Please fill in all required fields."),
+                    error=(
+                        "Please fill in all required fields."
+                    ),
                 ),
                 400,
             )
-
         # ----------------------------------------------------
         # SCRUM-1180: Text-length validation
         # ----------------------------------------------------
@@ -658,17 +1425,138 @@ def get_book_by_id(book_id):
 @librarian_required
 def librarian_book_details(book_id):
     book = get_book_by_id(book_id)
+
     if book is None:
         return "Book record not found.", 404
+        # SCRUM-1531:
+    # Preserve Book Catalogue list state.
+    return_q = request.args.get(
+        "return_q",
+        "",
+    ).strip()
 
-    copies = _get_book_copies(book_id)
+    return_category = request.args.get(
+        "return_category",
+        "all",
+    ).strip()
+
+    return_status = request.args.get(
+        "return_status",
+        "all",
+    ).strip()
+
+    return_sort = request.args.get(
+        "return_sort",
+        "title_asc",
+    ).strip()
+
+    return_page = (
+        _normalise_page_number(
+            request.args.get(
+                "return_page",
+                "1",
+            )
+        )
+    )
+
+    catalogue_return_url = url_for(
+        "book_catalogue.manage_books",
+        q=return_q,
+        category=return_category,
+        status=return_status,
+        sort=return_sort,
+        page=return_page,
+    )
+
+    # SCRUM-1524:
+    # Search using a complete or partial Copy ID.
+    copy_search_query = request.args.get(
+        "copy_q",
+        "",
+    ).strip()
+
+    # SCRUM-1526:
+    # Filter individual copies by status.
+    copy_status_filter = (
+        _normalise_copy_search_text(
+            request.args.get(
+                "copy_status",
+                "all",
+            )
+        )
+    )
+
+    if (
+        copy_status_filter
+        not in VALID_COPY_STATUS_FILTERS
+    ):
+        copy_status_filter = "all"
+
+    all_copies = _get_book_copies(
+        book_id
+    )
+
+    copy_summary = _calculate_copy_summary(
+        all_copies
+    )
+
+    copies = []
+
+    for copy_record in all_copies:
+        search_matches = (
+            _copy_matches_search(
+                copy_record,
+                copy_search_query,
+            )
+        )
+
+        status_matches = (
+            _copy_matches_status_filter(
+                copy_record,
+                copy_status_filter,
+            )
+        )
+
+        # The copy must satisfy both criteria.
+        if (
+            search_matches
+            and status_matches
+        ):
+            copies.append(copy_record)
+
+    has_active_copy_criteria = bool(
+        copy_search_query
+        or copy_status_filter != "all"
+    )
+
     return render_template(
         "librarian_book_details.html",
         book=book,
         copies=copies,
-        copy_summary=_calculate_copy_summary(copies),
+        copy_summary=copy_summary,
+        copy_search_query=(
+            copy_search_query
+        ),
+        copy_status_filter=(
+            copy_status_filter
+        ),
+        copy_result_count=len(copies),
+        total_copy_count=len(all_copies),
+        has_active_copy_search=bool(
+            copy_search_query
+        ),
+        has_active_copy_criteria=(
+            has_active_copy_criteria
+        ),
+                return_q=return_q,
+        return_category=return_category,
+        return_status=return_status,
+        return_sort=return_sort,
+        return_page=return_page,
+        catalogue_return_url=(
+            catalogue_return_url
+        ),
     )
-
 
 # ============================================================
 # DEACTIVATE / ACTIVATE WHOLE BOOK IN STUDENT CATALOGUE
@@ -766,15 +1654,37 @@ def activate_book(book_id):
 @librarian_required
 def update_copy_status(book_id, copy_id):
     book = get_book_by_id(book_id)
+
     if book is None:
         return "Book record not found.", 404
 
-    copy_record = _get_book_copy_by_id(book_id, copy_id)
+    copy_record = _get_book_copy_by_id(
+        book_id,
+        copy_id,
+    )
+
     if copy_record is None:
         return "Physical book copy not found.", 404
 
     if request.method == "POST":
-        selected_status = request.form.get("status", "").strip()
+        selected_status = request.form.get(
+            "status",
+            "",
+        ).strip()
+
+        status_reason = request.form.get(
+            "reason",
+            "",
+        ).strip()
+
+        confirmation_value = (
+            request.form.get(
+                "confirm_status_change",
+                "",
+            ).strip()
+        )
+
+        # Validate selected status.
         if selected_status not in COPY_STATUSES:
             return (
                 render_template(
@@ -782,23 +1692,97 @@ def update_copy_status(book_id, copy_id):
                     book=book,
                     copy_record=copy_record,
                     copy_statuses=COPY_STATUSES,
-                    error="Please select a valid copy status.",
+                    selected_status=selected_status,
+                    status_reason=status_reason,
+                    error=(
+                        "Please select a valid "
+                        "copy status."
+                    ),
                 ),
                 400,
             )
 
+        # ----------------------------------------------------
+        # SCRUM-1530:
+        # Damaged and Lost require reason + confirmation.
+        # ----------------------------------------------------
+
+        if selected_status in {
+            "Damaged",
+            "Lost",
+        }:
+            if not status_reason:
+                return (
+                    render_template(
+                        "update_copy_status.html",
+                        book=book,
+                        copy_record=copy_record,
+                        copy_statuses=COPY_STATUSES,
+                        selected_status=selected_status,
+                        status_reason=status_reason,
+                        error=(
+                            "Please provide a reason "
+                            f"for marking this copy as "
+                            f"{selected_status}."
+                        ),
+                    ),
+                    400,
+                )
+
+            if (
+                confirmation_value
+                != "confirmed"
+            ):
+                return (
+                    render_template(
+                        "update_copy_status.html",
+                        book=book,
+                        copy_record=copy_record,
+                        copy_statuses=COPY_STATUSES,
+                        selected_status=selected_status,
+                        status_reason=status_reason,
+                        error=(
+                            "Please confirm the "
+                            f"{selected_status.lower()} "
+                            "status change."
+                        ),
+                    ),
+                    400,
+                )
+
         current_time = _current_timestamp()
+
         copy_updates = {
             "status": selected_status,
             "updated_at": current_time,
         }
 
-        if selected_status in {"Available", "Borrowed", "Reserved"}:
+        if selected_status in {
+            "Available",
+            "Borrowed",
+            "Reserved",
+        }:
             copy_updates["condition"] = "Good"
+            copy_updates["status_reason"] = ""
+            copy_updates["status_reason_type"] = ""
+
         elif selected_status == "Damaged":
             copy_updates["condition"] = "Damaged"
+            copy_updates["status_reason"] = (
+                status_reason
+            )
+            copy_updates["status_reason_type"] = (
+                "Damage"
+            )
+
         elif selected_status == "Lost":
             copy_updates["condition"] = "Lost"
+            copy_updates["status_reason"] = (
+                status_reason
+            )
+            copy_updates["status_reason_type"] = (
+                "Loss"
+            )
 
         (
             db.collection(COLLECTION_BOOKS)
@@ -807,23 +1791,42 @@ def update_copy_status(book_id, copy_id):
             .document(copy_id)
             .update(copy_updates)
         )
-        _sync_book_inventory_from_copies(book_id)
+
+        _sync_book_inventory_from_copies(
+            book_id
+        )
 
         flash(
-            f"{copy_id} status was updated to {selected_status} successfully.",
+            (
+                f"{copy_id} status was updated "
+                f"to {selected_status} successfully."
+            ),
             "success",
         )
+
         return redirect(
-            url_for("book_catalogue.librarian_book_details", book_id=book_id)
+            url_for(
+                "book_catalogue.librarian_book_details",
+                book_id=book_id,
+            )
         )
 
+    # GET request:
+    # Show the update-status form.
     return render_template(
         "update_copy_status.html",
         book=book,
         copy_record=copy_record,
         copy_statuses=COPY_STATUSES,
+        selected_status=copy_record.get(
+            "status",
+            "",
+        ),
+        status_reason=copy_record.get(
+            "status_reason",
+            "",
+        ),
     )
-
 
 # ============================================================
 # SCRUM-688 AND SCRUM-1185:
