@@ -4,6 +4,47 @@
     margin: 0 auto;
 }
 
+/* =========================================================
+   USER MANAGEMENT BUTTONS
+   ========================================================= */
+
+.user-management-page .button,
+.user-details-page .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 7px;
+    color: #ffffff;
+    background-color: #2563eb;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.user-management-page .button:hover,
+.user-details-page .button:hover {
+    color: #ffffff;
+    background-color: #1d4ed8;
+    text-decoration: none;
+}
+
+.user-management-page .button-secondary,
+.user-details-page .button-secondary {
+    color: #334155;
+    background-color: #e2e8f0;
+}
+
+.user-management-page .button-secondary:hover,
+.user-details-page .button-secondary:hover {
+    color: #0f172a;
+    background-color: #cbd5e1;
+}
+
 .user-page-header {
     display: flex;
     align-items: center;

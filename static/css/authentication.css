@@ -151,3 +151,64 @@
     margin-bottom: 18px;
     line-height: 1.5;
 }
+/* =========================================================
+   AUTHENTICATION BUTTONS
+   ========================================================= */
+
+.authentication-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 8px;
+    background-color: #2563eb;
+    color: #ffffff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.authentication-button:hover,
+.authentication-button:focus-visible {
+    background-color: #1d4ed8;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.authentication-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+/* =========================================================
+   AUTHENTICATION BACK BUTTON
+   ========================================================= */
+
+.authentication-back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.authentication-back-button:hover,
+.authentication-back-button:focus-visible {
+    background-color: #e2e8f0;
+    color: #0f172a;
+    text-decoration: none;
+}
