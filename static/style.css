@@ -575,7 +575,7 @@ body {
 .penalty-table tr:nth-child(even) {
     background: #f9fafb;
 }
-=======
+
 /* Student Notifications for overdue */
 .dashboard-notifications {
     display: flex;
