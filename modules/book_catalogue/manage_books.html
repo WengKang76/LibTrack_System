@@ -3,7 +3,10 @@
 {% block extra_css %}
 <link
     rel="stylesheet"
-    href="{{ url_for('static', filename='css/book_catalogue.css') }}"
+    href="{{ url_for(
+        'static',
+        filename='css/book_catalogue.css'
+    ) }}"
 >
 {% endblock %}
 
@@ -12,17 +15,263 @@
 <div class="page-header">
     <div>
         <h1>📚 Book Catalogue Management</h1>
-        <p>View and edit all book records.</p>
+
+        <p>
+            View and edit all book records.
+        </p>
     </div>
 
     <a
-        href="{{ url_for('book_catalogue.add_book') }}"
+        href="{{ url_for(
+            'book_catalogue.add_book'
+        ) }}"
         class="button"
     >
         + Add New Book
     </a>
 </div>
 
+<form
+    class="book-search-tools"
+    method="GET"
+    action="{{ url_for(
+        'book_catalogue.manage_books'
+    ) }}"
+>
+    <div class="book-search-field">
+        <label for="book-search">
+            Search Books
+        </label>
+
+        <input
+            id="book-search"
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Search by title, author, ISBN, category, publisher, or year"
+            autocomplete="off"
+        >
+    </div>
+
+    <div class="book-filter-field">
+        <label for="book-category-filter">
+            Category
+        </label>
+
+        <select
+            id="book-category-filter"
+            name="category"
+        >
+            <option value="all">
+                All Categories
+            </option>
+
+            {% for category in category_options %}
+                <option
+                    value="{{ category | lower }}"
+                    {% if
+                        category_filter
+                        == category | lower
+                    %}
+                        selected
+                    {% endif %}
+                >
+                    {{ category }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="book-filter-field">
+        <label for="book-status-filter">
+            Catalogue Status
+        </label>
+
+        <select
+            id="book-status-filter"
+            name="status"
+        >
+            <option
+                value="all"
+                {% if status_filter == 'all' %}
+                    selected
+                {% endif %}
+            >
+                All Statuses
+            </option>
+
+            <option
+                value="active"
+                {% if status_filter == 'active' %}
+                    selected
+                {% endif %}
+            >
+                Active
+            </option>
+
+            <option
+                value="inactive"
+                {% if status_filter == 'inactive' %}
+                    selected
+                {% endif %}
+            >
+                Inactive
+            </option>
+                </select>
+    </div>
+
+    <div class="book-filter-field">
+        <label for="book-sort">
+            Sort By
+        </label>
+
+        <select
+            id="book-sort"
+            name="sort"
+        >
+            <option
+                value="title_asc"
+                {% if sort_option == 'title_asc' %}
+                    selected
+                {% endif %}
+            >
+                Title: A–Z
+            </option>
+
+            <option
+                value="title_desc"
+                {% if sort_option == 'title_desc' %}
+                    selected
+                {% endif %}
+            >
+                Title: Z–A
+            </option>
+
+            <option
+                value="author_asc"
+                {% if sort_option == 'author_asc' %}
+                    selected
+                {% endif %}
+            >
+                Author: A–Z
+            </option>
+
+            <option
+                value="author_desc"
+                {% if sort_option == 'author_desc' %}
+                    selected
+                {% endif %}
+            >
+                Author: Z–A
+            </option>
+
+            <option
+                value="publication_year_newest"
+                {% if sort_option == 'publication_year_newest' %}
+                    selected
+                {% endif %}
+            >
+                Publication Year: Newest First
+            </option>
+
+            <option
+                value="publication_year_oldest"
+                {% if sort_option == 'publication_year_oldest' %}
+                    selected
+                {% endif %}
+            >
+                Publication Year: Oldest First
+            </option>
+
+            <option
+                value="date_added_newest"
+                {% if sort_option == 'date_added_newest' %}
+                    selected
+                {% endif %}
+            >
+                Date Added: Newest First
+            </option>
+
+            <option
+                value="date_added_oldest"
+                {% if sort_option == 'date_added_oldest' %}
+                    selected
+                {% endif %}
+            >
+                Date Added: Oldest First
+            </option>
+
+            <option
+                value="available_copies_highest"
+                {% if sort_option == 'available_copies_highest' %}
+                    selected
+                {% endif %}
+            >
+                Available Copies: Highest First
+            </option>
+
+            <option
+                value="available_copies_lowest"
+                {% if sort_option == 'available_copies_lowest' %}
+                    selected
+                {% endif %}
+            >
+                Available Copies: Lowest First
+            </option>
+        </select>
+    </div>
+
+    <div class="book-search-actions">
+        <button
+            type="submit"
+            class="button"
+        >
+            Apply
+        </button>
+
+        {% if has_active_criteria %}
+            <a
+                href="{{ url_for(
+                    'book_catalogue.manage_books'
+                ) }}"
+                class="
+                    button
+                    button-secondary
+                "
+            >
+                Clear
+            </a>
+        {% endif %}
+    </div>
+</form>
+
+<div class="book-result-summary">
+    <strong>{{ result_count }}</strong>
+
+    {% if result_count == 1 %}
+        book record found
+    {% else %}
+        book records found
+    {% endif %}
+
+    {% if has_active_search %}
+    for
+    <strong>
+        “{{ search_query }}”
+    </strong>
+{% endif %}
+</div>
+{% if pagination.total_items > 0 %}
+    <div class="pagination-summary">
+        Showing
+        <strong>{{ pagination.start_item }}</strong>
+        to
+        <strong>{{ pagination.end_item }}</strong>
+        of
+        <strong>{{ pagination.total_items }}</strong>
+        book records
+    </div>
+{% endif %}
 {% if books %}
 
 <div class="table-container">
@@ -36,84 +285,309 @@
                 <th>Category</th>
                 <th>Publisher</th>
                 <th>Publication Year</th>
+                <th>Availability</th>
                 <th>Action</th>
             </tr>
         </thead>
 
         <tbody>
             {% for book in books %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ book.get('title', '-') }}</td>
-                <td>{{ book.get('author', '-') }}</td>
-                <td>{{ book.get('isbn', '-') }}</td>
-                <td>{{ book.get('category', '-') }}</td>
-                <td>{{ book.get('publisher', '-') or '-' }}</td>
-                <td>{{ book.get('publication_year', '-') or '-' }}</td>
+                <tr
+                     class="
+                          book-record-row
+                         availability-row-{{
+                          book.get(
+                             'availability_level',
+                             'normal'
+                          )
+                      }}
+                     "
+            >
+                    <td>
+                        {{
+                            (
+                                pagination.current_page - 1
+                            ) * pagination.per_page
+                             + loop.index
+                        }}
+                    </td>
 
-                <td>
-    <div class="action-buttons">
+                    <td>
+                        {{ book.get(
+                            'title',
+                            '-'
+                        ) }}
+                    </td>
 
-        <a
-            href="{{ url_for(
-                'book_catalogue.librarian_book_details',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small button-view"
+                    <td>
+                        {{ book.get(
+                            'author',
+                            '-'
+                        ) }}
+                    </td>
+
+                    <td>
+                        {{ book.get(
+                            'isbn',
+                            '-'
+                        ) }}
+                    </td>
+
+                    <td>
+                        {{ book.get(
+                            'category',
+                            '-'
+                        ) }}
+                    </td>
+
+                    <td>
+                        {{ book.get(
+                            'publisher',
+                            '-'
+                        ) or '-' }}
+                    </td>
+
+                    <td>
+                        {{ book.get(
+                            'publication_year',
+                            '-'
+                        ) or '-' }}
+                    </td>
+<td>
+    <div class="availability-display">
+        <span
+            class="
+                availability-badge
+                availability-{{
+                    book.get(
+                        'availability_level',
+                        'normal'
+                    )
+                }}
+            "
         >
-            View Details
-        </a>
+            {{
+                book.get(
+                    'available_copy_count',
+                    0
+                )
+            }}
+            Available
+        </span>
 
-        <a
-            href="{{ url_for(
-                'book_catalogue.add_book_copies',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small button-add-copy"
-        >
-            Add Copies
-        </a>
-
-        <a
-            href="{{ url_for(
-                'book_catalogue.edit_book',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small"
-        >
-            Edit
-        </a>
-
-        <a
-            href="{{ url_for(
-                'book_catalogue.delete_book',
-                book_id=book['book_id']
-            ) }}"
-            class="button button-small button-danger"
-        >
-            Delete
-        </a>
-
+        {% if
+            book.get(
+                'needs_availability_attention',
+                False
+            )
+        %}
+            <span class="availability-alert-text">
+                {{
+                    book.get(
+                        'availability_label',
+                        ''
+                    )
+                }}
+            </span>
+        {% endif %}
     </div>
 </td>
-            </tr>
+                    <td>
+                        <div class="action-buttons">
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.librarian_book_details',
+                                     book_id=book['book_id'],
+                                    return_q=search_query,
+                                    return_category=category_filter,
+                                    return_status=status_filter,
+                                    return_sort=sort_option,
+                                    return_page=pagination.current_page
+                            ) }}"
+                                class="
+                                    button
+                                    button-small
+                                    button-view
+                                "
+                            >
+                                View Details
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.add_book_copies',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                    button-add-copy
+                                "
+                            >
+                                Add Copies
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.edit_book',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                "
+                            >
+                                Edit
+                            </a>
+
+                            <a
+                                href="{{ url_for(
+                                    'book_catalogue.delete_book',
+                                    book_id=book['book_id']
+                                ) }}"
+                                class="
+                                    button
+                                    button-small
+                                    button-danger
+                                "
+                            >
+                                Delete
+                            </a>
+                        </div>
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
+{% if pagination.total_pages > 1 %}
+    <nav
+        class="book-pagination"
+        aria-label="Book catalogue pages"
+    >
+        {% if pagination.has_previous %}
+            <a
+                class="pagination-button"
+                href="{{ url_for(
+                    'book_catalogue.manage_books',
+                    q=search_query,
+                    category=category_filter,
+                    status=status_filter,
+                    sort=sort_option,
+                    page=pagination.previous_page
+                ) }}"
+            >
+                Previous
+            </a>
+        {% else %}
+            <span
+                class="
+                    pagination-button
+                    pagination-disabled
+                "
+            >
+                Previous
+            </span>
+        {% endif %}
+
+        <div class="pagination-pages">
+            {% for page_number in range(
+                1,
+                pagination.total_pages + 1
+            ) %}
+                {% if
+                    page_number
+                    == pagination.current_page
+                %}
+                    <span
+                        class="
+                            pagination-button
+                            pagination-current
+                        "
+                    >
+                        {{ page_number }}
+                    </span>
+                {% else %}
+                    <a
+                        class="pagination-button"
+                        href="{{ url_for(
+                            'book_catalogue.manage_books',
+                            q=search_query,
+                            category=category_filter,
+                            status=status_filter,
+                            sort=sort_option,
+                            page=page_number
+                        ) }}"
+                    >
+                        {{ page_number }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if pagination.has_next %}
+            <a
+                class="pagination-button"
+                href="{{ url_for(
+                    'book_catalogue.manage_books',
+                    q=search_query,
+                    category=category_filter,
+                    status=status_filter,
+                    sort=sort_option,
+                    page=pagination.next_page
+                ) }}"
+            >
+                Next
+            </a>
+        {% else %}
+            <span
+                class="
+                    pagination-button
+                    pagination-disabled
+                "
+            >
+                Next
+            </span>
+        {% endif %}
+    </nav>
+{% endif %}
+
 {% else %}
 
 <div class="empty-state">
-    <h3>No book records found</h3>
-    <p>Add a book record first.</p>
+    {% if has_active_criteria %}
+        <h3>No matching books found</h3>
 
-    <a
-        href="{{ url_for('book_catalogue.add_book') }}"
-        class="button"
-    >
-        Add New Book
-    </a>
+        <p>
+    No book records match the selected
+    search or filter criteria.
+        </p>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.manage_books'
+            ) }}"
+            class="button"
+        >
+            Clear Search and Filters
+        </a>
+    {% else %}
+        <h3>No book records found</h3>
+
+        <p>
+            Add a book record first.
+        </p>
+
+        <a
+            href="{{ url_for(
+                'book_catalogue.add_book'
+            ) }}"
+            class="button"
+        >
+            Add New Book
+        </a>
+    {% endif %}
 </div>
 
 {% endif %}

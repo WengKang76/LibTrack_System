@@ -13,7 +13,25 @@ COPY_ID = "COPY-BOOK001-001"
 # FAKE FIRESTORE
 # ============================================================
 
+def _status_update_data(status):
+    data = {
+        "status": status,
+    }
 
+    if status in {
+        "Damaged",
+        "Lost",
+    }:
+        data["reason"] = (
+            "Status updated during "
+            "librarian inspection."
+        )
+
+        data[
+            "confirm_status_change"
+        ] = "confirmed"
+
+    return data
 class FakeCopyDocumentReference:
     def __init__(
         self,
@@ -185,9 +203,9 @@ def test_scrum_1185_status_change_updates_copy(
 ):
     response = client.post(
         (f"/books/copies/status/" f"{BOOK_ID}/{COPY_ID}"),
-        data={
-            "status": selected_status,
-        },
+        data=_status_update_data(
+    selected_status
+),
     )
 
     assert response.status_code == 302
@@ -232,9 +250,9 @@ def test_scrum_1185_status_change_recalculates_book(
 ):
     response = client.post(
         (f"/books/copies/status/" f"{BOOK_ID}/{COPY_ID}"),
-        data={
-            "status": selected_status,
-        },
+        data=_status_update_data(
+    selected_status
+),
     )
 
     assert response.status_code == 302
