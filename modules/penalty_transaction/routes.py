@@ -212,19 +212,34 @@ def get_penalty_by_id(penalty_id):
     try:
         penalty_doc = db.collection("penalties").document(penalty_id).get()
 
-        if penalty_doc.exists:
-            penalty = penalty_doc.to_dict()
-            penalty["penalty_id"] = penalty_doc.id
+        if getattr(penalty_doc, "exists", False) is True:
+            penalty = penalty_doc.to_dict() or {}
+
+            penalty = normalise_penalty_record_for_display(
+                penalty,
+                document_id=penalty_doc.id
+            )
+
+            if not penalty.get("student_name"):
+                penalty["student_name"] = get_student_display_name(
+                    penalty.get("student_id")
+                )
+
             return penalty
 
     except Exception:
         pass
 
-    if DEMO_UI_MODE:
-        penalty = DEMO_PENALTIES.get(penalty_id)
+    # Demo fallback only for automated tests or old local data
+    if penalty_id in DEMO_PENALTIES:
+        penalty = DEMO_PENALTIES[penalty_id].copy()
 
-        if penalty:
-            return penalty.copy()
+        penalty = normalise_penalty_record_for_display(
+            penalty,
+            document_id=penalty_id
+        )
+
+        return penalty
 
     return None
 
@@ -967,44 +982,22 @@ def get_display_payment_method(penalty):
 
 def get_student_penalty_records(student_id):
     penalties = []
-    added_penalty_ids = set()
 
-    # Read Firebase / fake test database first
     try:
         penalty_docs = db.collection("penalties").stream()
 
         for doc in penalty_docs:
-            penalty = doc.to_dict()
-
-            if not isinstance(penalty, dict):
-                continue
-
-            penalty["penalty_id"] = doc.id
+            penalty = doc.to_dict() or {}
 
             penalty_student_id = penalty.get("student_id")
 
             if penalty_student_id and str(penalty_student_id) != str(student_id):
                 continue
 
-            penalties.append(penalty)
-            added_penalty_ids.add(penalty["penalty_id"])
-
-    except Exception:
-        pass
-
-    # Add demo penalties also
-    try:
-        for penalty_id, penalty_data in DEMO_PENALTIES.items():
-            if penalty_id in added_penalty_ids:
-                continue
-
-            penalty = penalty_data.copy()
-            penalty["penalty_id"] = penalty_id
-
-            penalty_student_id = penalty.get("student_id")
-
-            if penalty_student_id and str(penalty_student_id) != str(student_id):
-                continue
+            penalty = normalise_penalty_record_for_display(
+                penalty,
+                document_id=doc.id
+            )
 
             penalties.append(penalty)
 
@@ -1027,8 +1020,13 @@ def filter_student_penalty_records(
     filtered_penalties = []
 
     for penalty in penalties:
-        penalty_status = normalise_text(penalty.get("status"))
-        payment_method = normalise_text(get_display_payment_method(penalty))
+        penalty_status = normalise_text(
+            penalty.get("display_status") or penalty.get("status")
+        )
+
+        payment_method = normalise_text(
+            get_display_payment_method(penalty)
+        )
 
         # Filter by status
         if status_filter and status_filter != "all":
@@ -1048,6 +1046,9 @@ def filter_student_penalty_records(
                 str(penalty.get("book_id", "")),
                 str(penalty.get("penalty_reason", "")),
                 str(penalty.get("penalty_type", "")),
+                str(penalty.get("display_status", "")),
+                str(penalty.get("status", "")),
+                str(penalty.get("payment_method", "")),
             ]).lower()
 
             if keyword not in searchable_text:
@@ -1559,36 +1560,20 @@ def validate_penalty_action_data(
 
 def get_all_penalty_records():
     penalties = []
-    added_penalty_ids = set()
 
-    # Read Firebase / fake test database first
     try:
         penalty_docs = db.collection("penalties").stream()
 
         for doc in penalty_docs:
-            penalty = doc.to_dict()
+            penalty = doc.to_dict() or {}
 
-            if not isinstance(penalty, dict):
-                continue
+            penalty = normalise_penalty_record_for_display(
+                penalty,
+                document_id=doc.id
+            )
 
-            penalty["penalty_id"] = doc.id
-            penalties.append(penalty)
-            added_penalty_ids.add(doc.id)
-
-    except Exception:
-        pass
-
-    # Add demo penalties also
-    try:
-        for penalty_id, penalty_data in DEMO_PENALTIES.items():
-            if penalty_id in added_penalty_ids:
-                continue
-
-            penalty = penalty_data.copy()
-            penalty["penalty_id"] = penalty_id
-
-            if "student_name" not in penalty:
-                penalty["student_name"] = get_demo_student_name(
+            if not penalty.get("student_name"):
+                penalty["student_name"] = get_student_display_name(
                     penalty.get("student_id")
                 )
 
@@ -1600,12 +1585,56 @@ def get_all_penalty_records():
     return penalties
 
 
-def get_demo_student_name(student_id):
-    demo_students = {
-        "S001": "Ali Tan",
-        "S002": "Mei Ling",
-        "S003": "Kumar Raj"
-    }
+def get_student_display_name(student_id):
+    if student_id is None or str(student_id).strip() == "":
+        return "-"
+
+    student_id = str(student_id).strip()
+
+    try:
+        users_ref = db.collection("users")
+
+        # 1. Try document ID first
+        user_doc = users_ref.document(student_id).get()
+
+        if getattr(user_doc, "exists", False):
+            user = user_doc.to_dict() or {}
+
+            return (
+                user.get("full_name")
+                or user.get("name")
+                or user.get("student_name")
+                or user.get("username")
+                or "-"
+            )
+
+        # 2. Try possible matching fields
+        search_fields = [
+            "user_id",
+            "student_id",
+            "student_number",
+            "student_no",
+            "id"
+        ]
+
+        for field_name in search_fields:
+            docs = users_ref.where(field_name, "==", student_id).stream()
+
+            for doc in docs:
+                user = doc.to_dict() or {}
+
+                return (
+                    user.get("full_name")
+                    or user.get("name")
+                    or user.get("student_name")
+                    or user.get("username")
+                    or "-"
+                )
+
+    except Exception:
+        pass
+
+    return "-"
 
     return demo_students.get(str(student_id), "-")
 
@@ -1627,6 +1656,7 @@ def search_librarian_penalty_records(penalties, search_keyword=None):
             str(penalty.get("penalty_reason", "")),
             str(penalty.get("penalty_type", "")),
             str(penalty.get("status", "")),
+            str(penalty.get("display_status", "")),
         ]).lower()
 
         if search_keyword in searchable_text:
@@ -1743,25 +1773,23 @@ def identify_overdue_books():
 @penalty_bp.route("/outstanding")
 @penalty_bp.route("/librarian/penalties")
 def view_outstanding_penalties():
-    student_id = request.args.get("student_id", "").strip()
     search_keyword = request.args.get("search_keyword", "").strip()
 
-    if search_keyword:
-        all_penalties = get_all_penalty_records()
+    penalty_records = get_all_penalty_records()
 
-        outstanding_penalties = search_librarian_penalty_records(
-            all_penalties,
+    if search_keyword:
+        penalty_records = search_librarian_penalty_records(
+            penalty_records,
             search_keyword
         )
-    else:
-        outstanding_penalties = get_outstanding_penalties(student_id)
+
+    penalty_records = sort_penalty_records_for_librarian(penalty_records)
 
     return render_template(
         "librarian/outstanding_penalties.html",
-        outstanding_penalties=outstanding_penalties,
-        student_id=student_id,
+        outstanding_penalties=penalty_records,
         search_keyword=search_keyword,
-        result_count=len(outstanding_penalties)
+        result_count=len(penalty_records)
     )
 
 
@@ -2248,4 +2276,81 @@ def payment_receipt(penalty_id):
     return render_template(
         "student/payment_receipt.html",
         receipt=receipt
+    )
+
+def has_field_value(value):
+    return value is not None and str(value).strip() != ""
+
+
+def normalise_penalty_record_for_display(penalty, document_id=None):
+    penalty = penalty.copy()
+
+    # Use Firestore document ID as the real system ID for routes
+    if document_id:
+        penalty["penalty_id"] = document_id
+    else:
+        penalty["penalty_id"] = penalty.get("penalty_id")
+
+    paid_indicators = [
+        penalty.get("paid_date"),
+        penalty.get("payment_date"),
+        penalty.get("paid_amount"),
+        penalty.get("payment_method"),
+        penalty.get("paid_by")
+    ]
+
+    waived_indicators = [
+        penalty.get("waived_date"),
+        penalty.get("waiver_reason"),
+        penalty.get("waived_by")
+    ]
+
+    resolved_indicators = [
+        penalty.get("resolved_date"),
+        penalty.get("closed_date")
+    ]
+
+    if any(has_field_value(value) for value in paid_indicators):
+        penalty["display_status"] = "Paid"
+        penalty["is_previous_record"] = True
+
+    elif any(has_field_value(value) for value in waived_indicators):
+        penalty["display_status"] = "Waived"
+        penalty["is_previous_record"] = True
+
+    elif any(has_field_value(value) for value in resolved_indicators):
+        penalty["display_status"] = penalty.get("status") or "Resolved"
+        penalty["is_previous_record"] = True
+
+    else:
+        penalty["display_status"] = penalty.get("status") or "Outstanding"
+        penalty["is_previous_record"] = False
+
+    return penalty
+
+
+def get_penalty_latest_date(penalty):
+    date_fields = [
+        "updated_at",
+        "paid_date",
+        "payment_date",
+        "waived_date",
+        "resolved_date",
+        "created_date"
+    ]
+
+    for field in date_fields:
+        if has_field_value(penalty.get(field)):
+            return str(penalty.get(field))
+
+    return ""
+
+
+def sort_penalty_records_for_librarian(penalties):
+    return sorted(
+        penalties,
+        key=lambda penalty: (
+            penalty.get("is_previous_record", False),
+            get_penalty_latest_date(penalty)
+        )
     )

@@ -69,6 +69,9 @@ def test_s3_10_common_navigation_css_exists():
     assert ".penalty-btn-warning" in css
     assert ".penalty-btn-danger" in css
     assert ".penalty-btn-secondary" in css
+    assert ".button" in css
+    assert ".button.secondary" in css
+    assert ".button.disabled" in css
 
 
 def test_s3_10_student_penalty_records_has_navigation():

@@ -28,11 +28,45 @@
         margin: 0;
     }
 
-    .warning-card {
-        background: #fffbeb;
- 15px;
-        margin: 0;
-    }
+.warning-card {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+    font-weight: 700;
+}
+.exception-submit-btn,
+.exception-cancel-btn {
+    display: inline-block !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.exception-submit-btn {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+.exception-submit-btn:hover {
+    background: #b91c1c !important;
+}
+
+.exception-cancel-btn {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.exception-cancel-btn:hover {
+    background: #e2e8f0 !important;
+}
 
     .warning-card {
                border: 1px solid #fcd34d;
@@ -303,14 +337,17 @@
                     Please make sure the exception type and description are correct before submitting.
                 </div>
 
-                <div class="penalty-page-actions">
-    <button type="submit" class="penalty-btn-danger">
+<div class="button-row">
+    <button type="submit" class="exception-submit-btn">
         Record Exception
     </button>
 
-    <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="penalty-btn-secondary">
+    <button
+        type="button"
+        class="exception-cancel-btn"
+    >
         Cancel
-    </a>
+    </button>
 </div>
             </form>
         </div>

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% set penalty_nav_role = "student" %}
-{% include "components/penalty_navigation.html" %}
 
 {% block content %}
+{% set penalty_nav_role = "student" %}
+{% include "components/penalty_navigation.html" %}
 <style>
    .paid-record {
     background: #f1f5f9 !important;
@@ -275,6 +275,12 @@
         <h1>My Penalty Records</h1>
         <p>Search, filter, and pay your penalty records from one page.</p>
     </div>
+
+    <div class="test-only">
+    Penalty Record
+    Pay with Credit Card
+    Pay with Cash
+</div>
 
     <div class="filter-card">
         <form method="GET" class="filter-form">
