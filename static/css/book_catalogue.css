@@ -1006,3 +1006,94 @@
         grid-column: auto;
     }
 }
+/* =========================================================
+   BOOK CATALOGUE PAGINATION
+   ========================================================= */
+
+.book-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.pagination-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 38px;
+    padding: 8px 12px;
+    color: #334155;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pagination-button:hover {
+    color: #1d4ed8;
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.pagination-current {
+    color: #ffffff;
+    background-color: #2563eb;
+    border-color: #2563eb;
+    cursor: default;
+}
+
+.pagination-current:hover {
+    color: #ffffff;
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.pagination-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pagination-summary {
+    margin-top: 14px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.pagination-summary strong {
+    color: #0f172a;
+}
+
+@media (max-width: 700px) {
+    .book-pagination {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pagination-pages {
+        order: -1;
+    }
+
+    .pagination-button {
+        text-align: center;
+    }
+}
+
+.form-navigation {
+    margin: 14px 0 20px;
+}
