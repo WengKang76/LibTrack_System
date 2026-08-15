@@ -18,47 +18,78 @@
         rel="stylesheet"
         href="{{ url_for(
             'static',
+            filename='style.css'
+        ) }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            filename='css/navigation.css'
+        ) }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
             filename='css/student_catalogue.css'
         ) }}"
     >
 </head>
 
-<body>
+{% set current_role = session.get('role', '') | lower %}
 
-    <header class="student-header">
-        <div class="header-container">
-
-            <a
-                href="{{ url_for(
-                    'student_catalogue.view_catalogue'
-                ) }}"
-                class="student-brand"
-            >
-                📚 LibTrack
-            </a>
-
-            <nav class="student-navigation">
-                <a
-                    href="{{ url_for(
-                        'student_catalogue.view_catalogue'
-                    ) }}"
-                >
-                    Book Catalogue
+<body class="{% if current_role == 'student' %}role-student{% else %}role-guest{% endif %}">
+    <div class="student-shell">
+        <header class="student-topbar">
+            <div class="student-topbar-inner">
+                <a href="{% if current_role == 'student' %}/student{% else %}/{% endif %}" class="student-topbar-brand">
+                    <span class="student-topbar-brand-icon">📚</span>
+                    <span>
+                        <strong>LibTrack</strong>
+                        <small>Library Management System</small>
+                    </span>
                 </a>
-            </nav>
 
-        </div>
-    </header>
+                <nav class="student-topbar-nav" aria-label="{% if current_role == 'student' %}Student{% else %}Public{% endif %} navigation">
+                    {% if current_role == 'student' %}
+                        <a href="/student">Dashboard</a>
+                        <a href="/catalogue/">Browse Books</a>
+                        <a href="/catalogue/my-reservations">Reservations</a>
+                        <a href="/catalogue/my-borrowed-books">Borrowed Books</a>
+                        <a href="/penalty/student">Penalties</a>
+                    {% else %}
+                        <a href="/">Home</a>
+                        <a href="/student/catalogue/" class="active">Book Catalogue</a>
+                        <a href="/auth/login">Login</a>
+                        <a href="/auth/register">Register</a>
+                    {% endif %}
+                </nav>
 
-    <main class="student-main">
-        {% block content %}{% endblock %}
-    </main>
+                {% if current_role == 'student' and session.get('user_id') %}
+                    <div class="student-topbar-account">
+                        <div class="student-topbar-user">
+                            <strong>{{ session.get('full_name', 'Student') }}</strong>
+                            <span>Student</span>
+                        </div>
 
-    <footer class="student-footer">
-        <p>
-            LibTrack Library Management System
-        </p>
-    </footer>
+                        <form method="POST" action="/auth/logout" class="student-topbar-logout-form">
+                            <button type="submit" class="student-topbar-logout-button">Logout</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </header>
 
+        <main class="student-main student-catalogue-main">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="student-footer">
+            <p>LibTrack Library Management System</p>
+        </footer>
+    </div>
 </body>
 </html>

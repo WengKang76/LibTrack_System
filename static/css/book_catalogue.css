@@ -687,3 +687,413 @@
 .details-header-actions {
     flex-wrap: wrap;
 }
+/* =========================================================
+   Sprint 3 Day 2: Book Catalogue search
+   ========================================================= */
+
+.book-search-tools {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow:
+        0 2px 10px
+        rgba(15, 23, 42, 0.06);
+}
+
+.book-search-field {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.book-search-field label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.book-search-field input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font: inherit;
+}
+
+.book-search-field input:focus {
+    border-color: #2563eb;
+    outline: 3px solid
+        rgba(37, 99, 235, 0.14);
+}
+
+.book-search-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.book-search-actions .button {
+    min-width: 110px;
+    text-align: center;
+}
+
+.book-result-summary {
+    margin-bottom: 16px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.book-result-summary strong {
+    color: #0f172a;
+}
+
+@media (max-width: 720px) {
+    .book-search-tools {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .book-search-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .book-search-actions .button {
+        width: 100%;
+    }
+}
+/* =========================================================
+   Sprint 3 Day 3: Physical Copy ID search
+   ========================================================= */
+
+.copy-search-tools {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    margin-top: 18px;
+    margin-bottom: 14px;
+    padding: 18px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.copy-search-field {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.copy-search-field label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.copy-search-field input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font: inherit;
+}
+
+.copy-search-field input:focus {
+    border-color: #2563eb;
+    outline: 3px solid
+        rgba(37, 99, 235, 0.14);
+}
+
+.copy-search-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.copy-search-actions .button {
+    min-width: 110px;
+    text-align: center;
+}
+
+.copy-result-summary {
+    margin-bottom: 16px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.copy-result-summary strong {
+    color: #0f172a;
+}
+
+@media (max-width: 720px) {
+    .copy-search-tools {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .copy-search-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .copy-search-actions .button {
+        width: 100%;
+    }
+}
+/* =========================================================
+   Sprint 3 Day 3: Book Catalogue filters
+   ========================================================= */
+
+.book-search-tools {
+    display: grid;
+    grid-template-columns:
+        minmax(260px, 2fr)
+        repeat(2, minmax(170px, 1fr));
+    align-items: end;
+}
+
+.book-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.book-filter-field label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.book-filter-field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font: inherit;
+}
+
+.book-filter-field select:focus {
+    border-color: #2563eb;
+    outline: 3px solid
+        rgba(37, 99, 235, 0.14);
+}
+
+.book-search-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+}
+
+@media (max-width: 950px) {
+    .book-search-tools {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .book-search-field {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .book-search-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .book-search-field,
+    .book-search-actions {
+        grid-column: auto;
+    }
+}
+/* =========================================================
+   Sprint 3 Day 3: Physical Copy status filter
+   ========================================================= */
+
+.copy-search-tools {
+    display: grid;
+    grid-template-columns:
+        minmax(260px, 2fr)
+        minmax(180px, 1fr);
+    align-items: end;
+}
+
+.copy-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.copy-filter-field label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.copy-filter-field select {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    color: #0f172a;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font: inherit;
+}
+
+.copy-filter-field select:focus {
+    border-color: #2563eb;
+    outline: 3px solid
+        rgba(37, 99, 235, 0.14);
+}
+
+.copy-search-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+}
+
+@media (max-width: 760px) {
+    .copy-search-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .copy-search-actions {
+        grid-column: auto;
+    }
+}
+/* =========================================================
+   Sprint 3 Day 4: Book sorting controls
+   ========================================================= */
+
+.book-search-tools {
+    grid-template-columns:
+        minmax(260px, 2fr)
+        repeat(3, minmax(160px, 1fr));
+}
+
+@media (max-width: 1150px) {
+    .book-search-tools {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .book-search-field {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 650px) {
+    .book-search-tools {
+        grid-template-columns: 1fr;
+    }
+
+    .book-search-field,
+    .book-search-actions {
+        grid-column: auto;
+    }
+}
+/* =========================================================
+   BOOK CATALOGUE PAGINATION
+   ========================================================= */
+
+.book-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.pagination-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 38px;
+    padding: 8px 12px;
+    color: #334155;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.pagination-button:hover {
+    color: #1d4ed8;
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.pagination-current {
+    color: #ffffff;
+    background-color: #2563eb;
+    border-color: #2563eb;
+    cursor: default;
+}
+
+.pagination-current:hover {
+    color: #ffffff;
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.pagination-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pagination-summary {
+    margin-top: 14px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.pagination-summary strong {
+    color: #0f172a;
+}
+
+@media (max-width: 700px) {
+    .book-pagination {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pagination-pages {
+        order: -1;
+    }
+
+    .pagination-button {
+        text-align: center;
+    }
+}
+
+.form-navigation {
+    margin: 14px 0 20px;
+}

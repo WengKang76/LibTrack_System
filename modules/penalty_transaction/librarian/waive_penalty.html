@@ -5,41 +5,93 @@
 {% endblock %}
 
 {% block content %}
+{% set penalty_nav_role = "librarian" %}
+{% include "components/penalty_navigation.html" %}
+{% include "components/penalty_action_confirmation.html" %}
+<style>
+.waive-cancel-btn {
+    display: inline-block !important;
+    padding: 12px 20px !important;
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+}
 
-<div class="penalty-header">
-    <h1>Penalty, Transactions & Exception Handling</h1>
-    <h2>SCRUM-682: Waive Penalties</h2>
-    <p>This page allows the librarian to waive an outstanding penalty with a valid reason.</p>
+.waive-cancel-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+</style>
+
+
+<div class="librarian-page-wrapper">
+    <div class="librarian-page-header">
+        <h1>Waive Penalty</h1>
+        <p>Review the penalty details and enter a valid reason before waiving the penalty.</p>
+    </div>
+
+    <div class="warning-card">
+        Warning: Waiving a penalty will change the penalty status and may affect the student's outstanding penalty record.
+        <ul class="warning-list">
+            <li>Please confirm the correct penalty record before continuing.</li>
+            <li>A valid waiver reason is required.</li>
+            <li>Paid penalties should not be waived.</li>
+        </ul>
+    </div>
+
+    {% if error %}
+        <div class="error-card">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="penalty-card">
+        <h3>Penalty Details</h3>
+
+        <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
+        <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
+        <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
+        <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
+        <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
+        <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount|float) }}</p>
+        <p><strong>Status:</strong> {{ penalty.status }}</p>
+    </div>
+
+    <div class="penalty-card">
+<form
+    method="POST"
+    class="penalty-payment-form"
+    onsubmit="return confirmPenaltyAction('Waive Penalty', '{{ penalty.penalty_id }}');"
+>
+            <label>Waiver Reason</label>
+            <input
+                type="text"
+                name="waiver_reason"
+                placeholder="Example: Approved by librarian due to valid reason"
+                required
+            >
+
+            <label>Waived By</label>
+            <input type="text" name="waived_by" value="Librarian" required>
+
+<div class="waive-action-row">
+    <button type="submit" class="waive-submit-btn">
+        Waive Penalty
+    </button>
+
+    <button
+    type="button"
+    class="waive-cancel-btn"
+>
+    Cancel
+</button>
 </div>
-
-{% if error %}
-<div class="penalty-alert penalty-warning">
-    {{ error }}
+        </form>
+    </div>
 </div>
-{% endif %}
-
-<div class="penalty-card">
-    <h3>Penalty Details</h3>
-
-    <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
-    <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
-    <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
-    <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
-    <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
-    <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
-    <p><strong>Status:</strong> {{ penalty.status }}</p>
-</div>
-
-<div class="penalty-card">
-    <form method="POST" class="penalty-payment-form">
-        <label>Waiver Reason</label>
-        <input type="text" name="waiver_reason" placeholder="Example: Approved by librarian due to valid reason" required>
-
-        <label>Waived By</label>
-        <input type="text" name="waived_by" value="Librarian" required>
-
-        <button type="submit">Waive Penalty</button>
-    </form>
-</div>
-
 {% endblock %}

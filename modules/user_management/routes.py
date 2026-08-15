@@ -5,6 +5,7 @@ from flask import (
     flash,
     redirect,
     render_template,
+    request,
     url_for,
 )
 
@@ -25,15 +26,289 @@ user_management_bp = Blueprint(
 )
 
 
+VALID_ACCOUNT_STATUS_FILTERS = {
+    "all",
+    "active",
+    "inactive",
+}
+
+VALID_STUDENT_SORT_OPTIONS = {
+    "name_asc",
+    "name_desc",
+    "student_id_asc",
+    "student_id_desc",
+    "registration_newest",
+    "registration_oldest",
+    "status_active_first",
+    "status_inactive_first",
+}
+STUDENTS_PER_PAGE = 10
+
+
+def _parse_page_number(value):
+    """
+    Return a safe positive page number.
+
+    Invalid, empty, zero, and negative values
+    default to the first page.
+    """
+
+    try:
+        page_number = int(value)
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 1
+
+    if page_number < 1:
+        return 1
+
+    return page_number
+
+
 def _current_timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _normalise_text(value):
+    return str(
+        value or ""
+    ).strip().casefold()
+
+
+def _student_identifier(user):
+    return str(
+        user.get("student_id")
+        or user.get("user_id")
+        or user.get("document_id")
+        or ""
+    ).strip()
+
+
+def _student_matches_search(
+    user,
+    search_query,
+):
+    normalised_query = _normalise_text(
+        search_query
+    )
+
+    if not normalised_query:
+        return True
+
+    searchable_values = (
+        user.get("full_name", ""),
+        _student_identifier(user),
+        user.get("email", ""),
+    )
+
+    return any(
+        normalised_query
+        in _normalise_text(value)
+        for value in searchable_values
+    )
+
+
+def _parse_registration_timestamp(value):
+    if isinstance(value, datetime):
+        try:
+            return value.timestamp()
+        except (
+            OverflowError,
+            OSError,
+            ValueError,
+        ):
+            return None
+
+    text_value = str(
+        value or ""
+    ).strip()
+
+    if not text_value:
+        return None
+
+    supported_formats = (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d",
+    )
+
+    for date_format in supported_formats:
+        try:
+            parsed_value = datetime.strptime(
+                text_value,
+                date_format,
+            )
+
+            return parsed_value.timestamp()
+        except ValueError:
+            continue
+
+    return None
+
+
+def _sort_students(
+    users,
+    sort_option,
+):
+    def name_key(user):
+        return (
+            _normalise_text(
+                user.get(
+                    "full_name",
+                    "",
+                )
+            ),
+            _normalise_text(
+                _student_identifier(user)
+            ),
+        )
+
+    def student_id_key(user):
+        return (
+            _normalise_text(
+                _student_identifier(user)
+            ),
+            _normalise_text(
+                user.get(
+                    "full_name",
+                    "",
+                )
+            ),
+        )
+
+    def registration_key(
+        user,
+        newest=False,
+    ):
+        timestamp = (
+            _parse_registration_timestamp(
+                user.get("created_at")
+            )
+        )
+
+        is_missing = timestamp is None
+
+        safe_timestamp = (
+            timestamp
+            if timestamp is not None
+            else 0.0
+        )
+
+        return (
+            is_missing,
+            (
+                -safe_timestamp
+                if newest
+                else safe_timestamp
+            ),
+            _normalise_text(
+                user.get(
+                    "full_name",
+                    "",
+                )
+            ),
+        )
+
+    def status_key(
+        user,
+        inactive_first=False,
+    ):
+        status = _normalise_text(
+            user.get(
+                "account_status",
+                "inactive",
+            )
+        )
+
+        if inactive_first:
+            status_rank = {
+                "inactive": 0,
+                "active": 1,
+            }.get(
+                status,
+                2,
+            )
+        else:
+            status_rank = {
+                "active": 0,
+                "inactive": 1,
+            }.get(
+                status,
+                2,
+            )
+
+        return (
+            status_rank,
+            _normalise_text(
+                user.get(
+                    "full_name",
+                    "",
+                )
+            ),
+        )
+
+    if sort_option == "name_desc":
+        users.sort(
+            key=name_key,
+            reverse=True,
+        )
+
+    elif sort_option == "student_id_asc":
+        users.sort(
+            key=student_id_key,
+        )
+
+    elif sort_option == "student_id_desc":
+        users.sort(
+            key=student_id_key,
+            reverse=True,
+        )
+
+    elif sort_option == "registration_newest":
+        users.sort(
+            key=lambda user: registration_key(
+                user,
+                newest=True,
+            )
+        )
+
+    elif sort_option == "registration_oldest":
+        users.sort(
+            key=registration_key,
+        )
+
+    elif sort_option == "status_active_first":
+        users.sort(
+            key=status_key,
+        )
+
+    elif sort_option == "status_inactive_first":
+        users.sort(
+            key=lambda user: status_key(
+                user,
+                inactive_first=True,
+            )
+        )
+
+    else:
+        users.sort(
+            key=name_key,
+        )
+
+    return users
 
 
 def get_user_by_id(user_id):
     """
     Retrieve one user using the Firestore document ID.
     """
-    user_document = db.collection(COLLECTION_USERS).document(user_id).get()
+    user_document = (
+        db.collection(COLLECTION_USERS)
+        .document(user_id)
+        .get()
+    )
 
     if not user_document.exists:
         return None
@@ -41,6 +316,7 @@ def get_user_by_id(user_id):
     user = user_document.to_dict() or {}
 
     user["document_id"] = user_document.id
+
     user.setdefault(
         "user_id",
         user_document.id,
@@ -50,7 +326,8 @@ def get_user_by_id(user_id):
 
 
 # ============================================================
-# SCRUM-511: VIEW ALL REGISTERED USERS
+# SCRUM-511, SCRUM-1519, SCRUM-1520, SCRUM-1521
+# VIEW, SEARCH, FILTER AND SORT STUDENT ACCOUNTS
 # ============================================================
 
 
@@ -60,34 +337,194 @@ def get_user_by_id(user_id):
 )
 @librarian_required
 def manage_users():
-    user_documents = db.collection(COLLECTION_USERS).stream()
+    # SCRUM-1519:
+    # Search by name, Student ID, or email.
+    search_query = request.args.get(
+        "q",
+        "",
+    ).strip()
+
+    # SCRUM-1520:
+    # Filter by Active or Inactive status.
+    status_filter = _normalise_text(
+        request.args.get(
+            "status",
+            "all",
+        )
+    )
+
+    if (
+        status_filter
+        not in VALID_ACCOUNT_STATUS_FILTERS
+    ):
+        status_filter = "all"
+
+    # SCRUM-1521:
+    # Sort using the selected option.
+    sort_option = _normalise_text(
+        request.args.get(
+            "sort",
+            "name_asc",
+        )
+    )
+
+    if (
+        sort_option
+        not in VALID_STUDENT_SORT_OPTIONS
+    ):
+        sort_option = "name_asc"
+            # SCRUM-1522:
+    # Read and validate the requested page.
+    page_number = _parse_page_number(
+        request.args.get(
+            "page",
+            "1",
+        )
+    )
+
+    user_documents = (
+        db.collection(
+            COLLECTION_USERS
+        ).stream()
+    )
 
     users = []
 
     for document in user_documents:
         user = document.to_dict() or {}
 
-        role = str(user.get("role", "")).strip().lower()
+        role = _normalise_text(
+            user.get(
+                "role",
+                "",
+            )
+        )
 
-        # User Management displays only Student accounts.
+        # User Management displays
+        # only Student accounts.
         if role != "student":
             continue
 
         user["document_id"] = document.id
+
         user.setdefault(
             "user_id",
             document.id,
         )
 
+        if not _student_matches_search(
+            user,
+            search_query,
+        ):
+            continue
+
+        account_status = _normalise_text(
+            user.get(
+                "account_status",
+                "inactive",
+            )
+        )
+
+        if (
+            status_filter != "all"
+            and account_status
+            != status_filter
+        ):
+            continue
+
         users.append(user)
 
-    users.sort(key=lambda user: str(user.get("full_name", "")).lower())
+        _sort_students(
+        users,
+        sort_option,
+    )
+
+    # SCRUM-1522:
+    # Paginate the filtered and sorted results.
+    total_results = len(users)
+
+    total_pages = max(
+        1,
+        (
+            total_results
+            + STUDENTS_PER_PAGE
+            - 1
+        )
+        // STUDENTS_PER_PAGE,
+    )
+
+    # When a page exceeds the available range,
+    # display the final available page.
+    if page_number > total_pages:
+        page_number = total_pages
+
+    start_index = (
+        page_number - 1
+    ) * STUDENTS_PER_PAGE
+
+    end_index = (
+        start_index
+        + STUDENTS_PER_PAGE
+    )
+
+    paginated_users = users[
+        start_index:end_index
+    ]
+
+    first_result_number = (
+        start_index + 1
+        if total_results > 0
+        else 0
+    )
+
+    last_result_number = min(
+        end_index,
+        total_results,
+    )
+
+    has_active_criteria = bool(
+        search_query
+        or status_filter != "all"
+        or sort_option != "name_asc"
+    )
 
     return render_template(
         "manage_users.html",
-        users=users,
+        users=paginated_users,
+        search_query=search_query,
+        status_filter=status_filter,
+        sort_option=sort_option,
+        result_count=total_results,
+        page_number=page_number,
+        total_pages=total_pages,
+        page_numbers=list(
+            range(
+                1,
+                total_pages + 1,
+            )
+        ),
+        has_previous_page=(
+            page_number > 1
+        ),
+        has_next_page=(
+            page_number < total_pages
+        ),
+        previous_page=(
+            page_number - 1
+        ),
+        next_page=(
+            page_number + 1
+        ),
+        first_result_number=(
+            first_result_number
+        ),
+        last_result_number=(
+            last_result_number
+        ),
+        has_active_criteria=(
+            has_active_criteria
+        ),
     )
-
 
 # ============================================================
 # SCRUM-512: VIEW SELECTED USER DETAILS
@@ -127,16 +564,12 @@ def deactivate_student(user_id):
     if user is None:
         return "User record not found.", 404
 
-    user_role = (
-        str(
-            user.get(
-                "role",
-                "",
-            )
+    user_role = str(
+        user.get(
+            "role",
+            "",
         )
-        .strip()
-        .lower()
-    )
+    ).strip().lower()
 
     if user_role != "student":
         return (
@@ -144,16 +577,12 @@ def deactivate_student(user_id):
             400,
         )
 
-    current_status = (
-        str(
-            user.get(
-                "account_status",
-                "",
-            )
+    current_status = str(
+        user.get(
+            "account_status",
+            "",
         )
-        .strip()
-        .lower()
-    )
+    ).strip().lower()
 
     if current_status == "inactive":
         return (
@@ -164,7 +593,9 @@ def deactivate_student(user_id):
     current_time = _current_timestamp()
 
     (
-        db.collection(COLLECTION_USERS)
+        db.collection(
+            COLLECTION_USERS
+        )
         .document(user_id)
         .update(
             {
@@ -207,16 +638,12 @@ def reactivate_student(user_id):
     if user is None:
         return "User record not found.", 404
 
-    user_role = (
-        str(
-            user.get(
-                "role",
-                "",
-            )
+    user_role = str(
+        user.get(
+            "role",
+            "",
         )
-        .strip()
-        .lower()
-    )
+    ).strip().lower()
 
     if user_role != "student":
         return (
@@ -224,16 +651,12 @@ def reactivate_student(user_id):
             400,
         )
 
-    current_status = (
-        str(
-            user.get(
-                "account_status",
-                "",
-            )
+    current_status = str(
+        user.get(
+            "account_status",
+            "",
         )
-        .strip()
-        .lower()
-    )
+    ).strip().lower()
 
     if current_status == "active":
         return (
@@ -244,7 +667,9 @@ def reactivate_student(user_id):
     current_time = _current_timestamp()
 
     (
-        db.collection(COLLECTION_USERS)
+        db.collection(
+            COLLECTION_USERS
+        )
         .document(user_id)
         .update(
             {

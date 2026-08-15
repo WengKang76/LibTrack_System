@@ -156,3 +156,770 @@
 .penalty-payment-form button:hover {
     background-color: #1d4ed8;
 }
+
+/* =========================================================
+   Sprint 3 - Librarian Penalty Table UI and Warning Messages
+   ========================================================= */
+
+.librarian-page-wrapper {
+    max-width: 1180px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.librarian-page-header {
+    margin-bottom: 24px;
+}
+
+.librarian-page-header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.librarian-page-header p {
+    color: #64748b;
+    font-size: 15px;
+}
+
+.librarian-filter-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    margin-bottom: 22px;
+}
+
+.librarian-filter-form {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 14px;
+    align-items: end;
+}
+
+.librarian-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.librarian-form-group label {
+    font-weight: 700;
+    color: #334155;
+}
+
+.librarian-form-group input,
+.librarian-form-group select {
+    padding: 11px 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 15px;
+}
+
+.librarian-form-group input:focus,
+.librarian-form-group select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.librarian-summary-text {
+    margin-bottom: 14px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.librarian-table-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.librarian-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.librarian-table th {
+    background: #f8fafc;
+    color: #0f172a;
+    padding: 15px;
+    text-align: left;
+    font-weight: 800;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.librarian-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1e293b;
+    vertical-align: middle;
+}
+
+.librarian-table tr:last-child td {
+    border-bottom: none;
+}
+
+.librarian-table tr:hover {
+    background: #f8fafc;
+}
+
+.amount-text {
+    font-weight: 800;
+    color: #2563eb;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.status-outstanding,
+.status-unpaid,
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-waived {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.action-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-warning,
+.btn-danger,
+.btn-neutral {
+    display: inline-block;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-weight: 800;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.btn-warning {
+    background: #f59e0b;
+    color: #ffffff;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+.btn-neutral {
+    background: #64748b;
+    color: #ffffff;
+}
+
+.btn-neutral:hover {
+    background: #475569;
+}
+
+.librarian-empty-box {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    color: #64748b;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.librarian-empty-box h3 {
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.warning-card {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.error-card {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.success-card {
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.warning-list {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.warning-list li {
+    margin-bottom: 5px;
+}
+
+.form-action-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+    .librarian-filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .librarian-table-card {
+        overflow-x: auto;
+    }
+
+    .librarian-table {
+        min-width: 950px;
+    }
+
+    /* =========================================================
+   Simple Penalty Dashboard UI
+   ========================================================= */
+
+.penalty-dashboard-wrapper {
+    max-width: 1180px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.simple-dashboard-header {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border-radius: 20px;
+    padding: 34px 38px;
+    margin-bottom: 28px;
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+}
+
+.dashboard-tag {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+}
+
+.simple-dashboard-header h1 {
+    font-size: 36px;
+    font-weight: 900;
+    margin: 0 0 10px 0;
+}
+
+.simple-dashboard-header p {
+    font-size: 17px;
+    margin: 0;
+    color: #dbeafe;
+}
+
+.function-section {
+    margin-top: 10px;
+}
+
+.function-heading {
+    margin-bottom: 18px;
+}
+
+.function-heading h2 {
+    font-size: 26px;
+    font-weight: 900;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+
+.function-heading p {
+    color: #64748b;
+    margin: 0;
+}
+
+.function-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.function-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 22px;
+    text-decoration: none;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+    transition: 0.2s ease;
+}
+
+.function-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    border-color: #bfdbfe;
+}
+
+.function-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.function-card h3 {
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+}
+
+.function-card p {
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+@media (max-width: 850px) {
+    .function-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .simple-dashboard-header {
+        padding: 26px;
+    }
+
+    .simple-dashboard-header h1 {
+        font-size: 30px;
+    }
+}
+
+/* =========================================================
+   Sprint 3 - S3-07 and S3-10
+   Action Confirmation + Consistent Navigation Design
+   ========================================================= */
+
+.penalty-nav-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.penalty-nav-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #334155;
+    margin-bottom: 10px;
+}
+
+.penalty-nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.penalty-nav-link {
+    display: inline-block;
+    padding: 9px 14px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #0f172a;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+}
+
+.penalty-nav-link:hover {
+    background: #e2e8f0;
+}
+
+.penalty-nav-link.primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.penalty-nav-link.primary:hover {
+    background: #1d4ed8;
+}
+
+.confirm-warning-box {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+    border-radius: 14px;
+    padding: 15px 18px;
+    margin-bottom: 18px;
+    font-weight: 700;
+}
+
+.confirm-warning-box ul {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.confirm-warning-box li {
+    margin-bottom: 5px;
+}
+
+.penalty-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.penalty-btn-primary,
+.penalty-btn-warning,
+.penalty-btn-danger,
+.penalty-btn-secondary {
+    display: inline-block;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.penalty-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.penalty-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.penalty-btn-warning {
+    background: #f59e0b;
+    color: #ffffff;
+}
+
+.penalty-btn-warning:hover {
+    background: #d97706;
+}
+
+.penalty-btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.penalty-btn-danger:hover {
+    background: #b91c1c;
+}
+
+.penalty-btn-secondary {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+}
+
+.penalty-btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+/* Generic action buttons used by penalty pages */
+.button {
+    display: inline-block;
+    background: #2563eb;
+    color: #ffffff;
+    padding: 11px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 800;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.button:hover {
+    background: #1d4ed8;
+    text-decoration: none;
+    color: #ffffff;
+}
+
+.button.secondary {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+    box-shadow: none;
+}
+
+.button.secondary:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.button.disabled,
+.button:disabled {
+    background: #dfe7f1;
+    color: #64748b;
+    border-color: #dfe7f1;
+    cursor: not-allowed;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+/* =========================================================
+   Penalty Module Button Design Fix
+   ========================================================= */
+
+.penalty-btn-primary,
+.penalty-btn-warning,
+.penalty-btn-danger,
+.penalty-btn-secondary,
+.penalty-btn-success {
+    display: inline-block;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.2;
+    transition: 0.2s ease;
+}
+
+.penalty-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.penalty-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.penalty-btn-success {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.penalty-btn-success:hover {
+    background: #15803d;
+}
+
+.penalty-btn-warning {
+    background: #f59e0b;
+    color: #ffffff;
+}
+
+.penalty-btn-warning:hover {
+    background: #d97706;
+}
+
+.penalty-btn-danger {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.penalty-btn-danger:hover {
+    background: #b91c1c;
+}
+
+.penalty-btn-secondary {
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+}
+
+.penalty-btn-secondary:hover {
+    background: #e2e8f0;
+}
+
+.penalty-action-row,
+.form-action-row,
+.button-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 18px;
+}
+
+/* Fix old plain links inside penalty cards */
+.penalty-card a,
+.info-card a,
+.form-card a {
+    text-decoration: none;
+}
+
+/* Safety fallback: style any unclassed submit button in penalty pages */
+.penalty-payment-form button,
+.exception-form button {
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: none;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.penalty-payment-form button:hover,
+.exception-form button:hover {
+    background: #1d4ed8;
+}
+
+/* Final button override for penalty pages */
+.penalty-payment-form button.penalty-btn-warning,
+button.penalty-btn-warning {
+    background: #f59e0b !important;
+    color: #ffffff !important;
+}
+
+.penalty-payment-form button.penalty-btn-warning:hover,
+button.penalty-btn-warning:hover {
+    background: #d97706 !important;
+}
+
+.exception-form button.penalty-btn-danger,
+button.penalty-btn-danger {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+.exception-form button.penalty-btn-danger:hover,
+button.penalty-btn-danger:hover {
+    background: #b91c1c !important;
+}
+
+a.penalty-btn-secondary {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    text-decoration: none !important;
+}
+
+a.penalty-btn-secondary:hover {
+    background: #e2e8f0 !important;
+}
+
+/* =========================================================
+   Final Override: Waive Penalty Page Button Styling
+   ========================================================= */
+
+.penalty-payment-form button.penalty-btn-warning,
+button.penalty-btn-warning {
+    background: #f59e0b !important;
+    color: #ffffff !important;
+    padding: 11px 18px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.penalty-payment-form button.penalty-btn-warning:hover,
+button.penalty-btn-warning:hover {
+    background: #d97706 !important;
+}
+
+.penalty-payment-form a.penalty-btn-secondary,
+a.penalty-btn-secondary {
+    display: inline-block !important;
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 11px 18px !important;
+    border-radius: 10px !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+}
+
+.penalty-payment-form a.penalty-btn-secondary:hover,
+a.penalty-btn-secondary:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+.form-action-row {
+    display: flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    margin-top: 18px !important;
+}
+}

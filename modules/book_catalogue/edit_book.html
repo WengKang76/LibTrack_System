@@ -12,6 +12,15 @@
 <h1>📚 Book Catalogue Management</h1>
 <h2>Edit Book Details</h2>
 
+<div class="form-navigation">
+    <a
+        href="{{ url_for('book_catalogue.manage_books') }}"
+        class="button button-secondary"
+    >
+        ← Back to Book Catalogue
+    </a>
+</div>
+
 <p class="form-note">
     Update the book's catalogue information. Copy quantities and book
     status are handled in later user stories.

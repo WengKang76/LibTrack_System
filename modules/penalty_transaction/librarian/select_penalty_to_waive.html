@@ -1,47 +1,268 @@
 {% extends "base.html" %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
-{% endblock %}
-
 {% block content %}
-<div class="penalty-header">
-    <h1>Penalty, Transactions & Exception Handling</h1>
-    <h2>Waive Outstanding Penalties</h2>
-    <p>Select a penalty record to review the student and book details before waiving it.</p>
-</div>
+<style>
+    .waive-list-page {
+        max-width: 1050px;
+        margin: 30px auto;
+        padding: 20px;
+    }
 
-{% if outstanding_penalties %}
-<div class="penalty-card">
-    <h3>Outstanding Penalty Records</h3>
-    <p>Choose one of the records below to continue with waiver processing.</p>
+    .waive-header {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
 
-    <div class="penalty-list">
-        {% for penalty in outstanding_penalties %}
-        <div class="penalty-item">
-            <div class="penalty-item-header">
-                <strong>{{ penalty.penalty_id }}</strong>
-                <span class="penalty-badge">{{ penalty.status }}</span>
-            </div>
-            <p><strong>Student:</strong> {{ penalty.student_id }}</p>
-            <p><strong>Book:</strong> {{ penalty.book_title or 'N/A' }}</p>
-            <p><strong>Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount) }}</p>
-            <p><strong>Overdue Days:</strong> {{ penalty.overdue_days or 0 }}</p>
-            <div class="penalty-actions">
-                <a href="{{ url_for('penalty_transaction.librarian_waive_penalty', penalty_id=penalty.penalty_id) }}" class="button">Waive This Penalty</a>
-                {% if penalty.transaction_id %}
-                <a href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=penalty.transaction_id) }}" class="button secondary">Record Lost/Damaged Book</a>
-                {% else %}
-                <span class="button secondary disabled" aria-disabled="true" title="This penalty is not linked to a borrowing transaction">Record Lost/Damaged Book</span>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
+    .waive-header h1 {
+        font-size: 30px;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 8px 0;
+    }
+
+    .waive-header h2 {
+        font-size: 23px;
+        font-weight: 900;
+        color: #2563eb;
+        margin: 0 0 8px 0;
+    }
+
+    .waive-header p {
+        color: #64748b;
+        margin: 0;
+    }
+
+    .waive-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 26px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .waive-card h3 {
+        font-size: 21px;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 0 0 8px 0;
+    }
+
+    .waive-card-subtitle {
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+
+    .penalty-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+        background: #f8fafc;
+    }
+
+    .penalty-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .penalty-id {
+        font-size: 18px;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .penalty-badge {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .penalty-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 22px;
+        margin-bottom: 18px;
+    }
+
+    .detail-box {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+
+    .detail-label {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .detail-value {
+        color: #0f172a;
+        font-weight: 800;
+    }
+
+    .amount-text {
+        color: #2563eb;
+        font-weight: 900;
+    }
+
+    .penalty-action-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .penalty-btn-warning,
+    .penalty-btn-danger,
+    .penalty-btn-secondary {
+        display: inline-block;
+        padding: 11px 18px;
+        border-radius: 10px;
+        border: none;
+        text-decoration: none !important;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .penalty-btn-warning {
+        background: #f59e0b;
+        color: #ffffff !important;
+    }
+
+    .penalty-btn-warning:hover {
+        background: #d97706;
+        color: #ffffff !important;
+    }
+
+    .penalty-btn-danger {
+        background: #dc2626;
+        color: #ffffff !important;
+    }
+
+    .penalty-btn-danger:hover {
+        background: #b91c1c;
+        color: #ffffff !important;
+    }
+
+    .penalty-btn-secondary {
+        background: #f1f5f9;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1;
+    }
+
+    .disabled-btn {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+    .empty-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+        color: #64748b;
+    }
+
+    @media (max-width: 800px) {
+        .penalty-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="waive-list-page">
+    <div class="waive-header">
+        <h1>Penalty, Transactions &amp; Exception Handling</h1>
+        <h2>Waive Outstanding Penalties</h2>
+        <p>Select a penalty record to review the student and book details before waiving it.</p>
     </div>
+
+    {% if outstanding_penalties %}
+        <div class="waive-card">
+            <h3>Outstanding Penalty Records</h3>
+            <p class="waive-card-subtitle">
+                Choose one record below to continue with waiver processing.
+            </p>
+
+            {% for penalty in outstanding_penalties %}
+                <div class="penalty-item">
+                    <div class="penalty-item-header">
+                        <span class="penalty-id">{{ penalty.penalty_id }}</span>
+                        <span class="penalty-badge">{{ penalty.status }}</span>
+                    </div>
+
+                    <div class="penalty-detail-grid">
+                        <div class="detail-box">
+                            <div class="detail-label">Student ID</div>
+                            <div class="detail-value">{{ penalty.student_id }}</div>
+                        </div>
+
+                        <div class="detail-box">
+                            <div class="detail-label">Book Title</div>
+                            <div class="detail-value">{{ penalty.book_title or "N/A" }}</div>
+                        </div>
+
+                        <div class="detail-box">
+                            <div class="detail-label">Penalty Amount</div>
+                            <div class="detail-value amount-text">
+                                RM {{ "%.2f"|format(penalty.penalty_amount) }}
+                            </div>
+                        </div>
+
+                        <div class="detail-box">
+                            <div class="detail-label">Overdue Days</div>
+                            <div class="detail-value">{{ penalty.overdue_days or 0 }}</div>
+                        </div>
+                    </div>
+
+                    <div class="penalty-action-row">
+                        <a
+                            href="{{ url_for('penalty_transaction.librarian_waive_penalty', penalty_id=penalty.penalty_id) }}"
+                            class="penalty-btn-warning"
+                        >
+                            Waive Penalty
+                        </a>
+
+                        {% if penalty.transaction_id %}
+                            <a
+                                href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=penalty.transaction_id) }}"
+                                class="penalty-btn-danger"
+                            >
+                                Lost / Damaged Book
+                            </a>
+                        {% else %}
+                            <span
+                                class="penalty-btn-secondary disabled-btn"
+                                aria-disabled="true"
+                                title="This penalty is not linked to a borrowing transaction"
+                            >
+                                Lost / Damaged Book
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-card">
+            No outstanding penalties are available at the moment.
+        </div>
+    {% endif %}
 </div>
-{% else %}
-<div class="penalty-card">
-    <p>No outstanding penalties are available at the moment.</p>
-</div>
-{% endif %}
 {% endblock %}

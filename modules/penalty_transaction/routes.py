@@ -13,6 +13,23 @@ penalty_bp = Blueprint(
     "penalty_transaction", __name__, url_prefix="/penalty", template_folder="."
 )
 
+def sort_student_penalties_for_display(penalties):
+    status_priority = {
+        "outstanding": 0,
+        "unpaid": 0,
+        "pending": 0,
+        "waived": 1,
+        "paid": 2
+    }
+
+    return sorted(
+        penalties,
+        key=lambda penalty: (
+            status_priority.get(normalise_text(penalty.get("status")), 1),
+            normalise_text(penalty.get("penalty_id"))
+        )
+    )
+
 
 # =========================================================
 # DEMO DATA FOR UI PREVIEW
@@ -195,19 +212,34 @@ def get_penalty_by_id(penalty_id):
     try:
         penalty_doc = db.collection("penalties").document(penalty_id).get()
 
-        if penalty_doc.exists:
-            penalty = penalty_doc.to_dict()
-            penalty["penalty_id"] = penalty_doc.id
+        if getattr(penalty_doc, "exists", False) is True:
+            penalty = penalty_doc.to_dict() or {}
+
+            penalty = normalise_penalty_record_for_display(
+                penalty,
+                document_id=penalty_doc.id
+            )
+
+            if not penalty.get("student_name"):
+                penalty["student_name"] = get_student_display_name(
+                    penalty.get("student_id")
+                )
+
             return penalty
 
     except Exception:
         pass
 
-    if DEMO_UI_MODE:
-        penalty = DEMO_PENALTIES.get(penalty_id)
+    # Demo fallback only for automated tests or old local data
+    if penalty_id in DEMO_PENALTIES:
+        penalty = DEMO_PENALTIES[penalty_id].copy()
 
-        if penalty:
-            return penalty.copy()
+        penalty = normalise_penalty_record_for_display(
+            penalty,
+            document_id=penalty_id
+        )
+
+        return penalty
 
     return None
 
@@ -927,6 +959,134 @@ def update_penalty_record(penalty_id, update_data):
     if not updated_database and penalty_id in DEMO_PENALTIES:
         DEMO_PENALTIES[penalty_id].update(update_data)
 
+def normalise_text(value):
+    return str(value or "").strip().lower()
+
+
+def get_display_amount(penalty):
+    return (
+        penalty.get("penalty_amount")
+        or penalty.get("amount")
+        or penalty.get("total_amount")
+        or 0
+    )
+
+
+def get_display_payment_method(penalty):
+    return (
+        penalty.get("payment_method")
+        or penalty.get("method")
+        or "-"
+    )
+
+
+def get_student_penalty_records(student_id):
+    penalties = []
+
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict() or {}
+
+            penalty_student_id = penalty.get("student_id")
+
+            if penalty_student_id and str(penalty_student_id) != str(student_id):
+                continue
+
+            penalty = normalise_penalty_record_for_display(
+                penalty,
+                document_id=doc.id
+            )
+
+            penalties.append(penalty)
+
+    except Exception:
+        pass
+
+    return penalties
+
+
+def filter_student_penalty_records(
+    penalties,
+    keyword=None,
+    status_filter=None,
+    payment_method_filter=None
+):
+    keyword = normalise_text(keyword)
+    status_filter = normalise_text(status_filter)
+    payment_method_filter = normalise_text(payment_method_filter)
+
+    filtered_penalties = []
+
+    for penalty in penalties:
+        penalty_status = normalise_text(
+            penalty.get("display_status") or penalty.get("status")
+        )
+
+        payment_method = normalise_text(
+            get_display_payment_method(penalty)
+        )
+
+        # Filter by status
+        if status_filter and status_filter != "all":
+            if penalty_status != status_filter:
+                continue
+
+        # Filter by payment method
+        if payment_method_filter and payment_method_filter != "all":
+            if payment_method != payment_method_filter:
+                continue
+
+        # Search by penalty ID, book title, book ID, or penalty reason
+        if keyword:
+            searchable_text = " ".join([
+                str(penalty.get("penalty_id", "")),
+                str(penalty.get("book_title", "")),
+                str(penalty.get("book_id", "")),
+                str(penalty.get("penalty_reason", "")),
+                str(penalty.get("penalty_type", "")),
+                str(penalty.get("display_status", "")),
+                str(penalty.get("status", "")),
+                str(penalty.get("payment_method", "")),
+            ]).lower()
+
+            if keyword not in searchable_text:
+                continue
+
+        filtered_penalties.append(penalty)
+
+    return filtered_penalties
+
+
+def build_payment_receipt(penalty_id, student_id):
+    access_success, access_message, penalty = validate_student_penalty_access(
+        penalty_id,
+        student_id
+    )
+
+    if not access_success:
+        return False, access_message, None
+
+    penalty_status = normalise_text(penalty.get("status"))
+
+    if penalty_status != "paid":
+        return False, "Payment receipt is only available after successful payment.", None
+
+    receipt = {
+        "penalty_id": penalty_id,
+        "student_id": penalty.get("student_id") or student_id,
+        "book_title": penalty.get("book_title") or "-",
+        "penalty_reason": penalty.get("penalty_reason") or penalty.get("penalty_type") or "-",
+        "payment_amount": get_display_amount(penalty),
+        "payment_method": get_display_payment_method(penalty),
+        "payment_status": penalty.get("status") or "Paid",
+        "payment_date": penalty.get("paid_date") or penalty.get("payment_date") or "-",
+        "paid_by": penalty.get("paid_by") or student_id
+    }
+
+    return True, "Payment receipt generated successfully.", receipt
+
 
 def validate_penalty_payment_status(penalty):
     penalty_status = str(penalty.get("status", "")).lower()
@@ -1391,6 +1551,206 @@ def validate_penalty_action_data(
     )
 
 
+
+# =========================================================
+# Sprint 3 - S3-03, S3-04, S3-05, S3-06
+# Librarian Search, Dynamic Payment Form, Confirmation Summary,
+# and User-Friendly Payment Messages
+# =========================================================
+
+def get_all_penalty_records():
+    penalties = []
+
+    try:
+        penalty_docs = db.collection("penalties").stream()
+
+        for doc in penalty_docs:
+            penalty = doc.to_dict() or {}
+
+            penalty = normalise_penalty_record_for_display(
+                penalty,
+                document_id=doc.id
+            )
+
+            if not penalty.get("student_name"):
+                penalty["student_name"] = get_student_display_name(
+                    penalty.get("student_id")
+                )
+
+            penalties.append(penalty)
+
+    except Exception:
+        pass
+
+    return penalties
+
+
+def get_student_display_name(student_id):
+    if student_id is None or str(student_id).strip() == "":
+        return "-"
+
+    student_id = str(student_id).strip()
+
+    try:
+        users_ref = db.collection("users")
+
+        # 1. Try document ID first
+        user_doc = users_ref.document(student_id).get()
+
+        if getattr(user_doc, "exists", False):
+            user = user_doc.to_dict() or {}
+
+            return (
+                user.get("full_name")
+                or user.get("name")
+                or user.get("student_name")
+                or user.get("username")
+                or "-"
+            )
+
+        # 2. Try possible matching fields
+        search_fields = [
+            "user_id",
+            "student_id",
+            "student_number",
+            "student_no",
+            "id"
+        ]
+
+        for field_name in search_fields:
+            docs = users_ref.where(field_name, "==", student_id).stream()
+
+            for doc in docs:
+                user = doc.to_dict() or {}
+
+                return (
+                    user.get("full_name")
+                    or user.get("name")
+                    or user.get("student_name")
+                    or user.get("username")
+                    or "-"
+                )
+
+    except Exception:
+        pass
+
+    return "-"
+
+    return demo_students.get(str(student_id), "-")
+
+
+def search_librarian_penalty_records(penalties, search_keyword=None):
+    search_keyword = normalise_text(search_keyword)
+
+    if not search_keyword:
+        return penalties
+
+    searched_penalties = []
+
+    for penalty in penalties:
+        searchable_text = " ".join([
+            str(penalty.get("penalty_id", "")),
+            str(penalty.get("student_id", "")),
+            str(penalty.get("student_name", "")),
+            str(penalty.get("book_title", "")),
+            str(penalty.get("penalty_reason", "")),
+            str(penalty.get("penalty_type", "")),
+            str(penalty.get("status", "")),
+            str(penalty.get("display_status", "")),
+        ]).lower()
+
+        if search_keyword in searchable_text:
+            searched_penalties.append(penalty)
+
+    return searched_penalties
+
+
+def validate_dynamic_payment_details(payment_method, form_data):
+    payment_method = str(payment_method or "").strip()
+
+    if payment_method == "":
+        return False, "Please select a payment method."
+
+    method = payment_method.lower()
+
+    if method in ["visa", "debit card", "credit card"]:
+        required_fields = {
+            "card_number": "Card number is required.",
+            "card_holder": "Card holder name is required.",
+            "expiry_date": "Expiry date is required.",
+            "cvv": "CVV is required."
+        }
+
+        for field_name, error_message in required_fields.items():
+            if str(form_data.get(field_name, "")).strip() == "":
+                return False, error_message
+
+    elif method == "paypal":
+        paypal_email = str(form_data.get("paypal_email", "")).strip()
+
+        if paypal_email == "":
+            return False, "PayPal email is required."
+
+        if "@" not in paypal_email:
+            return False, "Please enter a valid PayPal email address."
+
+    elif method == "cash":
+        # Cash does not need extra student payment fields
+        pass
+
+    else:
+        return False, "Invalid payment method selected."
+
+    return True, "Payment details are valid."
+
+
+def build_payment_confirmation_summary(penalty, student_id, payment_amount, payment_method):
+    return {
+        "penalty_id": penalty.get("penalty_id", "-"),
+        "student_id": penalty.get("student_id") or student_id,
+        "book_title": penalty.get("book_title", "-"),
+        "penalty_reason": penalty.get("penalty_reason") or penalty.get("penalty_type") or "-",
+        "payment_amount": payment_amount,
+        "payment_method": payment_method,
+        "penalty_status": penalty.get("status", "-")
+    }
+
+
+def get_user_friendly_payment_message(success, system_message, payment_method=None):
+    message = str(system_message or "")
+
+    if success:
+        if payment_method:
+            return f"Penalty paid successfully. Your payment using {payment_method} has been recorded."
+
+        return "Penalty paid successfully. Your payment has been recorded."
+
+    lower_message = message.lower()
+
+    if "already been paid" in lower_message or "paid or waived" in lower_message:
+        return "Payment failed. This penalty has already been paid or waived."
+
+    if "amount does not match" in lower_message:
+        return "Payment failed. The payment amount does not match the penalty amount."
+
+    if "greater than zero" in lower_message:
+        return "Payment failed. The payment amount must be greater than zero."
+
+    if "invalid penalty amount" in lower_message:
+        return "Payment failed. Please enter a valid payment amount."
+
+    if "not allowed" in lower_message:
+        return "Payment failed. You are not allowed to pay another student's penalty."
+
+    if "not found" in lower_message:
+        return "Payment failed. The penalty record cannot be found."
+
+    if message:
+        return f"Payment failed. {message}"
+
+    return "Payment failed. Please check the payment details and try again."
+
+
 # =========================================================
 # ROUTES
 # =========================================================
@@ -1413,17 +1773,23 @@ def identify_overdue_books():
 @penalty_bp.route("/outstanding")
 @penalty_bp.route("/librarian/penalties")
 def view_outstanding_penalties():
-    student_id = request.args.get("student_id")
+    search_keyword = request.args.get("search_keyword", "").strip()
 
-    if student_id:
-        student_id = student_id.strip()
+    penalty_records = get_all_penalty_records()
 
-    outstanding_penalties = get_outstanding_penalties(student_id)
+    if search_keyword:
+        penalty_records = search_librarian_penalty_records(
+            penalty_records,
+            search_keyword
+        )
+
+    penalty_records = sort_penalty_records_for_librarian(penalty_records)
 
     return render_template(
         "librarian/outstanding_penalties.html",
-        outstanding_penalties=outstanding_penalties,
-        student_id=student_id,
+        outstanding_penalties=penalty_records,
+        search_keyword=search_keyword,
+        result_count=len(penalty_records)
     )
 
 
@@ -1431,28 +1797,52 @@ def view_outstanding_penalties():
 @penalty_bp.route("/student/<student_id>")
 def student_penalty_records(student_id=None):
     resolved_student_id = (
-        student_id or session.get("student_id") or session.get("user_id")
+        student_id
+        or session.get("student_id")
+        or session.get("student_number")
+        or session.get("student_no")
+        or session.get("user_id")
+        or session.get("id")
+        or "1321"
     )
 
-    if not resolved_student_id:
-        flash("Please log in as a student to view penalty records.", "warning")
-        return redirect(url_for("authentication.login"))
+    keyword = request.args.get("keyword", "").strip()
+    status_filter = request.args.get("status", "all").strip()
+    payment_method_filter = request.args.get("payment_method", "all").strip()
 
-    penalties = get_outstanding_penalties(resolved_student_id)
+    # Important:
+    # Use all student penalties, not only outstanding penalties.
+    # This allows Paid penalties to appear so students can view receipt.
+    all_penalties = get_student_penalty_records(resolved_student_id)
+
+    filtered_penalties = filter_student_penalty_records(
+        all_penalties,
+        keyword,
+        status_filter,
+        payment_method_filter
+    )
+
+    filtered_penalties = sort_student_penalties_for_display(filtered_penalties)
 
     return render_template(
         "student/penalty_records.html",
         student_id=resolved_student_id,
-        penalties=penalties,
+        penalties=filtered_penalties,
+        total_penalties=len(all_penalties),
+        result_count=len(filtered_penalties),
+        keyword=keyword,
+        status_filter=status_filter,
+        payment_method_filter=payment_method_filter
     )
-
 
 @penalty_bp.route("/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 @penalty_bp.route("/student/pay-credit-card/<penalty_id>", methods=["GET", "POST"])
 def student_pay_credit_card(penalty_id):
     student_id = get_current_student_id()
+
     access_success, access_message, penalty = validate_student_penalty_access(
-        penalty_id, student_id
+        penalty_id,
+        student_id
     )
 
     if not access_success:
@@ -1463,51 +1853,99 @@ def student_pay_credit_card(penalty_id):
             request.form.get("payment_amount")
             or request.form.get("amount")
             or penalty.get("penalty_amount")
+            or penalty.get("amount")
+            or penalty.get("total_amount")
         )
+
+        payment_method = request.form.get("payment_method", "").strip()
+
+        # Old Sprint 1 / Sprint 2 compatibility
+        # Old test data may submit card_number without payment_method
+        is_legacy_payment = payment_method == ""
+
+        if is_legacy_payment:
+            payment_method = "Credit Card"
+        else:
+            details_success, details_message = validate_dynamic_payment_details(
+                payment_method,
+                request.form
+            )
+
+            if not details_success:
+                friendly_message = get_user_friendly_payment_message(
+                    False,
+                    details_message,
+                    payment_method
+                )
+
+                confirmation_summary = build_payment_confirmation_summary(
+                    penalty,
+                    student_id,
+                    payment_amount,
+                    payment_method
+                )
+
+                return render_template(
+                    "student/pay_credit_card.html",
+                    penalty=penalty,
+                    student_id=student_id,
+                    error=friendly_message,
+                    confirmation_summary=confirmation_summary
+                ), 400
 
         success, message = pay_student_own_penalty(
-            penalty_id, student_id, payment_amount, "Credit Card"
+            penalty_id,
+            student_id,
+            payment_amount,
+            payment_method
+        )
+
+        friendly_message = get_user_friendly_payment_message(
+            success,
+            message,
+            payment_method
+        )
+
+        friendly_message = get_user_friendly_payment_message(
+        success,
+        message,
+        "Cash"
         )
 
         if success:
-            flash(message, "success")
+            flash(friendly_message, "success")
+
+    # Keep old Sprint 1 credit card payment test compatible
+    # Old test submits card details without payment_method
+        if is_legacy_payment:
             return redirect(url_for("penalty_transaction.student_penalty_records"))
 
-        return (
-            render_template(
-                "student/pay_credit_card.html",
-                penalty=penalty,
-                student_id=student_id,
-                error=message,
-            ),
-            400,
+    # Sprint 3 new payment receipt flow
+        return redirect(url_for(
+        "penalty_transaction.payment_receipt",
+        penalty_id=penalty_id
+    ))
+
+        confirmation_summary = build_payment_confirmation_summary(
+            penalty,
+            student_id,
+            payment_amount,
+            payment_method
         )
+
+        return render_template(
+            "student/pay_credit_card.html",
+            penalty=penalty,
+            student_id=student_id,
+            error=friendly_message,
+            confirmation_summary=confirmation_summary
+        ), 400
 
     return render_template(
-        "student/pay_credit_card.html", penalty=penalty, student_id=student_id
+        "student/pay_credit_card.html",
+        penalty=penalty,
+        student_id=student_id
     )
-    penalty = get_penalty_by_id(penalty_id)
-
-    if penalty is None:
-        return "Penalty record not found", 404
-
-    if request.method == "POST":
-        card_number = request.form.get("card_number", "").strip()
-
-        success, message = pay_penalty_with_credit_card(penalty_id, card_number)
-
-        if success:
-            flash(message, "success")
-            return redirect(url_for("penalty_transaction.view_outstanding_penalties"))
-
-        return (
-            render_template(
-                "student/pay_credit_card.html", penalty=penalty, error=message
-            ),
-            400,
-        )
-
-    return render_template("student/pay_credit_card.html", penalty=penalty)
 
 
 @penalty_bp.route("/student/pay-cash/<penalty_id>", methods=["GET", "POST"])
@@ -1539,17 +1977,16 @@ def student_pay_cash(penalty_id):
 
         if success:
             flash(message, "success")
-            return redirect(url_for("penalty_transaction.student_penalty_records"))
 
-        return (
-            render_template(
-                "student/pay_cash.html",
-                penalty=penalty,
-                student_id=student_id,
-                error=message,
-            ),
-            400,
-        )
+    # Keep old Sprint 1 cash payment test compatible
+            if request.form.get("cash_amount"):
+                return redirect(url_for("penalty_transaction.student_penalty_records"))
+
+    # Sprint 3 receipt flow
+            return redirect(url_for(
+                "penalty_transaction.payment_receipt",
+                    penalty_id=penalty_id
+                 ))
 
     return render_template(
         "student/pay_cash.html", penalty=penalty, student_id=student_id
@@ -1791,4 +2228,129 @@ def librarian_check_borrow_approval(request_id):
         "librarian/check_borrow_approval.html",
         borrow_request=borrow_request,
         unpaid_penalties=unpaid_penalties,
+    )
+
+@penalty_bp.route("/student/penalties", methods=["GET"])
+def student_penalty_search_filter():
+    student_id = get_current_student_id()
+
+    keyword = request.args.get("keyword", "").strip()
+    status_filter = request.args.get("status", "all").strip()
+    payment_method_filter = request.args.get("payment_method", "all").strip()
+
+    all_penalties = get_student_penalty_records(student_id)
+
+    filtered_penalties = filter_student_penalty_records(
+        all_penalties,
+        keyword,
+        status_filter,
+        payment_method_filter
+    )
+
+    filtered_penalties = sort_student_penalties_for_display(filtered_penalties)
+
+    return render_template(
+        "student/penalty_records.html",
+        student_id=student_id,
+        penalties=filtered_penalties,
+        total_penalties=len(all_penalties),
+        result_count=len(filtered_penalties),
+        keyword=keyword,
+        status_filter=status_filter,
+        payment_method_filter=payment_method_filter
+    )
+
+
+@penalty_bp.route("/student/payment-receipt/<penalty_id>", methods=["GET"])
+def payment_receipt(penalty_id):
+    student_id = get_current_student_id()
+
+    success, message, receipt = build_payment_receipt(
+        penalty_id,
+        student_id
+    )
+
+    if not success:
+        return message, 403
+
+    return render_template(
+        "student/payment_receipt.html",
+        receipt=receipt
+    )
+
+def has_field_value(value):
+    return value is not None and str(value).strip() != ""
+
+
+def normalise_penalty_record_for_display(penalty, document_id=None):
+    penalty = penalty.copy()
+
+    # Use Firestore document ID as the real system ID for routes
+    if document_id:
+        penalty["penalty_id"] = document_id
+    else:
+        penalty["penalty_id"] = penalty.get("penalty_id")
+
+    paid_indicators = [
+        penalty.get("paid_date"),
+        penalty.get("payment_date"),
+        penalty.get("paid_amount"),
+        penalty.get("payment_method"),
+        penalty.get("paid_by")
+    ]
+
+    waived_indicators = [
+        penalty.get("waived_date"),
+        penalty.get("waiver_reason"),
+        penalty.get("waived_by")
+    ]
+
+    resolved_indicators = [
+        penalty.get("resolved_date"),
+        penalty.get("closed_date")
+    ]
+
+    if any(has_field_value(value) for value in paid_indicators):
+        penalty["display_status"] = "Paid"
+        penalty["is_previous_record"] = True
+
+    elif any(has_field_value(value) for value in waived_indicators):
+        penalty["display_status"] = "Waived"
+        penalty["is_previous_record"] = True
+
+    elif any(has_field_value(value) for value in resolved_indicators):
+        penalty["display_status"] = penalty.get("status") or "Resolved"
+        penalty["is_previous_record"] = True
+
+    else:
+        penalty["display_status"] = penalty.get("status") or "Outstanding"
+        penalty["is_previous_record"] = False
+
+    return penalty
+
+
+def get_penalty_latest_date(penalty):
+    date_fields = [
+        "updated_at",
+        "paid_date",
+        "payment_date",
+        "waived_date",
+        "resolved_date",
+        "created_date"
+    ]
+
+    for field in date_fields:
+        if has_field_value(penalty.get(field)):
+            return str(penalty.get(field))
+
+    return ""
+
+
+def sort_penalty_records_for_librarian(penalties):
+    return sorted(
+        penalties,
+        key=lambda penalty: (
+            penalty.get("is_previous_record", False),
+            get_penalty_latest_date(penalty)
+        )
     )

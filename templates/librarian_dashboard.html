@@ -15,6 +15,124 @@ Librarian Dashboard | LibTrack
     </div>
 </section>
 
+<section class="dashboard-section" aria-labelledby="librarian-statistics-heading">
+    <div class="section-heading">
+        <h2 id="librarian-statistics-heading">Current Library Statistics</h2>
+        <p>
+            {% if librarian_dashboard_data_available %}
+                Values are calculated from the latest integrated library records.
+            {% else %}
+                Temporary zero values are shown because the latest statistics could not be loaded.
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="librarian-statistics-grid">
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">👥</span>
+            <strong id="active-students-count">{{ statistics.active_students }}</strong>
+            <span>Active students</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">📚</span>
+            <strong id="total-book-titles-count">{{ statistics.total_book_titles }}</strong>
+            <span>Book titles</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">📦</span>
+            <strong id="total-physical-copies-count">{{ statistics.total_physical_copies }}</strong>
+            <span>Physical copies</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">✅</span>
+            <strong id="available-copies-count">{{ statistics.available_copies }}</strong>
+            <span>Available copies</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">🔄</span>
+            <strong id="active-borrowings-count">{{ statistics.active_borrowings }}</strong>
+            <span>Active borrowings</span>
+        </article>
+
+        <article class="librarian-stat-card">
+            <span class="librarian-stat-icon">🗂️</span>
+            <strong id="librarian-active-reservations-count">{{ statistics.active_reservations }}</strong>
+            <span>Active reservations</span>
+        </article>
+
+        <article class="librarian-stat-card {% if statistics.outstanding_penalties > 0 %}librarian-stat-attention{% endif %}">
+            <span class="librarian-stat-icon">⚠️</span>
+            <strong id="librarian-outstanding-penalties-count">{{ statistics.outstanding_penalties }}</strong>
+            <span>Outstanding penalties</span>
+        </article>
+
+        <article class="librarian-stat-card {% if statistics.outstanding_penalty_amount > 0 %}librarian-stat-attention{% endif %}">
+            <span class="librarian-stat-icon">💳</span>
+            <strong id="librarian-outstanding-penalty-amount">RM {{ '%.2f'|format(statistics.outstanding_penalty_amount) }}</strong>
+            <span>Outstanding amount</span>
+        </article>
+    </div>
+</section>
+
+<section class="dashboard-section" aria-labelledby="pending-actions-heading">
+    <div class="section-heading dashboard-heading-row">
+        <div>
+            <h2 id="pending-actions-heading">Pending Actions</h2>
+            <p>
+                {% if pending_actions_available %}
+                    Review unresolved activities that require librarian attention.
+                {% else %}
+                    Counts are temporarily unavailable. Open the related modules to review current work.
+                {% endif %}
+            </p>
+        </div>
+        <span class="pending-total-badge">
+            {{ pending_actions.total_pending_actions }} total
+        </span>
+    </div>
+
+    <div class="pending-action-grid">
+        <a class="pending-action-card" href="/borrowing/">
+            <span class="pending-action-icon">📥</span>
+            <strong id="pending-borrow-requests-count">{{ pending_actions.pending_borrow_requests }}</strong>
+            <span>Borrow requests</span>
+            <small>Waiting for approval</small>
+        </a>
+
+        <a class="pending-action-card" href="/borrowing/">
+            <span class="pending-action-icon">↩️</span>
+            <strong id="pending-returns-count">{{ pending_actions.pending_returns }}</strong>
+            <span>Return requests</span>
+            <small>Waiting for confirmation</small>
+        </a>
+
+        <a class="pending-action-card" href="/borrowing/">
+            <span class="pending-action-icon">🗓️</span>
+            <strong id="pending-renewals-count">{{ pending_actions.pending_renewals }}</strong>
+            <span>Renewal requests</span>
+            <small>Waiting for a decision</small>
+        </a>
+
+        <a class="pending-action-card {% if pending_actions.overdue_transactions > 0 %}pending-action-warning{% endif %}" href="/penalty/librarian/overdue">
+            <span class="pending-action-icon">⏰</span>
+            <strong id="overdue-transactions-count">{{ pending_actions.overdue_transactions }}</strong>
+            <span>Overdue transactions</span>
+            <small>Past the recorded due date</small>
+        </a>
+
+        <a class="pending-action-card {% if pending_actions.unresolved_exceptions > 0 %}pending-action-danger{% endif %}" href="/penalty/librarian/book-exception">
+            <span class="pending-action-icon">🛠️</span>
+            <strong id="unresolved-exceptions-count">{{ pending_actions.unresolved_exceptions }}</strong>
+            <span>Exception cases</span>
+            <small>Require follow-up</small>
+        </a>
+    </div>
+</section>
+
 <section class="dashboard-section">
     <div class="section-heading">
         <h2>Library Operations</h2>
@@ -55,6 +173,13 @@ Librarian Dashboard | LibTrack
             <h3>Penalty &amp; Transactions</h3>
             <p>Manage overdue books, penalties, payments, waivers, and book exceptions.</p>
             <a href="{{ url_for('penalty_transaction.librarian_penalty_dashboard') }}">Open</a>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="dashboard-card-icon">📊</div>
+            <h3>Operational Reports</h3>
+            <p>Filter read-only borrowing, reservation, overdue, and penalty activities.</p>
+            <a href="{{ url_for('dashboard_report.operational_reports') }}">Open</a>
         </article>
     </div>
 </section>
