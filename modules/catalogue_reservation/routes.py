@@ -478,6 +478,11 @@ def _matches_search(book, search_keyword):
 # SCRUM-44: Setup module + View book catalogue
 @catalogue_bp.route("/")
 def view_catalogue():
+    # Guests should use the public catalogue instead of the
+    # authenticated student catalogue.
+    if not session.get("user_id"):
+        return redirect("/student/catalogue/")
+
     books = []
     search_keyword = request.args.get("search", "").strip().lower()
 

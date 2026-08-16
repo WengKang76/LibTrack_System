@@ -21,7 +21,7 @@ def test_authenticated_student_can_access_catalogue(app_factory):
     assert "Book Catalogue" in response.get_data(as_text=True)
 
 
-def test_guest_user_can_preview_catalogue_without_login(app_factory):
+def test_guest_user_is_redirected_to_public_catalogue(app_factory):
     app = app_factory(
         books=[
             {
@@ -37,9 +37,8 @@ def test_guest_user_can_preview_catalogue_without_login(app_factory):
 
     response = client.get("/catalogue/")
 
-    assert response.status_code == 200
-    assert "Preview Book" in response.get_data(as_text=True)
-
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/student/catalogue/")
 
 def test_unauthenticated_user_is_redirected_to_login_for_student_only_pages(
     app_factory,

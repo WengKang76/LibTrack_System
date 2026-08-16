@@ -138,48 +138,66 @@
 
     <div class="dashboard-card-grid">
         {% if session.get('role', '') | lower == 'librarian' %}
-            <article class="dashboard-card">
-                <h3>Book Catalogue Management</h3>
-                <p>Add, update, remove, and manage books and physical copies.</p>
-                <a href="/books/">Manage Book Catalogue</a>
-            </article>
-            <article class="dashboard-card">
-                <h3>User Management</h3>
-                <p>Manage student accounts, roles, and account statuses.</p>
-                <a href="/users/">Manage Users</a>
-            </article>
-            <article class="dashboard-card">
-                <h3>Borrowing &amp; Returning</h3>
-                <p>Manage borrowing requests, renewals, returns, and transactions.</p>
-                <a href="/borrowing/">Open Borrowing &amp; Returning</a>
-            </article>
-            <article class="dashboard-card">
-                <h3>Penalty &amp; Transactions</h3>
-                <p>Manage overdue books, penalties, payments, and exceptions.</p>
-                <a href="/penalty/librarian">Open Penalty Module</a>
-            </article>
-        {% else %}
-            <article class="dashboard-card">
-                <h3>Browse Book Catalogue</h3>
-                <p>Browse available books and view their details.</p>
-                <a href="/catalogue/">Browse Books</a>
-            </article>
-            <article class="dashboard-card">
-                <h3>My Reservations</h3>
-                <p>Review and manage your own book reservations.</p>
-                <a href="/catalogue/my-reservations">View Reservations</a>
-            </article>
-            <article class="dashboard-card">
-                <h3>My Borrowed Books</h3>
-                <p>View your current loans, due dates, and overdue information.</p>
-                <a href="/catalogue/my-borrowed-books">View Borrowed Books</a>
-            </article>
-            <article class="dashboard-card">
-                <h3>My Penalties</h3>
-                <p>Review your penalty records and payment options.</p>
-                <a href="/penalty/student">View Penalties</a>
-            </article>
-        {% endif %}
+
+    <article class="dashboard-card">
+        <h3>Book Catalogue Management</h3>
+        <p>Add, update, remove, and manage books and physical copies.</p>
+        <a href="/books/">Manage Book Catalogue</a>
+    </article>
+
+    <article class="dashboard-card">
+        <h3>User Management</h3>
+        <p>Manage student accounts, roles, and account statuses.</p>
+        <a href="/users/">Manage Users</a>
+    </article>
+
+    <article class="dashboard-card">
+        <h3>Borrowing &amp; Returning</h3>
+        <p>Manage borrowing requests, renewals, returns, and transactions.</p>
+        <a href="/borrowing/">Open Borrowing &amp; Returning</a>
+    </article>
+
+    <article class="dashboard-card">
+        <h3>Penalty &amp; Transactions</h3>
+        <p>Manage overdue books, penalties, payments, and exceptions.</p>
+        <a href="/penalty/librarian">Open Penalty Module</a>
+    </article>
+
+{% elif session.get('role', '') | lower == 'student' %}
+
+    <article class="dashboard-card">
+        <h3>Browse Book Catalogue</h3>
+        <p>Browse books and view their current availability.</p>
+        <a href="/catalogue/">Browse Books</a>
+    </article>
+
+    <article class="dashboard-card">
+        <h3>My Reservations</h3>
+        <p>Review and manage your own book reservations.</p>
+        <a href="/catalogue/my-reservations">View Reservations</a>
+    </article>
+
+    <article class="dashboard-card">
+        <h3>My Borrowed Books</h3>
+        <p>View your current loans, due dates, and overdue information.</p>
+        <a href="/catalogue/my-borrowed-books">View Borrowed Books</a>
+    </article>
+
+    <article class="dashboard-card">
+        <h3>My Penalties</h3>
+        <p>Review your penalty records and payment options.</p>
+        <a href="/penalty/student">View Penalties</a>
+    </article>
+
+{% else %}
+
+    <article class="dashboard-card">
+        <h3>Public Book Catalogue</h3>
+        <p>Browse currently available LibTrack books before logging in.</p>
+        <a href="/student/catalogue/">Browse Public Catalogue</a>
+    </article>
+
+{% endif %}
     </div>
 </section>
 {% endblock %}
