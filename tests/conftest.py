@@ -100,6 +100,22 @@ def login_as_librarian(client):
 
     return client
 
+@pytest.fixture
+def login_as_student(client):
+    """Authenticate the shared client as student S001."""
+
+    with client.session_transaction() as user_session:
+        user_session.clear()
+        user_session["user_id"] = "S001"
+        user_session["student_id"] = "S001"
+        user_session["full_name"] = "Test Student"
+        user_session["email"] = "student@test.com"
+        user_session["role"] = "student"
+        user_session["last_activity"] = time.time()
+        user_session.permanent = True
+
+    return client
+
 
 # ============================================================
 # Catalogue reservation fake Firestore

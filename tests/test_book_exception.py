@@ -226,6 +226,32 @@ def test_book_exception_page_resolves_transaction_from_penalty_id(client, monkey
 def test_demo_penalty_opens_its_demo_borrow_transaction(client, monkeypatch):
     monkeypatch.setattr(penalty_routes, "db", None)
 
+    monkeypatch.setitem(
+        penalty_routes.DEMO_BORROW_TRANSACTIONS,
+        "T001",
+        {
+            "transaction_id": "T001",
+            "student_id": "S001",
+            "book_id": "B001",
+            "book_title": "Python Programming",
+            "status": "Borrowed",
+        },
+    )
+
+    monkeypatch.setitem(
+        penalty_routes.DEMO_PENALTIES,
+        "P001",
+        {
+            "penalty_id": "P001",
+            "student_id": "S001",
+            "transaction_id": "T001",
+            "book_id": "B001",
+            "book_title": "Python Programming",
+            "penalty_amount": 5.00,
+            "status": "Outstanding",
+        },
+    )
+
     response = client.get("/penalty/librarian/book-exception/P001")
 
     assert response.status_code == 200
