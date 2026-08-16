@@ -9,12 +9,12 @@
 
 
 <div class="librarian-page-wrapper">
-    <div class="librarian-page-header"><h1>Lost / Damaged Book Exceptions</h1><p>Select an eligible borrowing transaction. Closed, rejected, and already-recorded exceptions are not shown.</p></div>
+    <div class="librarian-page-header"><h1>Return Exceptions</h1><p>Only borrowing transactions with a pending return request are shown.</p></div>
 
     {% if transactions %}
         <div class="librarian-table-card">
             <table class="librarian-table">
-                <thead><tr><th>Transaction ID</th><th>Student ID</th><th>Book</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+                <thead><tr><th>Transaction ID</th><th>Student ID</th><th>Book</th><th>Due Date</th><th>Return Date</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody>
                 {% for transaction in transactions %}
                     <tr>
@@ -22,15 +22,16 @@
                         <td>{{ transaction.get('student_id', '-') }}</td>
                         <td>{{ transaction.get('book_title', transaction.get('book_id', '-')) }}</td>
                         <td>{{ transaction.get('due_date', '-') }}</td>
-                        <td>{{ transaction.get('status', '-') }}</td>
-                        <td><a href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=transaction.get('transaction_id')) }}" class="btn-danger">Record Exception</a></td>
+                        <td>{{ transaction.get('return_date', '-') or '-' }}</td>
+                        <td><span class="status-badge status-pending">{{ transaction.get('status', '-') }}</span></td>
+                        <td><a href="{{ url_for('penalty_transaction.librarian_reject_return_exception', transaction_id=transaction.get('transaction_id')) }}" class="btn-danger">Review Return</a></td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
     {% else %}
-        <div class="librarian-empty-box"><h3>No eligible transactions</h3><p>No borrowing transaction currently requires lost or damaged book exception handling.</p></div>
+        <div class="librarian-empty-box"><h3>No pending return exceptions</h3><p>There are no pending return requests that require exception handling.</p></div>
     {% endif %}
 </div>
 {% endblock %}

@@ -33,6 +33,9 @@
         background: rgba(255, 255, 255, 0.12);
         border-radius: 50%;
     }
+    .full-width-card {
+    grid-column: 1 / -1;
+}
 
     .dashboard-tag {
         display: inline-block;
@@ -235,6 +238,24 @@
                 </div>
                 <span class="function-action">Open</span>
             </a>
+            <a
+    href="{{ url_for('penalty_transaction.librarian_choose_book_exception') }}"
+    class="function-card full-width-card"
+>
+    <div class="function-icon">📕</div>
+
+    <div class="function-info">
+        <h3>Lost / Damaged Books</h3>
+        <p>
+            View borrowing transactions and record lost or damaged
+            book exceptions for students.
+        </p>
+    </div>
+
+    <span class="function-action">
+        Open
+    </span>
+</a>
 
         </div>
 

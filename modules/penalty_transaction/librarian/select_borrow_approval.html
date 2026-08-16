@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
+{% endblock %}
+
+{% block content %}
+{% set penalty_nav_role = "librarian" %}
+
+
+<div class="librarian-page-wrapper">
+    <div class="librarian-page-header"><h1>Borrow Approval Checks</h1><p>Review pending borrow requests and check unpaid penalties before approval.</p></div>
+
+    {% if borrow_requests %}
+        <div class="librarian-table-card">
+            <table class="librarian-table">
+                <thead><tr><th>Request ID</th><th>Student ID</th><th>Student Name</th><th>Book</th><th>Status</th><th>Unpaid Penalties</th><th>Action</th></tr></thead>
+                <tbody>
+                {% for item in borrow_requests %}
+                    <tr>
+                        <td><strong>{{ item.get('request_id', '-') }}</strong></td>
+                        <td>{{ item.get('student_id', '-') }}</td>
+                        <td>{{ item.get('student_name', '-') }}</td>
+                        <td>{{ item.get('book_title', item.get('book', item.get('book_id', '-'))) }}</td>
+                        <td><span class="status-badge status-pending">{{ item.get('status', 'Pending') }}</span></td>
+                        <td>
+                            {% if item.get('unpaid_penalty_count', 0) > 0 %}
+                                <span class="status-badge status-outstanding">{{ item.get('unpaid_penalty_count') }}</span>
+                            {% else %}
+                                <span class="status-badge status-paid">0</span>
+                            {% endif %}
+                        </td>
+                        <td><a href="{{ url_for('penalty_transaction.librarian_check_borrow_approval', request_id=item.get('request_id')) }}" class="btn-primary">Check Request</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="librarian-empty-box"><h3>No pending borrow requests</h3><p>There are no borrow requests waiting for penalty eligibility checks.</p></div>
+    {% endif %}
+</div>
+{% endblock %}

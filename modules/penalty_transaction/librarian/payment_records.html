@@ -1,61 +1,52 @@
 {% extends "base.html" %}
 
-
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
 {% endblock %}
 
 {% block content %}
+{% set penalty_nav_role = "librarian" %}
 
-<div class="penalty-header">
-    <h1>Penalty, Transactions & Exception Handling</h1>
-    <h2>SCRUM-681: Record Penalty Payments</h2>
-    <p>This page displays completed penalty payment records.</p>
+
+<div class="librarian-page-wrapper">
+    <div class="librarian-page-header"><h1>Payment Records</h1><p>Review completed penalty payments.</p></div>
+
+    <div class="librarian-filter-card">
+        <form method="GET" action="{{ url_for('penalty_transaction.view_payment_records') }}" class="librarian-filter-form">
+            <div class="librarian-form-group">
+                <label for="student_id">Search by Student ID</label>
+                <input id="student_id" type="text" name="student_id" value="{{ student_id or '' }}" placeholder="Example: S001">
+            </div>
+            <button type="submit" class="btn-primary">Search</button>
+            <a href="{{ url_for('penalty_transaction.view_payment_records') }}" class="btn-secondary">Reset</a>
+        </form>
+    </div>
+
+    {% if payment_records %}
+        <div class="penalty-alert penalty-success">{{ payment_records|length }} payment record(s) found.</div>
+        <div class="librarian-table-card">
+            <table class="librarian-table">
+                <thead><tr><th>Penalty ID</th><th>Student ID</th><th>Transaction ID</th><th>Book</th><th>Amount</th><th>Payment Method</th><th>Payment Date</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for record in payment_records %}
+                    {% set amount = record.get('penalty_amount', record.get('amount', record.get('total_amount', record.get('paid_amount', 0)))) %}
+                    {% set payment_date = record.get('payment_date', record.get('paid_date', '-')) %}
+                    <tr>
+                        <td>{{ record.get('penalty_id', '-') }}</td>
+                        <td>{{ record.get('student_id', '-') }}</td>
+                        <td>{{ record.get('transaction_id', '-') }}</td>
+                        <td>{{ record.get('book_title', record.get('book_id', '-')) }}</td>
+                        <td>RM {{ '%.2f'|format(amount|float) }}</td>
+                        <td>{{ record.get('payment_method', record.get('method', '-')) }}</td>
+                        <td>{{ payment_date }}</td>
+                        <td><span class="status-badge status-paid">{{ record.get('display_status', record.get('status', 'Paid')) }}</span></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="librarian-empty-box"><h3>No payment records found</h3><p>No completed payment matches the current search.</p></div>
+    {% endif %}
 </div>
-
-<div class="penalty-card">
-    <form method="GET" action="{{ url_for('penalty_transaction.view_payment_records') }}" class="penalty-form">
-        <label>Search by Student ID:</label>
-        <input type="text" name="student_id" value="{{ student_id or '' }}" placeholder="Example: S001">
-        <button type="submit">Search</button>
-    </form>
-</div>
-
-{% if payment_records %}
-<div class="penalty-alert penalty-success">
-    {{ payment_records|length }} payment record(s) found.
-</div>
-
-<table class="penalty-table">
-    <tr>
-        <th>Penalty ID</th>
-        <th>Student ID</th>
-        <th>Transaction ID</th>
-        <th>Book Title</th>
-        <th>Amount</th>
-        <th>Payment Method</th>
-        <th>Payment Date</th>
-        <th>Status</th>
-    </tr>
-
-    {% for record in payment_records %}
-    <tr>
-        <td>{{ record.penalty_id }}</td>
-        <td>{{ record.student_id }}</td>
-        <td>{{ record.transaction_id }}</td>
-        <td>{{ record.book_title }}</td>
-        <td>RM {{ "%.2f"|format(record.penalty_amount) }}</td>
-        <td>{{ record.payment_method or "-" }}</td>
-        <td>{{ record.payment_date or "-" }}</td>
-        <td>{{ record.status }}</td>
-    </tr>
-    {% endfor %}
-</table>
-
-{% else %}
-<div class="penalty-alert penalty-warning">
-    No payment records found.
-</div>
-{% endif %}
-
 {% endblock %}

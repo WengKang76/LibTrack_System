@@ -6,91 +6,36 @@
 
 {% block content %}
 {% set penalty_nav_role = "librarian" %}
-{% include "components/penalty_navigation.html" %}
+
 {% include "components/penalty_action_confirmation.html" %}
-<style>
-.waive-cancel-btn {
-    display: inline-block !important;
-    padding: 12px 20px !important;
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
-    border-radius: 10px !important;
-    font-size: 15px !important;
-    font-weight: 800 !important;
-    text-decoration: none !important;
-    cursor: pointer !important;
-}
-
-.waive-cancel-btn:hover {
-    background: #e2e8f0 !important;
-    color: #0f172a !important;
-}
-</style>
-
 
 <div class="librarian-page-wrapper">
-    <div class="librarian-page-header">
-        <h1>Waive Penalty</h1>
-        <p>Review the penalty details and enter a valid reason before waiving the penalty.</p>
-    </div>
+    <div class="librarian-page-header"><h1>Waive Penalty</h1><p>Review the penalty and provide a valid waiver reason.</p></div>
 
-    <div class="warning-card">
-        Warning: Waiving a penalty will change the penalty status and may affect the student's outstanding penalty record.
-        <ul class="warning-list">
-            <li>Please confirm the correct penalty record before continuing.</li>
-            <li>A valid waiver reason is required.</li>
-            <li>Paid penalties should not be waived.</li>
-        </ul>
-    </div>
-
-    {% if error %}
-        <div class="error-card">
-            {{ error }}
-        </div>
-    {% endif %}
+    <div class="warning-card">Waiving a penalty changes its status permanently. Confirm the correct record before continuing.</div>
+    {% if error %}<div class="error-card">{{ error }}</div>{% endif %}
 
     <div class="penalty-card">
         <h3>Penalty Details</h3>
-
-        <p><strong>Penalty ID:</strong> {{ penalty.penalty_id }}</p>
-        <p><strong>Student ID:</strong> {{ penalty.student_id }}</p>
-        <p><strong>Transaction ID:</strong> {{ penalty.transaction_id }}</p>
-        <p><strong>Book Title:</strong> {{ penalty.book_title }}</p>
-        <p><strong>Overdue Days:</strong> {{ penalty.overdue_days }}</p>
-        <p><strong>Penalty Amount:</strong> RM {{ "%.2f"|format(penalty.penalty_amount|float) }}</p>
-        <p><strong>Status:</strong> {{ penalty.status }}</p>
+        <p><strong>Penalty ID:</strong> {{ penalty.get('penalty_id', '-') }}</p>
+        <p><strong>Student ID:</strong> {{ penalty.get('student_id', '-') }}</p>
+        <p><strong>Transaction ID:</strong> {{ penalty.get('transaction_id', '-') }}</p>
+        <p><strong>Book:</strong> {{ penalty.get('book_title', penalty.get('book_id', '-')) }}</p>
+        <p><strong>Overdue Days:</strong> {{ penalty.get('overdue_days', 0) }}</p>
+        <p><strong>Penalty Amount:</strong> RM {{ '%.2f'|format(penalty.get('penalty_amount', penalty.get('amount', 0))|float) }}</p>
+        <p><strong>Status:</strong> {{ penalty.get('status', '-') }}</p>
+        <p><strong>Waived By:</strong> {{ session.get('full_name', session.get('user_id', 'Librarian')) }}</p>
     </div>
 
     <div class="penalty-card">
-<form
-    method="POST"
-    class="penalty-payment-form"
-    onsubmit="return confirmPenaltyAction('Waive Penalty', '{{ penalty.penalty_id }}');"
->
-            <label>Waiver Reason</label>
-            <input
-                type="text"
-                name="waiver_reason"
-                placeholder="Example: Approved by librarian due to valid reason"
-                required
-            >
+        <form method="POST" class="penalty-payment-form" onsubmit="return confirmPenaltyAction('Waive Penalty', '{{ penalty.get('penalty_id', '') }}');">
+            <label for="waiver_reason">Waiver Reason</label>
+            <input id="waiver_reason" type="text" name="waiver_reason" minlength="5" maxlength="300" placeholder="Enter a clear reason for the waiver" required>
 
-            <label>Waived By</label>
-            <input type="text" name="waived_by" value="Librarian" required>
-
-<div class="waive-action-row">
-    <button type="submit" class="waive-submit-btn">
-        Waive Penalty
-    </button>
-
-    <button
-    type="button"
-    class="waive-cancel-btn"
->
-    Cancel
-</button>
-</div>
+            <div class="form-action-row">
+                <button type="submit" class="btn-warning">Waive Penalty</button>
+                <a href="{{ url_for('penalty_transaction.librarian_choose_penalty_to_waive') }}" class="btn-secondary">Cancel</a>
+            </div>
         </form>
     </div>
 </div>
