@@ -35,30 +35,37 @@
             novalidate
         >
 
-            <div class="form-group">
-                <label for="student_id">
-                    Student ID
-                </label>
+<div class="form-group">
+    <label for="student_id">
+        Student ID
+    </label>
 
-                <input
-                    type="text"
-                    id="student_id"
-                    name="student_id"
-                    value="{{ form_data.get(
-                        'student_id',
-                        ''
-                    ) }}"
-                    maxlength="20"
-                    autocomplete="username"
-                    required
-                >
+    <input
+        type="text"
+        id="student_id"
+        name="student_id"
+        value="{{ form_data.get(
+            'student_id',
+            ''
+        ) }}"
+        minlength="7"
+        maxlength="7"
+        inputmode="numeric"
+        pattern="[0-9]{7}"
+        autocomplete="username"
+        required
+    >
 
-                {% if errors.get('student_id') %}
-                <p class="field-error">
-                    {{ errors.get('student_id') }}
-                </p>
-                {% endif %}
-            </div>
+    <p class="password-requirements">
+        Student ID must contain exactly 7 digits.
+    </p>
+
+    {% if errors.get('student_id') %}
+    <p class="field-error">
+        {{ errors.get('student_id') }}
+    </p>
+    {% endif %}
+</div>
 
             <div class="form-group">
                 <label for="full_name">
