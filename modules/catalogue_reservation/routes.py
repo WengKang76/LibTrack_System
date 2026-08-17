@@ -21,7 +21,7 @@ BOOKS_COLLECTION = "books"
 RESERVATIONS_COLLECTION = "reservations"
 BORROW_REQUESTS_COLLECTION = "borrow_requests"
 BORROW_TRANSACTIONS_COLLECTION = "borrow_transactions"
-BORROWING_PERIOD_DAYS = 0
+BORROWING_PERIOD_DAYS = 14
 CURRENT_BORROWING_STATUSES = {"approved", "borrowed", "issued", "active"}
 PENDING_BORROW_REQUEST_STATUSES = {
     "pending",
@@ -478,6 +478,11 @@ def _matches_search(book, search_keyword):
 # SCRUM-44: Setup module + View book catalogue
 @catalogue_bp.route("/")
 def view_catalogue():
+    # Guests should use the public catalogue instead of the
+    # authenticated student catalogue.
+    if not session.get("user_id"):
+        return redirect("/student/catalogue/")
+
     books = []
     search_keyword = request.args.get("search", "").strip().lower()
 
@@ -889,7 +894,7 @@ def _build_borrow_request_data(
         "book_id": book["book_id"],
         "book_title": book.get("title", "Untitled Book"),
         "request_date": request_date,
-        "borrowing_period": "Dummy period",
+        "borrowing_period": f"{BORROWING_PERIOD_DAYS} days",
         "borrowing_period_days": BORROWING_PERIOD_DAYS,
         "status": "Pending",
         "availability_checked_at": request_date,

@@ -46,7 +46,7 @@ def seed_users():
 
     for user_id, data in users.items():
 
-        db.collection("users").document(user_id).set(data)
+        db.collection(COLLECTION_USERS).document(user_id).set(data)
 
 
 # ==========================
@@ -104,7 +104,7 @@ def seed_borrow_requests():
 
         book_id = f"BOOK{((i - 1) % 10) + 1:03}"
 
-        db.collection("borrow_requests").document(request_id).set(
+        db.collection(COLLECTION_BORROW_REQUESTS).document(request_id).set(
             {
                 "book_id": book_id,
                 "student_id": student_id,

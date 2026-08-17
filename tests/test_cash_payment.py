@@ -77,7 +77,7 @@ def test_scrum_680_student_cash_payment_success(monkeypatch):
     assert success is True
     assert fake_db.penalties["P001"]["status"] == "Paid"
     assert fake_db.penalties["P001"]["payment_method"] == "Cash"
-    assert fake_db.penalties["P001"]["paid_by"] == "Student"
+    assert fake_db.penalties["P001"]["paid_by"] == "S001"
     assert fake_db.penalties["P001"]["cash_amount_received"] == 10.00
     assert fake_db.penalties["P001"]["change_amount"] == 5.00
 
@@ -122,7 +122,11 @@ def test_scrum_680_reject_waived_penalty(monkeypatch):
     assert fake_db.penalties["P003"]["status"] == "Waived"
 
 
-def test_scrum_680_student_cash_payment_page_loads(client, monkeypatch):
+def test_scrum_680_student_cash_payment_page_loads(
+    login_as_student,
+    monkeypatch,
+):
+    client = login_as_student
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
@@ -131,16 +135,22 @@ def test_scrum_680_student_cash_payment_page_loads(client, monkeypatch):
     assert response.status_code == 200
 
 
-def test_scrum_680_student_cash_payment_route_updates_status(client, monkeypatch):
+def test_scrum_680_student_cash_payment_route_updates_status(
+    login_as_student,
+    monkeypatch,
+):
+    client = login_as_student
+
     fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     response = client.post(
-        "/penalty/student/pay-cash/P001", data={"cash_amount": "10.00"}
+        "/penalty/student/pay-cash/P001",
+        data={"cash_amount": "10.00"},
     )
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/penalty/student")
     assert fake_db.penalties["P001"]["status"] == "Paid"
     assert fake_db.penalties["P001"]["payment_method"] == "Cash"
-    assert fake_db.penalties["P001"]["paid_by"] == "Student"
+    assert fake_db.penalties["P001"]["paid_by"] == "S001"

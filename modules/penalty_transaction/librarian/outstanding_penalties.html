@@ -5,126 +5,66 @@
 {% endblock %}
 
 {% block content %}
+{% set penalty_nav_role = "librarian" %}
+
+
 <div class="librarian-page-wrapper">
     <div class="librarian-page-header">
         <h1>Penalty Records</h1>
-        <p>Review student penalty records, search by student information, and perform penalty actions.</p>
-    </div>
-
-    <div class="warning-card">
-        Please review the penalty record carefully before performing any action.
-        Waiving a penalty or creating an exception penalty may update the student's penalty status.
+        <p>Review current and previous student penalty records.</p>
     </div>
 
     <div class="librarian-filter-card">
         <form method="GET" class="librarian-filter-form">
             <div class="librarian-form-group">
-                <label>Search Student Penalty</label>
-                <input
-                    type="text"
-                    name="search_keyword"
-                    placeholder="Search by student ID or student name"
-                    value="{{ search_keyword }}"
-                >
+                <label for="search_keyword">Search Student Penalty</label>
+                <input id="search_keyword" type="text" name="search_keyword" placeholder="Penalty ID, student ID, name, book, reason or status" value="{{ search_keyword or '' }}">
             </div>
-
             <button type="submit" class="btn-primary">Search</button>
-
-            <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="btn-secondary">
-                Reset
-            </a>
+            <a href="{{ url_for('penalty_transaction.view_outstanding_penalties') }}" class="btn-secondary">Reset</a>
         </form>
     </div>
 
-    {% if search_keyword %}
-        <div class="librarian-summary-text">
-            Search result for: <strong>{{ search_keyword }}</strong>
-        </div>
-    {% endif %}
-
-    <div class="librarian-summary-text">
-        {{ result_count if result_count is defined else outstanding_penalties|length }}
-        penalty record(s) found.
-    </div>
+    <div class="librarian-summary-text">{{ result_count if result_count is defined else outstanding_penalties|length }} penalty record(s) found.</div>
 
     {% if outstanding_penalties %}
         <div class="librarian-table-card">
             <table class="librarian-table">
-                <thead>
-                    <tr>
-                        <th>Penalty ID</th>
-                        <th>Student ID</th>
-                        <th>Student Name</th>
-                        <th>Book Title</th>
-                        <th>Reason</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
+                <thead><tr><th>Penalty ID</th><th>Student ID</th><th>Student Name</th><th>Book</th><th>Reason</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody>
-                    {% for penalty in outstanding_penalties %}
-                        {% set status = penalty.get("display_status", penalty.get("status", "-")) %}
-                        {% set status_lower = status|lower %}
-                        {% set penalty_id = penalty.get("penalty_id", "-") %}
-                        {% set transaction_id = penalty.get("transaction_id", "") %}
-
-                        <tr>
-                            <td><strong>{{ penalty_id }}</strong></td>
-                            <td>{{ penalty.get("student_id", "-") }}</td>
-                            <td>{{ penalty.get("student_name", "-") }}</td>
-                            <td>{{ penalty.get("book_title", "-") }}</td>
-                            <td>{{ penalty.get("penalty_reason", penalty.get("penalty_type", "-")) }}</td>
-                            <td>
-                                <span class="amount-text">
-                                    RM {{ "%.2f"|format(penalty.get("penalty_amount", penalty.get("amount", 0))|float) }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-badge status-{{ status_lower|replace(' ', '-') }}">
-                                    {{ status }}
-                                </span>
-                            </td>
-                            <td>
-    <div class="action-group">
-        {% if penalty.get("is_previous_record") %}
-            {% if status|lower == "paid" %}
-                <span class="btn-neutral">Paid Record</span>
-            {% elif status|lower == "waived" %}
-                <span class="btn-neutral">Waived Record</span>
-            {% else %}
-                <span class="btn-neutral">Previous Record</span>
-            {% endif %}
-        {% else %}
-            <a
-                href="{{ url_for('penalty_transaction.librarian_waive_penalty', penalty_id=penalty_id) }}"
-                class="btn-warning"
-            >
-                Waive
-            </a>
-
-            {% if transaction_id %}
-                <a
-                    href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=transaction_id) }}"
-                    class="btn-danger"
-                >
-                    Exception
-                </a>
-            {% endif %}
-        {% endif %}
-    </div>
-</td>
-                        </tr>
-                    {% endfor %}
+                {% for penalty in outstanding_penalties %}
+                    {% set status = penalty.get('display_status', penalty.get('status', '-')) %}
+                    {% set status_lower = status|lower %}
+                    {% set penalty_id = penalty.get('penalty_id', '-') %}
+                    {% set transaction_id = penalty.get('transaction_id', '') %}
+                    {% set amount = penalty.get('penalty_amount', penalty.get('amount', penalty.get('total_amount', 0))) %}
+                    <tr>
+                        <td><strong>{{ penalty_id }}</strong></td>
+                        <td>{{ penalty.get('student_id', '-') }}</td>
+                        <td>{{ penalty.get('student_name', '-') }}</td>
+                        <td>{{ penalty.get('book_title', penalty.get('book_id', '-')) }}</td>
+                        <td>{{ penalty.get('penalty_reason', penalty.get('penalty_type', '-')) }}</td>
+                        <td><span class="amount-text">RM {{ '%.2f'|format(amount|float) }}</span></td>
+                        <td><span class="status-badge status-{{ status_lower|replace(' ', '-') }}">{{ status }}</span></td>
+                        <td>
+                            <div class="action-group">
+                                {% if penalty.get('is_previous_record') %}
+                                    <span class="btn-neutral">{{ status }} Record</span>
+                                {% else %}
+                                    <a href="{{ url_for('penalty_transaction.librarian_waive_penalty', penalty_id=penalty_id) }}" class="btn-warning">Waive</a>
+                                    {% if transaction_id %}
+                                    <a href="{{ url_for('penalty_transaction.librarian_record_book_exception', transaction_id=transaction_id) }}" class="btn-danger">Exception</a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
                 </tbody>
             </table>
         </div>
     {% else %}
-        <div class="librarian-empty-box">
-            <h3>No matching penalty records found</h3>
-            <p>Please try another student ID, student name, or reset the search.</p>
-        </div>
+        <div class="librarian-empty-box"><h3>No matching penalty records found</h3><p>Try another search value or reset the search.</p></div>
     {% endif %}
 </div>
 {% endblock %}

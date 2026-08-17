@@ -7,7 +7,12 @@ from modules.penalty_transaction import routes as penalty_routes
 
 @pytest.fixture(autouse=True)
 def reset_demo_data(monkeypatch):
-    original_penalties = copy.deepcopy(penalty_routes.DEMO_PENALTIES)
+    original_penalties = copy.deepcopy(
+        penalty_routes.DEMO_PENALTIES
+    )
+
+    # This test suite specifically tests the demo/test fallback.
+    monkeypatch.setattr(penalty_routes, "db", None)
 
     fake_transactions = {
         "RT1084": {

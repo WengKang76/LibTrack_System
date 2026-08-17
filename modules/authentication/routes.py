@@ -75,7 +75,7 @@ def check_session_expiration():
 
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
-STUDENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9-]{4,20}$")
+STUDENT_ID_PATTERN = re.compile(r"^[0-9]{7}$")
 
 PHONE_PATTERN = re.compile(r"^[0-9+\-\s]{7,20}$")
 
@@ -360,7 +360,7 @@ def register():
             form_data["student_id"]
         ):
             errors["student_id"] = (
-                "Student ID must contain 4 to 20 " "letters, numbers, or hyphens."
+                "Student ID must contain exactly 7 digits."
             )
 
         if form_data["full_name"] and len(form_data["full_name"]) > 100:

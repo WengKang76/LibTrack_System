@@ -105,15 +105,14 @@
             <div>
                 <dt>Borrowing Period</dt>
                 <dd class="borrowing-period-value">
-                    Dummy period
+                    {{ borrowing_period_days }} days
                 </dd>
             </div>
         </dl>
 
         <div class="borrow-period-notice">
             <strong>Borrowing period:</strong>
-            The borrowing period is currently set as a dummy placeholder for
-            this demo flow.
+            The borrowing period is {{ borrowing_period_days }} days. Please ensure to return the book on time to avoid any late fees.
         </div>
 
         <div class="borrow-request-notice">

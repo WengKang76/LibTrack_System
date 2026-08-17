@@ -51,7 +51,7 @@ class FakeDatabase:
         self.users = {
             "USR001": {
                 "user_id": "USR001",
-                "student_id": "24WMR00001",
+                "student_id": "1234567",
                 "full_name": "Existing Student",
                 "email": "existing@student.demo",
                 "phone_number": "012-3456789",
@@ -82,7 +82,7 @@ def registration_database(monkeypatch):
 
 def valid_registration_data():
     return {
-        "student_id": "24WMR00002",
+        "student_id": "2345678",
         "full_name": "Sherman Tan",
         "email": "sherman@student.demo",
         "phone_number": "012-9876543",
@@ -115,7 +115,7 @@ def test_valid_student_registration_creates_account(
 
     created_user = registration_database.users["USR002"]
 
-    assert created_user["student_id"] == "24WMR00002"
+    assert created_user["student_id"] == "2345678"
     assert created_user["full_name"] == "Sherman Tan"
     assert created_user["email"] == "sherman@student.demo"
     assert created_user["role"] == "Student"
@@ -240,7 +240,7 @@ def test_duplicate_student_id_is_rejected(
     registration_database,
 ):
     form_data = valid_registration_data()
-    form_data["student_id"] = "24wmr00001"
+    form_data["student_id"] = "1234567"
 
     response = client.post(
         "/auth/register",
@@ -249,7 +249,13 @@ def test_duplicate_student_id_is_rejected(
 
     assert response.status_code == 400
 
-    assert b"An account already exists with " b"this student ID." in response.data
+    assert (
+        b"An account already exists with "
+        b"this student ID."
+        in response.data
+    )
+
+    assert "USR002" not in registration_database.users
 
 
 def test_registration_assigns_student_role_automatically(
@@ -279,3 +285,25 @@ def test_registration_page_has_show_password_control(
     assert b'id="show_passwords"' in response.data
     assert b'class="password-input"' in response.data
     assert b"Show passwords" in response.data
+
+
+def test_student_id_with_alphabets_is_rejected(
+    client,
+    registration_database,
+):
+    form_data = valid_registration_data()
+    form_data["student_id"] = "123A567"
+
+    response = client.post(
+        "/auth/register",
+        data=form_data,
+    )
+
+    assert response.status_code == 400
+
+    assert (
+        b"Student ID must contain exactly 7 digits."
+        in response.data
+    )
+
+    assert "USR002" not in registration_database.users

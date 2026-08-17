@@ -2,7 +2,7 @@
 
 {% block content %}
 {% set penalty_nav_role = "student" %}
-{% include "components/penalty_navigation.html" %}
+
 <style>
    .paid-record {
     background: #f1f5f9 !important;
@@ -120,6 +120,10 @@
         font-size: 14px;
         text-align: center;
     }
+
+    .test-only {
+    display: none;
+}
 
     .btn-primary {
         background: #2563eb;

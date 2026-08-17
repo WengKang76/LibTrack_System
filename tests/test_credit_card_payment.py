@@ -120,9 +120,13 @@ def test_scrum_703_reject_invalid_credit_card(monkeypatch):
     assert fake_db.penalties["P001"]["status"] == "Outstanding"
 
 
-def test_scrum_703_credit_card_payment_page_loads(client, monkeypatch):
-    fake_db = FakeDB()
+def test_scrum_703_credit_card_payment_page_loads(
+    login_as_student,
+    monkeypatch,
+):
+    client = login_as_student
 
+    fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     response = client.get("/penalty/student/pay-credit-card/P001")
@@ -130,9 +134,13 @@ def test_scrum_703_credit_card_payment_page_loads(client, monkeypatch):
     assert response.status_code == 200
 
 
-def test_scrum_703_credit_card_payment_route_updates_status(client, monkeypatch):
-    fake_db = FakeDB()
+def test_scrum_703_credit_card_payment_route_updates_status(
+    login_as_student,
+    monkeypatch,
+):
+    client = login_as_student
 
+    fake_db = FakeDB()
     monkeypatch.setattr(penalty_routes, "db", fake_db)
 
     response = client.post(
@@ -144,6 +152,11 @@ def test_scrum_703_credit_card_payment_route_updates_status(client, monkeypatch)
             "cvv": "123",
         },
     )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/penalty/student")
+    assert fake_db.penalties["P001"]["status"] == "Paid"
+    assert fake_db.penalties["P001"]["payment_method"] == "Credit Card"
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/penalty/student")

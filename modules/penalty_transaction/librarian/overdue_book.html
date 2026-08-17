@@ -1,44 +1,41 @@
 {% extends "base.html" %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="../../static/css/penalty_transaction.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/penalty_transaction.css') }}">
 {% endblock %}
 
 {% block content %}
-<h1>💰 Penalty, Transactions & Exception Handling</h1>
-<h2>Identify Overdue Books</h2>
+{% set penalty_nav_role = "librarian" %}
 
-{% if overdue_books %}
-<div class="penalty-alert penalty-warning">
-    {{ overdue_books|length }} overdue book(s) found.
+
+<div class="librarian-page-wrapper">
+    <div class="librarian-page-header">
+        <h1>Overdue Books</h1>
+        <p>Only active borrowing records with a due date earlier than today are shown.</p>
+    </div>
+
+    {% if overdue_books %}
+        <div class="penalty-alert penalty-warning">{{ overdue_books|length }} overdue book(s) found.</div>
+        <div class="librarian-table-card">
+            <table class="librarian-table">
+                <thead><tr><th>Transaction ID</th><th>Student ID</th><th>Book ID</th><th>Book Title</th><th>Borrow Date</th><th>Due Date</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for book in overdue_books %}
+                    <tr>
+                        <td>{{ book.get('transaction_id', '-') }}</td>
+                        <td>{{ book.get('student_id', '-') }}</td>
+                        <td>{{ book.get('book_id', '-') }}</td>
+                        <td>{{ book.get('book_title', book.get('book_id', '-')) }}</td>
+                        <td>{{ book.get('borrow_date', '-') }}</td>
+                        <td>{{ book.get('due_date', '-') }}</td>
+                        <td><span class="status-badge status-outstanding">{{ book.get('status', '-') }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="librarian-empty-box"><h3>No overdue books found</h3><p>There are currently no active borrowing records past their due date.</p></div>
+    {% endif %}
 </div>
-
-<table class="penalty-table">
-    <tr>
-        <th>Transaction ID</th>
-        <th>Student ID</th>
-        <th>Book ID</th>
-        <th>Book Title</th>
-        <th>Borrow Date</th>
-        <th>Due Date</th>
-        <th>Status</th>
-    </tr>
-
-    {% for book in overdue_books %}
-    <tr>
-        <td>{{ book.transaction_id }}</td>
-        <td>{{ book.student_id }}</td>
-        <td>{{ book.book_id }}</td>
-        <td>{{ book.book_title }}</td>
-        <td>{{ book.borrow_date }}</td>
-        <td>{{ book.due_date }}</td>
-        <td>{{ book.status }}</td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<div class="penalty-alert penalty-success">
-    No overdue books found.
-</div>
-{% endif %}
 {% endblock %}
